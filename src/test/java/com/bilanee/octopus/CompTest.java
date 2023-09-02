@@ -1,17 +1,25 @@
 package com.bilanee.octopus;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.CompCreatePO;
+import com.bilanee.octopus.adapter.CompFacade;
+import com.bilanee.octopus.adapter.CompVO;
 import com.bilanee.octopus.adapter.ManageFacade;
 import com.bilanee.octopus.basic.TradeStage;
 import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
+import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
+import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +33,13 @@ public class CompTest {
     ManageFacade manageFacade;
 
     @Autowired
+    CompFacade compFacade;
+
+    @Autowired
     MetaUnitDOMapper metaUnitDOMapper;
+
+    @Autowired
+    UnitDOMapper unitDOMapper;
     @Test
     public void testDelay() throws InterruptedException {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
@@ -36,18 +50,22 @@ public class CompTest {
         }
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
-                .compInitLength(1)
+                .compInitLength(10)
                 .quitCompeteLength(1)
                 .quitResultLength(1)
                 .marketStageBidLengths(marketStageBidLengths)
                 .marketStageClearLengths(marketStageClearLengths)
                 .tradeResultLength(1)
+                .userIds(Arrays.asList("0", "1"))
                 .build();
 
-        System.out.println(Json.toJson(compCreatePO));
         manageFacade.createComp(compCreatePO);
-        Thread.sleep(60_000);
-        System.out.println("test");
+        Result<CompVO> compVOResult = compFacade.runningComp();
+        Assertions.assertTrue(compVOResult.getSuccess());
+        Long compId = compVOResult.getData().getCompId();
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, compId);
+        List<UnitDO> unitDOS = unitDOMapper.selectList(queryWrapper);
+        Assertions.assertEquals(unitDOS.size(), 2 * 3 * 4);
     }
 
     @Test

@@ -4,6 +4,7 @@ package com.bilanee.octopus.adapter;
 import com.bilanee.octopus.basic.CentralizedBidVO;
 import com.bilanee.octopus.basic.TradeStage;
 import com.bilanee.octopus.basic.UnitVO;
+import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,13 @@ import java.util.List;
 @RequestMapping("/api/unit")
 public class UnitFacade {
 
+    UnitDOMapper unitDOMapper;
+    CompFacade compFacade;
+
+
     @GetMapping("listUnitVOs")
     public List<UnitVO> listUnitVOs() {
+
         return null;
     }
 

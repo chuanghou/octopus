@@ -5,6 +5,7 @@ import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import com.stellariver.milky.domain.support.event.EventRouter;
+import com.stellariver.milky.domain.support.event.EventRouters;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ import java.util.Map;
 @CustomLog
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Routers {
+public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
 

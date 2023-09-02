@@ -1,7 +1,11 @@
 package com.bilanee.octopus.basic;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.bilanee.octopus.infrastructure.entity.PositionHandler;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.Map;
 
 @Data
 @CustomLog
@@ -10,25 +14,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UnitVO {
 
-    /**
-     * 单元id
-     */
     Long unitId;
-
-    /**
-     * 单元名称
-     */
-    String name;
-
-    /**
-     * 买方向剩余持仓，NULL代表此时不能发生买动作
-     */
-    Double buyBalance;
-
-    /**
-     * 卖方向剩余持仓，NULL代表此时不能发生卖动作
-     */
-    Double sellBalance;
-
+    Long compId;
+    Integer roundId;
+    String userId;
+    Long metaUnitId;
+    Map<TimeFrame, Map<Direction, Double>> balance;
 
 }
