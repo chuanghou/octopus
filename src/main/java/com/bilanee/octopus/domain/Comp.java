@@ -1,10 +1,17 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.adapter.BidQuery;
 import com.bilanee.octopus.adapter.Tunnel;
 import com.bilanee.octopus.basic.*;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Range;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
+import com.stellariver.milky.common.tool.common.Kit;
+import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.ErrorEnums;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
 import com.stellariver.milky.domain.support.command.Command;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -13,16 +20,17 @@ import com.stellariver.milky.domain.support.command.MethodHandler;
 import com.stellariver.milky.domain.support.context.Context;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Nullable;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 
 @Data
@@ -43,6 +51,7 @@ public class Comp extends AggregateRoot {
     MarketStatus marketStatus;
 
     Long endingTimeStamp;
+
 
     @StaticWire
     static private DelayExecutor delayExecutor;
@@ -80,6 +89,8 @@ public class Comp extends AggregateRoot {
         context.publish(event);
         return comp;
     }
+
+
 
     private static void fillDelayCommand(CompCmd.Create command, Comp comp) {
         // quiz compete
@@ -136,6 +147,24 @@ public class Comp extends AggregateRoot {
     }
 
     @MethodHandler
+    public void centralizedClear(CompCmd.Clear command, Context context) {
+        SysEx.trueThrow((tradeStage != TradeStage.AN_INTER) && (tradeStage != TradeStage.MO_INTER), ErrorEnums.SYS_EX);
+        SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
+        BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
+        List<Object> collect = tunnel.listBids(bidQuery)
+                .stream().collect(Collect.listMultiMap(Bid::getTimeFrame))
+                .asMap().values().stream().map(this::doClear).collect(Collectors.toList());
+    }
+
+    private Object doClear(Collection<Bid> bids) {
+        List<Bid> buyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).collect(Collectors.toList());
+        List<Bid> sellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).collect(Collectors.toList());
+
+    }
+
+
+
+    @MethodHandler
     public void step(CompCmd.Step command, Context context) {
         this.compStage = command.getCompStage();
         this.roundId = command.getRoundId();
@@ -144,6 +173,7 @@ public class Comp extends AggregateRoot {
         this.endingTimeStamp = command.getEndingTimeStamp();
         context.publishPlaceHolderEvent(getAggregateId());
     }
+
 
     static private void pushDelayCommand(CompCmd.Step command, long executeTime) {
         DelayCommandWrapper delayCommandWrapper = new DelayCommandWrapper(command, new Date(executeTime));

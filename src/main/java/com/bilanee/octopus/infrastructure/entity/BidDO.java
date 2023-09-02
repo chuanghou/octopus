@@ -1,0 +1,45 @@
+package com.bilanee.octopus.infrastructure.entity;
+
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.bilanee.octopus.basic.*;
+import com.stellariver.milky.domain.support.base.BaseDataObject;
+import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
+import com.stellariver.milky.infrastructure.base.database.ListJsonHandler;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@TableName("octopus_bid_do")
+@EqualsAndHashCode(callSuper = true)
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class BidDO extends AbstractMpDO  {
+
+    Long bidId;
+    Long compId;
+    Integer roundId;
+    Long unitId;
+    Province province;
+    TimeFrame timeFrame;
+    TradeStage tradeStage;
+    Direction direction;
+    Double quantity;
+    Double price;
+    Date date;
+    @TableField(typeHandler = DealHandlers.class)
+    List<Deal> deals;
+    Date cancelledDate;
+
+    BidStatus bidStatus;
+
+    static public class DealHandlers extends ListJsonHandler<Deal> {};
+
+
+}

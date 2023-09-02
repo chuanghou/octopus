@@ -2,10 +2,12 @@ package com.bilanee.octopus.adapter;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.bilanee.octopus.basic.BasicConvertor;
-import com.bilanee.octopus.basic.MetaUnit;
+import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
+import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
@@ -21,6 +23,7 @@ import java.util.Map;
 public class Tunnel {
 
     final MetaUnitDOMapper metaUnitDOMapper;
+    final BidDOMapper bidDOMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -36,6 +39,20 @@ public class Tunnel {
     }
 
 
+    public List<Bid> listBids(BidQuery q) {
+        LambdaQueryWrapper<BidDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(q.getCompId() != null, BidDO::getCompId, q.getCompId());
+        queryWrapper.eq(q.getUnitId() != null, BidDO::getUnitId, q.getUnitId());
+        queryWrapper.eq(q.getRoundId() != null, BidDO::getRoundId, q.getRoundId());
+        queryWrapper.eq(q.getProvince() != null, BidDO::getProvince, Kit.op(q.getProvince()).map(Province::name).orElse(null));
+        queryWrapper.eq(q.getDirection() != null, BidDO::getDirection, Kit.op(q.getDirection()).map(Direction::name).orElse(null));
+        queryWrapper.eq(q.getTradeStage() != null, BidDO::getTradeStage, Kit.op(q.getTradeStage()).map(TradeStage::name).orElse(null));
+        queryWrapper.eq(q.getBidStatus() != null, BidDO::getBidStatus, Kit.op(q.getBidStatus()).map(BidStatus::name).orElse(null));
+        List<BidDO> bidDOs = bidDOMapper.selectList(queryWrapper);
+        return Collect.transfer(bidDOs, Convertor.INST::to);
+    }
+
+
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public interface Convertor extends BasicConvertor {
@@ -45,6 +62,8 @@ public class Tunnel {
         @BeanMapping(builder = @Builder(disableBuilder = true))
         MetaUnit to(MetaUnitDO metaUnitDO);
 
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        Bid to(BidDO bidDO);
 
     }
 

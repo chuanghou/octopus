@@ -1,7 +1,6 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.basic.MetaUnit;
-import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.event.EventRouter;
 import lombok.AccessLevel;

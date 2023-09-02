@@ -5,31 +5,22 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.SuperBuilder;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 @Data
-@SuperBuilder
+@lombok.Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Bid {
+public class PointLine {
 
     Long bidId;
-    Long compId;
     Long unitId;
-    Province province;
-    TimeFrame timeFrame;
-    TradeStage tradeStage;
     Direction direction;
     Double quantity;
     Double price;
-    Date date;
-    List<Deal> deals;
-    Date cancelledDate;
-    BidStatus bidStatus;
 
+    Double leftX;
+    Double rightX;
+    Double width;
+    Double y;
 }
