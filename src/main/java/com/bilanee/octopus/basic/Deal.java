@@ -17,8 +17,6 @@ import java.util.Date;
 public class Deal {
 
     Long dealId;
-    Long bidId;
-    Long unitId;
     Double quantity;
     Double price;
     Long timeStamp;

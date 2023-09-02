@@ -52,6 +52,11 @@ public class Tunnel {
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
 
+    public void updateBids(List<Bid> bids) {
+        List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
+        bidDOs.forEach(bidDOMapper::updateById);
+    }
+
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -64,6 +69,9 @@ public class Tunnel {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         Bid to(BidDO bidDO);
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        BidDO to(Bid bid);
 
     }
 

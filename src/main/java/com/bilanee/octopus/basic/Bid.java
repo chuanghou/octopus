@@ -1,9 +1,6 @@
 package com.bilanee.octopus.basic;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
@@ -28,7 +25,8 @@ public class Bid {
     Double quantity;
     Double price;
     Long declareTimeStamp;
-    List<Deal> deals;
+    @Builder.Default
+    List<Deal> deals = new ArrayList<>();
     Date cancelledTimeStamp;
     BidStatus bidStatus;
 

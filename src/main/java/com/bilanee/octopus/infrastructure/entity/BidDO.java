@@ -1,6 +1,8 @@
 package com.bilanee.octopus.infrastructure.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bilanee.octopus.basic.*;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
@@ -22,6 +24,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BidDO extends AbstractMpDO  {
 
+    @TableId(type = IdType.INPUT)
     Long bidId;
     Long compId;
     Integer roundId;

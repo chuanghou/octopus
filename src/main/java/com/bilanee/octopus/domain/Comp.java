@@ -3,9 +3,6 @@ package com.bilanee.octopus.domain;
 import com.bilanee.octopus.adapter.BidQuery;
 import com.bilanee.octopus.adapter.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Range;
-import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -18,19 +15,16 @@ import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.command.ConstructorHandler;
 import com.stellariver.milky.domain.support.command.MethodHandler;
 import com.stellariver.milky.domain.support.context.Context;
+import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 
 @Data
@@ -59,6 +53,8 @@ public class Comp extends AggregateRoot {
     static private OctopusProperties octopusProperties;
     @StaticWire
     static private Tunnel tunnel;
+    @StaticWire
+    UniqueIdGetter uniqueIdGetter;
 
     @Override
     public String getAggregateId() {
@@ -147,21 +143,32 @@ public class Comp extends AggregateRoot {
     }
 
     @MethodHandler
-    public void centralizedClear(CompCmd.Clear command, Context context) {
+    public void clear(CompCmd.Clear command, Context context) {
         SysEx.trueThrow((tradeStage != TradeStage.AN_INTER) && (tradeStage != TradeStage.MO_INTER), ErrorEnums.SYS_EX);
         SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
         List<Object> collect = tunnel.listBids(bidQuery)
                 .stream().collect(Collect.listMultiMap(Bid::getTimeFrame))
                 .asMap().values().stream().map(this::doClear).collect(Collectors.toList());
+//        tunnel.
     }
 
     private Object doClear(Collection<Bid> bids) {
-        List<Bid> buyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).collect(Collectors.toList());
-        List<Bid> sellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).collect(Collectors.toList());
-        return null;
-    }
+        List<Bid> buyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
+                .sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList());
+        List<Bid> sellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
+                .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
+        Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBids, sellBids);
+        if (interPoint == null || Kit.eq(interPoint.x, 0D)) {
+            return null;
+        }
+        ClearUtil.deal(buyBids, interPoint);
+        ClearUtil.deal(sellBids, interPoint);
 
+        return null;
+
+    }
 
 
     @MethodHandler
