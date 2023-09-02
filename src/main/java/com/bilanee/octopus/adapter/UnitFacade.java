@@ -27,13 +27,13 @@ public class UnitFacade {
 
 
     @GetMapping("listUnitVOs")
-    public List<UnitVO> listUnitVOs() {
+    public Result<List<UnitVO>> listUnitVOs() {
 
         return null;
     }
 
     @GetMapping("listCentralizedBidVOs")
-    public List<CentralizedBidVO> listCentralizedBidVOs(TradeStage tradeStage) {
+    public Result<List<CentralizedBidVO>> listCentralizedBidVOs(TradeStage tradeStage) {
 
         return null;
     }

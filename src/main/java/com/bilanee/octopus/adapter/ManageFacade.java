@@ -32,7 +32,6 @@ public class ManageFacade {
 
     /**
      * 获取所有用户信息
-     * @return 用户信息列表
      */
     @GetMapping("listUserVOs")
     public List<UserVO> listUserVOs() {
@@ -44,7 +43,6 @@ public class ManageFacade {
     /**
      * 竞赛创建接口
      * @param compCreatePO 创建竞赛参数
-     * @return 创建结果
      */
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {

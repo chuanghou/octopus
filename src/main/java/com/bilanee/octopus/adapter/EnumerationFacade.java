@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter;
 
 import com.bilanee.octopus.basic.TradeStage;
 import com.stellariver.milky.common.base.Enumeration;
+import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -17,11 +18,16 @@ import java.util.List;
 public class EnumerationFacade {
 
 
-
-    @RequestMapping("stages")
-    public List<Enumeration> stages() {
-        return Collect.transfer(Arrays.asList(TradeStage.values()), tradeStage -> new Enumeration(tradeStage.name(), tradeStage.getDesc()));
+    /**
+     * 仿真交易阶段枚举列表
+     */
+    @RequestMapping("tradeStages")
+    public Result<List<Enumeration>> tradeStages() {
+        List<Enumeration> enumerations = Collect
+                .transfer(Arrays.asList(TradeStage.values()), tradeStage -> new Enumeration(tradeStage.name(), tradeStage.getDesc()));
+        return Result.success(enumerations);
     }
+
 
 
 
