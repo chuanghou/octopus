@@ -16,11 +16,11 @@ public class PointLine {
     Long bidId;
     Long unitId;
     Direction direction;
-    Double quantity;
-    Double price;
+    Integer quantity;
+    Integer price;
 
-    Double leftX;
-    Double rightX;
-    Double width;
-    Double y;
+    Integer leftX;
+    Integer rightX;
+    Integer width;
+    Integer y;
 }

@@ -1,10 +1,9 @@
 package com.bilanee.octopus.basic;
 
-import com.stellariver.milky.demo.basic.PointLine;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -13,8 +12,13 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ClearResult {
-    List<PointLine> buyPointLines;
-    List<PointLine> sellPointLines;
-    Pair<Double, Double> interPoint;
-    List<Deal> deals;
+    Point<Integer> intersection;
+
+    @Builder.Default
+    List<PointLine> buyPointLines = new ArrayList<>();
+    @Builder.Default
+    List<PointLine> sellPointLines = new ArrayList<>();
+    @Builder.Default
+    List<Deal> deals = new ArrayList<>();
+
 }

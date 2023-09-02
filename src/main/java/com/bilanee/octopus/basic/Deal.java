@@ -21,6 +21,6 @@ public class Deal {
     Long unitId;
     Double quantity;
     Double price;
-    Date date;
+    Long timeStamp;
 
 }

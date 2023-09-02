@@ -27,9 +27,9 @@ public class Bid {
     Direction direction;
     Double quantity;
     Double price;
-    Date date;
+    Long declareTimeStamp;
     List<Deal> deals;
-    Date cancelledDate;
+    Date cancelledTimeStamp;
     BidStatus bidStatus;
 
 }

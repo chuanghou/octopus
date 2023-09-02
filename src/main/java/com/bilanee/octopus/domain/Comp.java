@@ -159,7 +159,7 @@ public class Comp extends AggregateRoot {
     private Object doClear(Collection<Bid> bids) {
         List<Bid> buyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).collect(Collectors.toList());
         List<Bid> sellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).collect(Collectors.toList());
-
+        return null;
     }
 
 
