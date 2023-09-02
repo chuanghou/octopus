@@ -31,15 +31,11 @@ public class CompFacade {
     final DomainTunnel domainTunnel;
     final CompDOMapper compDOMapper;
 
-    @PostMapping("/createComp")
-    public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
-        CompCommand.Create command = Convertor.INST.to(compCreatePO);
-        command.setCompId(uniqueIdGetter.get());
-        CommandBus.accept(command, new HashMap<>());
-        return Result.success();
-    }
 
-
+    /**
+     * 当前运行竞赛查看
+     * @return 当前运行竞赛概况
+     */
     @GetMapping("runningComp")
     public Result<CompVO> runningComp() {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
@@ -55,9 +51,6 @@ public class CompFacade {
     public interface Convertor extends BasicConvertor {
 
         Convertor INST = Mappers.getMapper(Convertor.class);
-
-        @BeanMapping(builder = @Builder(disableBuilder = true))
-        CompCommand.Create to(CompCreatePO compCreatePO);
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);

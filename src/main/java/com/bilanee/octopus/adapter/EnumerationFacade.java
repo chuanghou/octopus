@@ -16,6 +16,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EnumerationFacade {
 
+
+
     @RequestMapping("stages")
     public List<Enumeration> stages() {
         return Collect.transfer(Arrays.asList(TradeStage.values()), tradeStage -> new Enumeration(tradeStage.name(), tradeStage.getDesc()));
