@@ -13,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("comp_do")
+@TableName("octopus_comp_do")
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {

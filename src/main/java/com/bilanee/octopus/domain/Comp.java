@@ -1,9 +1,7 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.basic.CompStage;
-import com.bilanee.octopus.basic.MarketStatus;
-import com.bilanee.octopus.basic.OctopusProperties;
-import com.bilanee.octopus.basic.TradeStage;
+import com.bilanee.octopus.adapter.Tunnel;
+import com.bilanee.octopus.basic.*;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -19,8 +17,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 @Data
@@ -46,6 +48,8 @@ public class Comp extends AggregateRoot {
     static private DelayExecutor delayExecutor;
     @StaticWire
     static private OctopusProperties octopusProperties;
+    @StaticWire
+    static private Tunnel tunnel;
 
     @Override
     public String getAggregateId() {
@@ -54,26 +58,35 @@ public class Comp extends AggregateRoot {
 
 
     @ConstructorHandler
-    public static Comp create(CompCommand.Create command, Context context) {
+    public static Comp create(CompCmd.Create command, Context context) {
 
-        // init
+        // init comp status
         Comp comp = new Comp();
         comp.setCompId(command.getCompId());
         comp.setCompStage(CompStage.INT);
-        comp.setEndingTimeStamp(Clock.currentTimeMillis() + (long) command.getCompInitLength() * octopusProperties.getDelayUnits());
+        long endingTimeStamp = Clock.currentTimeMillis()
+                + (long) command.getCompInitLength() * octopusProperties.getDelayUnits();
+        comp.setEndingTimeStamp(endingTimeStamp);
 
+        // assign metaUnit
+        List<Map<String, List<MetaUnit>>> roundMetaUnitDOs = IntStream.range(0, comp.getRoundTotal())
+                .mapToObj(roundId -> tunnel.assignMetaUnits(roundId, command.getUserIds())).collect(Collectors.toList());
+
+        // fill stage step trigger
         fillDelayCommand(command, comp);
         delayExecutor.start();
 
-        context.publishPlaceHolderEvent(comp.getAggregateId());
+        CompEvent.Created event = CompEvent.Created.builder().comp(comp).roundMetaUnits(roundMetaUnitDOs).build();
+        context.publish(event);
         return comp;
     }
 
-    private static void fillDelayCommand(CompCommand.Create command, Comp comp) {
+    private static void fillDelayCommand(CompCmd.Create command, Comp comp) {
         // quiz compete
         long executeTime = comp.endingTimeStamp;
-        long endingTimeStamp = executeTime + (long) command.getQuitCompeteLength() * octopusProperties.getDelayUnits();
-        CompCommand.Step stepCommand = CompCommand.Step.builder()
+        long endingTimeStamp = executeTime
+                + (long) command.getQuitCompeteLength() * octopusProperties.getDelayUnits();
+        CompCmd.Step stepCommand = CompCmd.Step.builder()
                 .compId(comp.getCompId())
                 .compStage(CompStage.QUIT_COMPETE)
                 .endingTimeStamp(endingTimeStamp)
@@ -81,8 +94,9 @@ public class Comp extends AggregateRoot {
         pushDelayCommand(stepCommand, executeTime);
 
         executeTime = endingTimeStamp;
-        endingTimeStamp = executeTime + (long) command.getQuitResultLength() * octopusProperties.getDelayUnits();
-        stepCommand = CompCommand.Step.builder()
+        endingTimeStamp = executeTime
+                + (long) command.getQuitResultLength() * octopusProperties.getDelayUnits();
+        stepCommand = CompCmd.Step.builder()
                 .compId(comp.getCompId())
                 .compStage(CompStage.QUIT_RESULT)
                 .endingTimeStamp(endingTimeStamp)
@@ -92,25 +106,28 @@ public class Comp extends AggregateRoot {
         for (int i = 0; i < comp.roundTotal; i++) {
             for (TradeStage marketStage : TradeStage.marketStages()) {
                 executeTime = endingTimeStamp;
-                endingTimeStamp = executeTime + (long) command.getMarketStageBidLengths().get(marketStage) * octopusProperties.getDelayUnits();
-                stepCommand = CompCommand.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
+                endingTimeStamp = executeTime
+                        + (long) command.getMarketStageBidLengths().get(marketStage) * octopusProperties.getDelayUnits();
+                stepCommand = CompCmd.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
                         .roundId(i).tradeStage(marketStage).marketStatus(MarketStatus.BID).endingTimeStamp(endingTimeStamp).build();
                 pushDelayCommand(stepCommand, executeTime);
                 executeTime = endingTimeStamp;
-                endingTimeStamp = executeTime + (long) command.getMarketStageClearLengths().get(marketStage) * octopusProperties.getDelayUnits();
-                stepCommand = CompCommand.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
+                endingTimeStamp = executeTime
+                        + (long) command.getMarketStageClearLengths().get(marketStage) * octopusProperties.getDelayUnits();
+                stepCommand = CompCmd.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
                         .roundId(i).tradeStage(marketStage).marketStatus(MarketStatus.CLEAR).endingTimeStamp(endingTimeStamp).build();
                 pushDelayCommand(stepCommand, executeTime);
             }
             executeTime = endingTimeStamp;
-            endingTimeStamp = executeTime + (long) command.getTradeResultLength() * octopusProperties.getDelayUnits();
-            stepCommand = CompCommand.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
+            endingTimeStamp = executeTime
+                    + (long) command.getTradeResultLength() * octopusProperties.getDelayUnits();
+            stepCommand = CompCmd.Step.builder().compId(comp.getCompId()).compStage(CompStage.TRADE)
                     .roundId(i).tradeStage(TradeStage.END).marketStatus(null).endingTimeStamp(endingTimeStamp).build();
             pushDelayCommand(stepCommand, executeTime);
         }
 
         executeTime = endingTimeStamp;
-        stepCommand = CompCommand.Step.builder()
+        stepCommand = CompCmd.Step.builder()
                 .compId(comp.getCompId())
                 .compStage(CompStage.RANKING)
                 .endingTimeStamp(null)
@@ -119,7 +136,7 @@ public class Comp extends AggregateRoot {
     }
 
     @MethodHandler
-    public void step(CompCommand.Step command, Context context) {
+    public void step(CompCmd.Step command, Context context) {
         this.compStage = command.getCompStage();
         this.roundId = command.getRoundId();
         this.tradeStage = command.getTradeStage();
@@ -128,7 +145,7 @@ public class Comp extends AggregateRoot {
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
-    static private void pushDelayCommand(CompCommand.Step command, long executeTime) {
+    static private void pushDelayCommand(CompCmd.Step command, long executeTime) {
         DelayCommandWrapper delayCommandWrapper = new DelayCommandWrapper(command, new Date(executeTime));
         delayExecutor.delayQueue.add(delayCommandWrapper);
     }

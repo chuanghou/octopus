@@ -6,6 +6,8 @@ import com.bilanee.octopus.basic.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,13 +29,11 @@ public class CompVO {
 
     /**
      * 交易阶段
-     * @see TradeStage
      */
     TradeStage tradeStage;
 
     /**
      * 市场状态
-     * @see MarketStatus
      */
     MarketStatus marketStatus;
 
@@ -41,5 +41,11 @@ public class CompVO {
      * 当前阶段的截止时间
      */
     Long endingTimeStamp;
+
+
+    /**
+     * 本次参赛的用户id列表
+     */
+    List<String> traderIds;
 
 }

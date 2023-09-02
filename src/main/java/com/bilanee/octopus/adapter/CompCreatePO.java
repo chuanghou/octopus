@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -52,5 +53,13 @@ public class CompCreatePO {
      */
     @NotNull @Positive
     Integer tradeResultLength;
+
+    /**
+     * 本次参赛的用户id列表
+     */
+    @NotNull @NotEmpty
+    List<String> userIds;
+
+
 
 }

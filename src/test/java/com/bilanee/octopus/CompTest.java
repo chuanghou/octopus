@@ -2,8 +2,8 @@ package com.bilanee.octopus;
 
 import com.bilanee.octopus.adapter.CompCreatePO;
 import com.bilanee.octopus.adapter.CompFacade;
+import com.bilanee.octopus.adapter.ManageFacade;
 import com.bilanee.octopus.basic.TradeStage;
-import com.bilanee.octopus.domain.CompCommand;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class CompTest {
 
     @Autowired
-    CompFacade compFacade;
+    ManageFacade manageFacade;
 
     @Test
     public void testDelay() throws InterruptedException {
@@ -41,7 +41,7 @@ public class CompTest {
                 .build();
 
         System.out.println(Json.toJson(compCreatePO));
-        compFacade.createComp(compCreatePO);
+        manageFacade.createComp(compCreatePO);
         Thread.sleep(60_000);
         System.out.println("test");
     }

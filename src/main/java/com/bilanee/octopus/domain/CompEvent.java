@@ -2,14 +2,17 @@ package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.basic.CompStage;
 import com.bilanee.octopus.basic.MarketStatus;
+import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.TradeStage;
 import com.stellariver.milky.domain.support.command.Command;
+import com.stellariver.milky.domain.support.event.Event;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Map;
 
-public class CompCommand {
+public class CompEvent {
 
     @Data
     @Builder
@@ -17,21 +20,14 @@ public class CompCommand {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class Create extends Command {
+    static public class Created extends Event {
 
-        Long compId;
-
-        Integer compInitLength;
-        Integer quitCompeteLength;
-        Integer quitResultLength;
-        Map<TradeStage, Integer> marketStageBidLengths;
-        Map<TradeStage, Integer> marketStageClearLengths;
-        Integer tradeResultLength;
-
+        Comp comp;
+        List<Map<String, List<MetaUnit>>> roundMetaUnits;
 
         @Override
         public String getAggregateId() {
-            return compId.toString();
+            return comp.getCompId().toString();
         }
 
     }
