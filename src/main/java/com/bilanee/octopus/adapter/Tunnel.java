@@ -38,6 +38,11 @@ public class Tunnel {
         return metaUnitMap;
     }
 
+    public MetaUnit getMetaUnitById(Long id) {
+        MetaUnitDO metaUnitDO = metaUnitDOMapper.selectById(id);
+        return Convertor.INST.to(metaUnitDO);
+    }
+
 
     public List<Bid> listBids(BidQuery q) {
         LambdaQueryWrapper<BidDO> queryWrapper = new LambdaQueryWrapper<>();

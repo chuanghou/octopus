@@ -1,10 +1,18 @@
 package com.bilanee.octopus.infrastructure.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.bilanee.octopus.basic.Direction;
+import com.bilanee.octopus.basic.MetaUnit;
+import com.bilanee.octopus.basic.TimeFrame;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
 import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.Map;
 
 @Data
 @Builder
@@ -15,9 +23,14 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {
 
+    @TableId(type = IdType.INPUT)
     Long unitId;
-
-
+    Long compId;
+    Integer roundId;
+    String userId;
+    Long metaUnitId;
+    @TableField(typeHandler = PositionHandler.class)
+    Map<TimeFrame, Map<Direction, Double>> balance;
 
 
     @Override

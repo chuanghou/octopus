@@ -16,7 +16,7 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetaUnit {
 
-    Integer metaUnitId;
+    Long metaUnitId;
     Integer nodeId;
     String name;
     Province province;

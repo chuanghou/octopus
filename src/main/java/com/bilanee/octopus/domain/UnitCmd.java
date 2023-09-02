@@ -1,12 +1,11 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.basic.CompStage;
-import com.bilanee.octopus.basic.MarketStatus;
-import com.bilanee.octopus.basic.TradeStage;
+import com.bilanee.octopus.basic.*;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Map;
 
 public class UnitCmd {
@@ -20,7 +19,11 @@ public class UnitCmd {
     static public class Create extends Command {
 
         Long unitId;
-
+        Long compId;
+        Integer roundId;
+        String userId;
+        MetaUnit metaUnit;
+        Map<TimeFrame, Map<Direction, Double>> balance;
 
         @Override
         public String getAggregateId() {
