@@ -163,8 +163,8 @@ public class Comp extends AggregateRoot {
         if (interPoint == null || Kit.eq(interPoint.x, 0D)) {
             return null;
         }
-        ClearUtil.deal(buyBids, interPoint);
-        ClearUtil.deal(sellBids, interPoint);
+        ClearUtil.deal(buyBids, interPoint, uniqueIdGetter);
+        ClearUtil.deal(sellBids, interPoint, uniqueIdGetter);
 
         return null;
 

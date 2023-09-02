@@ -86,7 +86,7 @@ public class ClearUtil {
         return Range.closed(min, max);
     }
 
-    public static void deal(List<Bid> bids, Point<Double> interPoint) {
+    public static void deal(List<Bid> bids, Point<Double> interPoint, UniqueIdGetter uniqueIdGetter) {
         Double dealPrice = interPoint.y;
         Double totalDealQuantity = interPoint.x;
 
@@ -117,17 +117,14 @@ public class ClearUtil {
         Double notAverageQuantity = notAverageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
         double averageBidsQuantity = totalDealQuantity - notAverageQuantity;
         Double originalAverageBidsQuantity = averageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
-//        UniqueIdGetter uniqueIdGetter = BeanUtil.getBean(UniqueIdGetter.class);
         averageBids.forEach(b -> {
             double averageQuantity = (averageBidsQuantity / originalAverageBidsQuantity) * b.getQuantity();
-            Deal deal = Deal.builder()
-//                    .dealId(uniqueIdGetter.get())
+            Deal deal = Deal.builder().dealId(uniqueIdGetter.get())
                     .quantity(averageQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
         });
         notAverageBids.forEach(b -> {
-            Deal deal = Deal.builder()
-//                    .dealId(uniqueIdGetter.get())
+            Deal deal = Deal.builder().dealId(uniqueIdGetter.get())
                     .quantity(b.getQuantity()).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
         });

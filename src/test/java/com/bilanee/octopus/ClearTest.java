@@ -7,8 +7,11 @@ import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.domain.ClearUtil;
 import com.bilanee.octopus.domain.Comp;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -115,13 +118,13 @@ public class ClearTest {
         Assertions.assertEquals(point, new Point<>(200D, 200D));
     }
 
-
     @Test
     public void testAverageBids() {
+        UniqueIdGetter uniqueIdGetter = Mockito.mock(UniqueIdGetter.class);
         Bid sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         Bid sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         Bid sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
-        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(250D, 200D));
+        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(250D, 200D), uniqueIdGetter);
         Deal deal0 = sellBid0.getDeals().get(0);
         Assertions.assertEquals(deal0.getQuantity(), sellBid0.getQuantity());
         Deal deal1 = sellBid1.getDeals().get(0);
@@ -132,21 +135,21 @@ public class ClearTest {
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
-        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(50D, 100D));
+        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(50D, 100D), uniqueIdGetter);
         deal0 = sellBid0.getDeals().get(0);
         Assertions.assertEquals(deal0.getQuantity(),50);
 
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
-        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(100D, 100D));
+        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(100D, 100D), uniqueIdGetter);
         deal0 = sellBid0.getDeals().get(0);
         Assertions.assertEquals(deal0.getQuantity(),100);
 
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
-        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(200D, 200D));
+        ClearUtil.deal(Collect.asList(sellBid0, sellBid1, sellBid2), new Point<>(200D, 200D), uniqueIdGetter);
         deal0 = sellBid0.getDeals().get(0);
         Assertions.assertEquals(deal0.getQuantity(),100);
         deal1 = sellBid1.getDeals().get(0);
