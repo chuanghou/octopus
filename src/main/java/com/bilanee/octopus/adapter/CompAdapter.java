@@ -3,7 +3,6 @@ package com.bilanee.octopus.adapter;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
-import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.stellariver.milky.domain.support.dependency.DaoAdapter;
 import com.stellariver.milky.domain.support.dependency.DataObjectInfo;
 import lombok.AccessLevel;

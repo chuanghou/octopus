@@ -1,19 +1,13 @@
 package com.bilanee.octopus.adapter;
 
-import com.bilanee.octopus.basic.BasicConvertor;
-import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.dependency.DAOWrapper;
-import com.stellariver.milky.domain.support.dependency.DaoAdapter;
-import com.stellariver.milky.domain.support.dependency.DataObjectInfo;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +15,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CompWrapper implements DAOWrapper<CompDO, Long> {
+public class CompDOWrapper implements DAOWrapper<CompDO, Long> {
 
     final CompDOMapper compDOMapper;
 

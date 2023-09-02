@@ -1,7 +1,6 @@
 package com.bilanee.octopus;
 
 import com.bilanee.octopus.adapter.CompCreatePO;
-import com.bilanee.octopus.adapter.CompFacade;
 import com.bilanee.octopus.adapter.ManageFacade;
 import com.bilanee.octopus.basic.TradeStage;
 import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;

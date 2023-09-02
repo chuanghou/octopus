@@ -1,8 +1,5 @@
 package com.bilanee.octopus.adapter;
 
-import com.bilanee.octopus.basic.CompStage;
-import com.bilanee.octopus.basic.MarketStatus;
-import com.bilanee.octopus.basic.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

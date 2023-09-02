@@ -1,8 +1,5 @@
 package com.bilanee.octopus.basic;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
-import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

@@ -5,12 +5,10 @@ import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.Direction;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.domain.ClearUtil;
-import com.bilanee.octopus.domain.Comp;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;

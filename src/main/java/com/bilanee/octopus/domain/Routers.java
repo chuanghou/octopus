@@ -1,6 +1,5 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.context.Context;
@@ -10,8 +9,6 @@ import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.mapstruct.*;
-import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Map;

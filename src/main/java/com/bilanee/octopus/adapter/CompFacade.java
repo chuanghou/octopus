@@ -13,7 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/comp")
 public class CompFacade {
 
-    final UniqueIdGetter uniqueIdGetter;
     final DomainTunnel domainTunnel;
     final CompDOMapper compDOMapper;
 

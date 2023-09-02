@@ -1,7 +1,9 @@
 package com.bilanee.octopus.adapter;
 
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.BidStatus;
+import com.bilanee.octopus.basic.Direction;
+import com.bilanee.octopus.basic.Province;
+import com.bilanee.octopus.basic.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

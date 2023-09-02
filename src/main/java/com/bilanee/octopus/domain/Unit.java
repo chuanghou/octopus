@@ -1,12 +1,8 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.adapter.CompCreatePO;
-import com.bilanee.octopus.adapter.CompFacade;
-import com.bilanee.octopus.adapter.CompVO;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.Direction;
 import com.bilanee.octopus.basic.MetaUnit;
-import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.bilanee.octopus.basic.TimeFrame;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
 import com.stellariver.milky.domain.support.command.ConstructorHandler;
@@ -14,11 +10,10 @@ import com.stellariver.milky.domain.support.command.MethodHandler;
 import com.stellariver.milky.domain.support.context.Context;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.mapstruct.*;
 import org.mapstruct.Builder;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
-import java.util.List;
 import java.util.Map;
 
 @Data
