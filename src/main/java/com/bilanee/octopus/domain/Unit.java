@@ -5,6 +5,7 @@ import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.bilanee.octopus.basic.TimeFrame;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
 import com.stellariver.milky.domain.support.command.ConstructorHandler;
+import com.stellariver.milky.domain.support.command.MethodHandler;
 import com.stellariver.milky.domain.support.context.Context;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -37,14 +38,14 @@ public class Unit extends AggregateRoot {
     }
 
 
-    @ConstructorHandler
+    @MethodHandler
     public void handle(UnitCmd.CentralizedBids command, Context context) {
 
     }
 
 
 
-    @ConstructorHandler
+    @MethodHandler
     public void handle(UnitCmd.RealtimeBid command, Context context) {
 
     }

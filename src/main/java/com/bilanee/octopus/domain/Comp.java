@@ -54,7 +54,7 @@ public class Comp extends AggregateRoot {
     @StaticWire
     static private Tunnel tunnel;
     @StaticWire
-    UniqueIdGetter uniqueIdGetter;
+    static private UniqueIdGetter uniqueIdGetter;
 
     @Override
     public String getAggregateId() {

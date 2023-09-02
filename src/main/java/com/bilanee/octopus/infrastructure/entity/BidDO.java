@@ -19,7 +19,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("octopus_bid_do")
+@TableName(value = "octopus_bid_do",autoResultMap = true)
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BidDO extends AbstractMpDO  {
@@ -35,11 +35,11 @@ public class BidDO extends AbstractMpDO  {
     Direction direction;
     Double quantity;
     Double price;
-    Date date;
+
     @TableField(typeHandler = DealHandlers.class)
     List<Deal> deals;
-    Date cancelledDate;
-
+    Long declareTimeStamp;
+    Long cancelledTimeStamp;
     BidStatus bidStatus;
 
     static public class DealHandlers extends ListJsonHandler<Deal> {};

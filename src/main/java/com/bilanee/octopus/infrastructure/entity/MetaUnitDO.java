@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("octopus_meta_unit_do")
+@TableName(value = "octopus_meta_unit_do", autoResultMap = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetaUnitDO {
 

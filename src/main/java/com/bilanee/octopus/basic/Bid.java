@@ -27,7 +27,7 @@ public class Bid {
     Long declareTimeStamp;
     @Builder.Default
     List<Deal> deals = new ArrayList<>();
-    Date cancelledTimeStamp;
+    Long cancelledTimeStamp;
     BidStatus bidStatus;
 
 }
