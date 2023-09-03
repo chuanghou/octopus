@@ -1,7 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.common.enums.MarketStatus;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.MarketStatus;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

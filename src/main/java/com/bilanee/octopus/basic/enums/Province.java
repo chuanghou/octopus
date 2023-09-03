@@ -1,6 +1,5 @@
-package com.bilanee.octopus.common.enums;
+package com.bilanee.octopus.basic.enums;
 
-import com.bilanee.octopus.basic.Direction;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package com.bilanee.octopus.basic;
+package com.bilanee.octopus.config;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

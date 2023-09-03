@@ -3,9 +3,11 @@ package com.bilanee.octopus.adapter.tunnel;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.common.enums.BidStatus;
-import com.bilanee.octopus.common.enums.Province;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.UnitType;
+import com.bilanee.octopus.basic.enums.BidStatus;
+import com.bilanee.octopus.basic.enums.Province;
+import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.entity.CompDO;

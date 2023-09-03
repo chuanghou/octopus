@@ -1,7 +1,9 @@
 package com.bilanee.octopus.basic;
 
-import com.bilanee.octopus.common.enums.Province;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.Province;
+import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.Direction;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

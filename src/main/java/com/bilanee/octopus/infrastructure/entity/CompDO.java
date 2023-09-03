@@ -1,9 +1,9 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.bilanee.octopus.common.enums.CompStage;
-import com.bilanee.octopus.common.enums.MarketStatus;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.CompStage;
+import com.bilanee.octopus.basic.enums.MarketStatus;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
 import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;

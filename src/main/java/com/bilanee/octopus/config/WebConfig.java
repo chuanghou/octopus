@@ -1,5 +1,6 @@
-package com.bilanee.octopus.basic;
+package com.bilanee.octopus.config;
 
+import com.bilanee.octopus.basic.TokenInterceptor;
 import lombok.NonNull;
 import org.apache.catalina.Context;
 import org.apache.catalina.connector.Connector;

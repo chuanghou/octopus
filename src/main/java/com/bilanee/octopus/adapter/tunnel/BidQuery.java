@@ -1,9 +1,9 @@
 package com.bilanee.octopus.adapter.tunnel;
 
-import com.bilanee.octopus.common.enums.BidStatus;
-import com.bilanee.octopus.basic.Direction;
-import com.bilanee.octopus.common.enums.Province;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.BidStatus;
+import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.Province;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

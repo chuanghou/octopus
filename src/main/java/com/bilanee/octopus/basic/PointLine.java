@@ -1,5 +1,6 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.basic.enums.Direction;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;

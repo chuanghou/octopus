@@ -1,9 +1,11 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.common.enums.CompStage;
-import com.bilanee.octopus.common.enums.MarketStatus;
-import com.bilanee.octopus.common.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.CompStage;
+import com.bilanee.octopus.basic.enums.MarketStatus;
+import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.Direction;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
