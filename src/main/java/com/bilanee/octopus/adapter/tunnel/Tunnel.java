@@ -62,6 +62,7 @@ public class Tunnel {
     public List<Bid> listBids(BidQuery q) {
         LambdaQueryWrapper<BidDO> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(q.getCompId() != null, BidDO::getCompId, q.getCompId());
+        queryWrapper.eq(!Kit.isBlank(q.getUserId()), BidDO::getUserId, q.getUserId());
         queryWrapper.eq(q.getUnitId() != null, BidDO::getUnitId, q.getUnitId());
         queryWrapper.eq(q.getRoundId() != null, BidDO::getRoundId, q.getRoundId());
         queryWrapper.eq(q.getProvince() != null, BidDO::getProvince, Kit.op(q.getProvince()).map(Province::name).orElse(null));

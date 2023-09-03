@@ -24,7 +24,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CentralizedBidsPO {
+public class ClBidsPO {
 
     /**
      * 系统阶段id

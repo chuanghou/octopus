@@ -20,6 +20,7 @@ import java.util.List;
 public class Bid {
 
     Long bidId;
+    String userId;
     Long compId;
     Long unitId;
     Province province;

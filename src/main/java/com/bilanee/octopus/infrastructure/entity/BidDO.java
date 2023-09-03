@@ -26,6 +26,7 @@ public class BidDO {
 
     @TableId(type = IdType.AUTO)
     Long bidId;
+    String userId;
     Long compId;
     Integer roundId;
     Long unitId;

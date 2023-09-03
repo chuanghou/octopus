@@ -82,6 +82,7 @@ public class Unit extends AggregateRoot {
         // 填充委托其他参数
         bids.forEach(bid -> {
             bid.setBidId(uniqueIdGetter.get());
+            bid.setUserId(userId);
             bid.setCompId(command.getStageId().getCompId());
             bid.setProvince(metaUnit.getProvince());
             bid.setRoundId(comp.getRoundId());

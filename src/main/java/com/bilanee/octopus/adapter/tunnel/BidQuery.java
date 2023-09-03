@@ -15,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class BidQuery {
 
     Long compId;
+    String userId;
     Long unitId;
     Integer roundId;
     Province province;
