@@ -3,13 +3,19 @@ package com.bilanee.octopus.adapter.tunnel;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.common.enums.BidStatus;
+import com.bilanee.octopus.common.enums.Province;
+import com.bilanee.octopus.common.enums.TradeStage;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
+import com.bilanee.octopus.infrastructure.entity.MarketSettingDO;
 import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -30,6 +36,7 @@ public class Tunnel {
     final BidDOMapper bidDOMapper;
     final DomainTunnel domainTunnel;
     final CompDOMapper compDOMapper;
+    final MarketSettingMapper marketSettingMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -78,6 +85,17 @@ public class Tunnel {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
         CompDO compDO = compDOMapper.selectOne(queryWrapper);
         return domainTunnel.getByAggregateId(Comp.class, compDO.getCompId());
+    }
+
+    public GridLimit priceLimit(UnitType unitType) {
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        if (unitType == UnitType.GENERATOR) {
+            return GridLimit.builder().low(marketSettingDO.getBidPriceFloor()).high(marketSettingDO.getBidPriceCap()).build();
+        } else if (unitType == UnitType.LOAD) {
+            return GridLimit.builder().low(marketSettingDO.getOfferPriceFloor()).high(marketSettingDO.getOfferPriceCap()).build();
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
     }
 
 

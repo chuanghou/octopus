@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.common.enums.GeneratorType;
+import com.bilanee.octopus.common.enums.Province;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;

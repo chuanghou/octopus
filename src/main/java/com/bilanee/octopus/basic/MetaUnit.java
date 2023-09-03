@@ -1,5 +1,7 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.common.enums.GeneratorType;
+import com.bilanee.octopus.common.enums.Province;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

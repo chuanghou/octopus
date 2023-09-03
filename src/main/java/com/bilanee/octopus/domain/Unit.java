@@ -2,7 +2,7 @@ package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.google.common.collect.ListMultimap;
+import com.bilanee.octopus.common.enums.BidStatus;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -20,7 +20,6 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Data
 @CustomLog
@@ -66,6 +65,10 @@ public class Unit extends AggregateRoot {
 
         // 方向限制
         BizEx.trueThrow(direction != metaUnit.getUnitType().generalDirection(), ErrorEnums.PARAM_FORMAT_WRONG.message("买卖方向错误"));
+
+        // 价格限制
+        GridLimit gridLimit = tunnel.priceLimit(metaUnit.getUnitType());
+        bids.forEach(bid -> gridLimit.check(bid.getPrice()));
 
         // 持仓限制
         bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((t, vs) -> {

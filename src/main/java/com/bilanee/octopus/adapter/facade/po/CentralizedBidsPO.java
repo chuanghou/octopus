@@ -1,6 +1,8 @@
 package com.bilanee.octopus.adapter.facade.po;
 
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.common.enums.MarketStatus;
+import com.bilanee.octopus.common.enums.TradeStage;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.AfterValidation;
 import com.stellariver.milky.common.base.BizEx;

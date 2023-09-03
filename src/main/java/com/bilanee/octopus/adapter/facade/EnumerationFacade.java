@@ -1,6 +1,6 @@
 package com.bilanee.octopus.adapter.facade;
 
-import com.bilanee.octopus.basic.TradeStage;
+import com.bilanee.octopus.common.enums.TradeStage;
 import com.stellariver.milky.common.base.Enumeration;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
