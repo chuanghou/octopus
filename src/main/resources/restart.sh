@@ -6,4 +6,4 @@ fi
 
 script_path=$(cd $(dirname $0);pwd)
 
-nohup java -cp "./bin/*:./lib/*" -Dstatic.resource="${script_path}/static/" com.bilanee.octopus.Application > console.log 2>&1 &
+nohup java -cp "./bin/*:./lib/*" -Dstatic.resource="${script_path}/static/" -Dspring.profiles.active=prod com.bilanee.octopus.Application > console.log 2>&1 &
