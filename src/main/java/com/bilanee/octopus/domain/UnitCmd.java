@@ -5,6 +5,7 @@ import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Map;
 
 public class UnitCmd {
@@ -40,18 +41,12 @@ public class UnitCmd {
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class CentralizedBids extends Command {
 
-        Long compId;
-
-        CompStage compStage;
-        Integer roundId;
-        TradeStage tradeStage;
-        MarketStatus marketStatus;
-
-        Long endingTimeStamp;
+        StageId stageId;
+        List<Bid> bids;
 
         @Override
         public String getAggregateId() {
-            return compId.toString();
+            return bids.get(0).getUnitId().toString();
         }
 
     }

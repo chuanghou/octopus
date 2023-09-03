@@ -2,7 +2,9 @@ package com.bilanee.octopus.adapter.facade;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
+import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
@@ -23,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/comp")
 public class CompFacade {
 
-    final DomainTunnel domainTunnel;
+    final Tunnel tunnel;
     final CompDOMapper compDOMapper;
 
 
@@ -33,9 +35,7 @@ public class CompFacade {
      */
     @GetMapping("/runningComp")
     public Result<CompVO> runningComp() {
-        LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
-        CompDO compDO = compDOMapper.selectOne(queryWrapper);
-        Comp comp = domainTunnel.getByAggregateId(Comp.class, compDO.getCompId());
+        Comp comp = tunnel.runningComp();
         return Result.success(Convertor.INST.to(comp));
     }
 
@@ -49,6 +49,17 @@ public class CompFacade {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);
+
+        @AfterMapping
+        default void after(Comp comp, @MappingTarget CompVO compVO) {
+            StageId stageId = StageId.builder().compId(compVO.getCompId())
+                    .compStage(comp.getCompStage())
+                    .roundId(comp.getRoundId())
+                    .tradeStage(comp.getTradeStage())
+                    .marketStatus(comp.getMarketStatus())
+                    .build();
+            compVO.setStageId(stageId);
+        }
 
     }
 

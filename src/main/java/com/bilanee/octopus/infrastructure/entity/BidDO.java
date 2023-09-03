@@ -17,11 +17,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName(value = "octopus_bid_do",autoResultMap = true)
-@EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class BidDO extends AbstractMpDO  {
+public class BidDO {
 
-    @TableId(type = IdType.INPUT)
+    @TableId(type = IdType.AUTO)
     Long bidId;
     Long compId;
     Integer roundId;

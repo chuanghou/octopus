@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.basic.CompStage;
 import com.bilanee.octopus.basic.MarketStatus;
+import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -20,6 +21,9 @@ public class CompVO {
      */
     Long compId;
 
+    /**
+     * 竞赛阶段
+     */
     CompStage compStage;
 
     /**
@@ -38,6 +42,11 @@ public class CompVO {
     MarketStatus marketStatus;
 
     /**
+     * 阶段id
+     */
+    StageId  stageId;
+
+    /**
      * 当前阶段的截止时间
      */
     Long endingTimeStamp;
@@ -47,5 +56,6 @@ public class CompVO {
      * 本次参赛的用户id列表
      */
     List<String> traderIds;
+
 
 }

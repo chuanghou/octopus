@@ -3,6 +3,7 @@ package com.bilanee.octopus.infrastructure.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.bilanee.octopus.basic.TokenUtils;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -20,4 +21,7 @@ public class UserDO  {
     String password;
     String portrait;
 
+    public static void main(String[] args) {
+        System.out.println(TokenUtils.sign("1000"));
+    }
 }

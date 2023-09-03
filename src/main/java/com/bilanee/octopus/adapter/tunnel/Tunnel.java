@@ -3,12 +3,16 @@ package com.bilanee.octopus.adapter.tunnel;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
+import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
@@ -24,6 +28,8 @@ public class Tunnel {
 
     final MetaUnitDOMapper metaUnitDOMapper;
     final BidDOMapper bidDOMapper;
+    final DomainTunnel domainTunnel;
+    final CompDOMapper compDOMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -57,9 +63,21 @@ public class Tunnel {
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
 
-    public void updateBids(List<Bid> bids) {
+    public void coverBids(List<Bid> bids) {
         List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
-        bidDOs.forEach(bidDOMapper::updateById);
+        BidDO bidDO = bidDOs.get(0);
+        LambdaQueryWrapper<BidDO> queryWrapper = new LambdaQueryWrapper<BidDO>().eq(BidDO::getCompId, bidDO.getCompId())
+                .eq(BidDO::getRoundId, bidDO.getRoundId())
+                .eq(BidDO::getTradeStage, bidDO.getTradeStage())
+                .eq(BidDO::getUnitId, bidDO.getUnitId());
+        bidDOMapper.selectList(queryWrapper).forEach(bidDOMapper::deleteById);
+        bidDOs.forEach(bidDOMapper::insert);
+    }
+
+    public Comp runningComp() {
+        LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
+        CompDO compDO = compDOMapper.selectOne(queryWrapper);
+        return domainTunnel.getByAggregateId(Comp.class, compDO.getCompId());
     }
 
 

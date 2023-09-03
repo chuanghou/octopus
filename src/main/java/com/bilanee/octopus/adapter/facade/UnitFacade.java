@@ -1,19 +1,26 @@
 package com.bilanee.octopus.adapter.facade;
 
 
-import com.bilanee.octopus.basic.CentralizedBidVO;
-import com.bilanee.octopus.basic.TradeStage;
-import com.bilanee.octopus.basic.UnitVO;
+import com.bilanee.octopus.adapter.facade.po.BidPO;
+import com.bilanee.octopus.adapter.facade.po.CentralizedBidsPO;
+import com.bilanee.octopus.adapter.facade.po.RealtimeBidPO;
+import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.domain.Comp;
+import com.bilanee.octopus.domain.Unit;
+import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.mapstruct.*;
+import org.mapstruct.factory.Mappers;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -22,34 +29,43 @@ import java.util.List;
 @RequestMapping("/api/unit")
 public class UnitFacade {
 
-    UnitDOMapper unitDOMapper;
-    CompFacade compFacade;
+    final UnitDOMapper unitDOMapper;
+    final CompFacade compFacade;
 
-
-    @GetMapping("listUnitVOs")
-    public Result<List<UnitVO>> listUnitVOs() {
-
-        return null;
-    }
 
     @GetMapping("listCentralizedBidVOs")
-    public Result<List<CentralizedBidVO>> listCentralizedBidVOs(TradeStage tradeStage) {
+    public Result<List<CentralizedBidVO>> listCentralizedBidVOs(String stageId, @RequestHeader String token) {
 
         return null;
     }
 
 
-    @PostMapping("submitCentralizedBids")
-    public Result<Void> submitCentralizedBids(TradeStage tradeStage) {
+    @PostMapping("submitCentralizedBidsPO")
+    public Result<Void> submitCentralizedBidsPO(CentralizedBidsPO centralizedBidsPO) {
+        StageId stageId = StageId.parse(centralizedBidsPO.getStageId());
+        List<BidPO> bidPOs = centralizedBidsPO.getBidPOs();
+        UnitCmd.CentralizedBids command = UnitCmd.CentralizedBids.builder().stageId(stageId)
+                .bids(Collect.transfer(bidPOs, Convertor.INST::to))
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+        return Result.success();
+    }
+
+    @PostMapping("submitRealtimeBidPO")
+    public Result<Void> submitRealtimeBidPO(RealtimeBidPO realtimeBidPO) {
 
         return null;
     }
 
-    @PostMapping("submitRealtimeBid")
-    public Result<Void> submitRealtimeBid() {
+    @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
+            nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public interface Convertor extends BasicConvertor {
 
-        return null;
+        Convertor INST = Mappers.getMapper(Convertor.class);
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        Bid to(BidPO bidPO);
+
     }
-
 
 }
