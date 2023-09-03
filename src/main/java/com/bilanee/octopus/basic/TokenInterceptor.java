@@ -15,28 +15,22 @@ import javax.servlet.http.HttpServletResponse;
 public class TokenInterceptor implements HandlerInterceptor {
 
     @Override
-    public boolean preHandle(HttpServletRequest request,
-                             @NonNull HttpServletResponse response, @NonNull Object handler) throws Exception {
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) {
 
-        if(request.getMethod().equals("OPTIONS")){
-            response.setStatus(HttpServletResponse.SC_OK);
-            return true;
-        }
-
-        response.setCharacterEncoding("utf-8");
-        response.setContentType("application/json; charset=utf-8");
-        String token = request.getHeader("token");
-        if (StringUtils.isBlank(token) || !TokenUtils.verify(token)) {
-            Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
-            response.getWriter().append(Json.toJson(result));
-            return false;
-        }
+//        if(request.getMethod().equals("OPTIONS")){
+//            response.setStatus(HttpServletResponse.SC_OK);
+//            return true;
+//        }
+//
+//        response.setCharacterEncoding("utf-8");
+//        response.setContentType("application/json; charset=utf-8");
+//        String token = request.getHeader("token");
+//        if (StringUtils.isBlank(token) || !TokenUtils.verify(token)) {
+//            Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
+//            response.getWriter().append(Json.toJson(result));
+//            return false;
+//        }
         return true;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(TokenUtils.sign("0"));
-        System.out.println(TokenUtils.sign("1000"));
     }
 
 }

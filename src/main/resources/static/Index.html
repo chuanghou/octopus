@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div>
+        Jealous
+        <p>ddd</p>
+    </div>
+    <script>
+        let diveNode = document.getElementsByTagName('div')[0];
+
+        diveNode.addEventListener("click", function() {
+            console.log("bubble")
+        }, true);
+
+        diveNode.addEventListener("click", function() {
+            console.log("capture")
+        }, false);
+
+    </script>
+</body>
+</html>
