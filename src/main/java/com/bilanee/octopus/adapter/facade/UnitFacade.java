@@ -5,12 +5,15 @@ import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.CentralizedBidsPO;
 import com.bilanee.octopus.adapter.facade.po.RealtimeBidPO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
@@ -31,6 +34,7 @@ public class UnitFacade {
 
     final UnitDOMapper unitDOMapper;
     final CompFacade compFacade;
+    final Tunnel tunnel;
 
 
     @GetMapping("listCentralizedBidVOs")
@@ -42,9 +46,12 @@ public class UnitFacade {
 
     @PostMapping("submitCentralizedBidsPO")
     public Result<Void> submitCentralizedBidsPO(CentralizedBidsPO centralizedBidsPO) {
-        StageId stageId = StageId.parse(centralizedBidsPO.getStageId());
+        StageId pStageId = StageId.parse(centralizedBidsPO.getStageId());
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+
         List<BidPO> bidPOs = centralizedBidsPO.getBidPOs();
-        UnitCmd.CentralizedBids command = UnitCmd.CentralizedBids.builder().stageId(stageId)
+        UnitCmd.CentralizedBids command = UnitCmd.CentralizedBids.builder().stageId(pStageId)
                 .bids(Collect.transfer(bidPOs, Convertor.INST::to))
                 .build();
         CommandBus.accept(command, new HashMap<>());

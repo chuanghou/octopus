@@ -17,7 +17,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("octopus_unit_do")
+@TableName(value = "octopus_unit_do", autoResultMap = true)
 @EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {

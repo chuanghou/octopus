@@ -1,7 +1,6 @@
 package com.bilanee.octopus.adapter.facade.po;
 
-import com.bilanee.octopus.basic.ErrorEnums;
-import com.bilanee.octopus.basic.TimeFrame;
+import com.bilanee.octopus.basic.*;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.AfterValidation;
 import com.stellariver.milky.common.base.BizEx;
@@ -13,7 +12,9 @@ import lombok.experimental.FieldDefaults;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Builder
@@ -37,12 +38,19 @@ public class CentralizedBidsPO {
 
     @AfterValidation
     public void afterValidation() {
+
+        StageId parsedStageId = StageId.parse(stageId);
+        boolean b0 = TradeStage.AN_INTER.equals(parsedStageId.getTradeStage()) || TradeStage.MO_INTER.equals(parsedStageId.getTradeStage());
+        boolean b1 = MarketStatus.BID.equals(parsedStageId.getMarketStatus());
+        BizEx.falseThrow(b0 && b1, ErrorEnums.PARAM_FORMAT_WRONG.message("省间报价已经结束"));
+
         long count = bidPOs.stream().map(BidPO::getUnitId).distinct().count();
         BizEx.trueThrow(count != 1L, ErrorEnums.PARAM_FORMAT_WRONG);
         count = bidPOs.stream().map(BidPO::getDirection).distinct().count();
         BizEx.trueThrow(count != 1L, ErrorEnums.PARAM_FORMAT_WRONG);
         ListMultimap<TimeFrame, BidPO> grouped = bidPOs.stream().collect(Collect.listMultiMap(BidPO::getTimeFrame));
-        BizEx.trueThrow(grouped.size() != 3, ErrorEnums.PARAM_FORMAT_WRONG);
+        Map<TimeFrame, Collection<BidPO>> map = grouped.asMap();
+        map.forEach((k, vs) -> BizEx.trueThrow(vs.size() != 3, ErrorEnums.PARAM_FORMAT_WRONG));
         grouped.asMap().values().forEach(vs -> BizEx.trueThrow(vs.size() != 3, ErrorEnums.PARAM_FORMAT_WRONG));
     }
 

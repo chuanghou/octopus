@@ -19,6 +19,7 @@ public class Bid {
     Long unitId;
     Province province;
     TimeFrame timeFrame;
+    Integer roundId;
     TradeStage tradeStage;
     Direction direction;
     Double quantity;

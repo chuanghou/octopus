@@ -60,23 +60,32 @@ public class Unit extends AggregateRoot {
     public void handle(UnitCmd.CentralizedBids command, Context context) {
 
         List<Bid> bids = command.getBids();
-        ListMultimap<TimeFrame, Bid> collect = bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame));
-        collect.asMap().forEach((t, vs) -> {
+
+        // 报单方向
+        Direction direction = bids.get(0).getDirection();
+
+        // 方向限制
+        BizEx.trueThrow(direction != metaUnit.getUnitType().generalDirection(), ErrorEnums.PARAM_FORMAT_WRONG.message("买卖方向错误"));
+
+        // 持仓限制
+        bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((t, vs) -> {
             Double declareQuantity = vs.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
-            Bid bid = vs.iterator().next();
-            Double tBalance = balance.get(t).get(bid.getDirection());
+            Double tBalance = balance.get(t).get(direction);
             BizEx.trueThrow(declareQuantity > tBalance, ErrorEnums.PARAM_FORMAT_WRONG.message("超过持仓限制"));
         });
-
-        StageId stageId = command.getStageId();
+        Comp comp = tunnel.runningComp();
+        // 填充委托其他参数
         bids.forEach(bid -> {
             bid.setBidId(uniqueIdGetter.get());
-            bid.setCompId(stageId.getCompId());
+            bid.setCompId(command.getStageId().getCompId());
             bid.setProvince(metaUnit.getProvince());
-            bid.setTradeStage(stageId.getTradeStage());
+            bid.setRoundId(comp.getRoundId());
+            bid.setTradeStage(command.getStageId().getTradeStage());
             bid.setDeclareTimeStamp(Clock.currentTimeMillis());
             bid.setBidStatus(BidStatus.NEW_DECELERATED);
         });
+
+        // 数据库覆盖
         tunnel.coverBids(bids);
 
         context.publishPlaceHolderEvent(getAggregateId());

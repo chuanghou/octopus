@@ -187,6 +187,15 @@ public class Comp extends AggregateRoot {
         delayExecutor.delayQueue.add(delayCommandWrapper);
     }
 
+    public StageId getStageId() {
+        return StageId.builder()
+                .compId(compId)
+                .compStage(compStage)
+                .roundId(roundId)
+                .tradeStage(tradeStage)
+                .marketStatus(marketStatus)
+                .build();
+    }
 
     @Data
     @FieldDefaults(level = AccessLevel.PRIVATE)
