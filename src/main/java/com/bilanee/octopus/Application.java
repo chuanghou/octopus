@@ -8,10 +8,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableMilky
 @EnableStaticWire
 @SpringBootApplication
-public class OctopusApplication {
+public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(OctopusApplication.class, args);
+        SpringApplication.run(Application.class, args);
     }
 
 }
