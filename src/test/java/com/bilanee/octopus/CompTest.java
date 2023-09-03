@@ -1,17 +1,15 @@
 package com.bilanee.octopus;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.bilanee.octopus.adapter.CompCreatePO;
-import com.bilanee.octopus.adapter.CompFacade;
-import com.bilanee.octopus.adapter.CompVO;
-import com.bilanee.octopus.adapter.ManageFacade;
+import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
+import com.bilanee.octopus.adapter.facade.CompFacade;
+import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.basic.TradeStage;
-import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
-import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -68,9 +66,4 @@ public class CompTest {
         Assertions.assertEquals(unitDOS.size(), 2 * 3 * 4);
     }
 
-    @Test
-    public void testMetaUnit() {
-        List<MetaUnitDO> metaUnitDOS = metaUnitDOMapper.selectList(null);
-        System.out.println(metaUnitDOS);
-    }
 }

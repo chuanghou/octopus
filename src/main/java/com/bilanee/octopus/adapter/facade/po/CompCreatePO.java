@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade.po;
 
 import com.bilanee.octopus.basic.TradeStage;
 import lombok.*;

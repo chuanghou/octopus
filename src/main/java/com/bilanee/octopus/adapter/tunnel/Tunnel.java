@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.tunnel;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -29,7 +29,7 @@ public class Tunnel {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
 
         for (int i = 0; i < userIds.size(); i++) {
-            List<Integer> sourceIds = AllocateUtils.allocateSourceId(roundId, userIds.size(), 30, i);
+            List<Integer> sourceIds = AssignUtils.assignSourceId(roundId, userIds.size(), 30, i);
             LambdaQueryWrapper<MetaUnitDO> in = new LambdaQueryWrapper<MetaUnitDO>().in(MetaUnitDO::getSourceId, sourceIds);
             List<MetaUnitDO> metaUnitDOs = metaUnitDOMapper.selectList(in);
             metaUnitMap.put(userIds.get(i), Collect.transfer(metaUnitDOs, Convertor.INST::to));

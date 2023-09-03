@@ -1,5 +1,6 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.repository;
 
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.domain.Unit;

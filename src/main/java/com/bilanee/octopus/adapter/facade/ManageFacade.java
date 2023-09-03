@@ -1,5 +1,8 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade;
 
+import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
+import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
@@ -22,7 +25,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("manage")
+@RequestMapping("/api/manage")
 public class ManageFacade {
 
     final UniqueIdGetter uniqueIdGetter;

@@ -1,13 +1,13 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
-import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -31,7 +31,7 @@ public class CompFacade {
      * 当前运行竞赛查看
      * @return 当前运行竞赛概况
      */
-    @GetMapping("runningComp")
+    @GetMapping("/runningComp")
     public Result<CompVO> runningComp() {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
         CompDO compDO = compDOMapper.selectOne(queryWrapper);

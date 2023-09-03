@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade;
 
 
 import com.bilanee.octopus.basic.CentralizedBidVO;

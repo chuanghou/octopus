@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.tunnel;
 
 import com.bilanee.octopus.basic.BidStatus;
 import com.bilanee.octopus.basic.Direction;

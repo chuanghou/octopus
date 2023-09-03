@@ -16,9 +16,11 @@ public class ErrorEnums extends ErrorEnumsBase {
     @Message("未登录")
     public static ErrorEnum NOT_LOGIN;
 
-    @Message("账户密码错误")
-    public static ErrorEnum ACCOUNT_PASSWORD_ERROR;
+    @Message("密码错误")
+    public static ErrorEnum PASSWORD_ERROR;
 
+    @Message("用户不存在")
+    public static ErrorEnum ACCOUNT_NOT_EXISTED;
 
     static {
         for (Field field : ErrorEnums.class.getDeclaredFields()) {

@@ -26,12 +26,8 @@ public class TokenInterceptor implements HandlerInterceptor {
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json; charset=utf-8");
         String token = request.getHeader("token");
-        if (StringUtils.isBlank(token)) {
+        if (StringUtils.isBlank(token) || !TokenUtils.verify(token)) {
             Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
-            response.getWriter().append(Json.toJson(result));
-            return false;
-        } else if (!TokenUtils.verify(token)){
-            Result<Void> result = Result.error(ErrorEnums.ACCOUNT_PASSWORD_ERROR, ExceptionType.BIZ);
             response.getWriter().append(Json.toJson(result));
             return false;
         }

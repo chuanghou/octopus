@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.tunnel;
 
 import com.stellariver.milky.common.tool.util.Collect;
 import org.apache.commons.lang3.tuple.Pair;
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-public class AllocateUtils {
+public class AssignUtils {
 
     static Map<Integer, Pair<Integer, Integer>> roundOneMap = Collect.asMap(
             1, Pair.of(1, 6),
@@ -46,7 +46,7 @@ public class AllocateUtils {
     }
 
     // 方圣哲给的原始分配方案，相对冗杂，且id不是从0开始，这个函数计算了分配方案，并将被分配的MetaUnit的sourceId计算出来了
-    static List<Map<Integer, List<Integer>>> allocateSourceId(Integer roundTotal, Integer userIdTotal, Integer sourceIdTotal) {
+    static List<Map<Integer, List<Integer>>> assignSourceId(Integer roundTotal, Integer userIdTotal, Integer sourceIdTotal) {
         List<Map<Integer, List<Integer>>> result = new ArrayList<>();
         IntStream.range(1, roundTotal + 1).forEach(roundId -> {
             Map<Integer, List<Integer>> allocate = new HashMap<>();
@@ -60,10 +60,10 @@ public class AllocateUtils {
         return result;
     }
 
-    static public List<Integer> allocateSourceId(Integer roundId,
-                                          Integer userTotal,
-                                          Integer sourceIdTotal,
-                                          Integer positionId) {
+    static public List<Integer> assignSourceId(Integer roundId,
+                                               Integer userTotal,
+                                               Integer sourceIdTotal,
+                                               Integer positionId) {
         Pair<Integer, Integer> allocateIds = allocate(roundId + 1, positionId + 1, userTotal, sourceIdTotal);
         return  Collect.asList(allocateIds.getLeft(), allocateIds.getRight());
 

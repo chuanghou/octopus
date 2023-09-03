@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade.vo;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;

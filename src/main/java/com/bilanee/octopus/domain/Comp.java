@@ -1,7 +1,7 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.adapter.BidQuery;
-import com.bilanee.octopus.adapter.Tunnel;
+import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;

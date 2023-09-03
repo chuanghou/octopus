@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.facade;
 
 import com.bilanee.octopus.basic.TradeStage;
 import com.stellariver.milky.common.base.Enumeration;
@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 
 
-@RestController
+@RestController("/api/enumeration")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class EnumerationFacade {
 
@@ -21,7 +21,7 @@ public class EnumerationFacade {
     /**
      * 仿真交易阶段枚举列表
      */
-    @RequestMapping("tradeStages")
+    @RequestMapping("/tradeStages")
     public Result<List<Enumeration>> tradeStages() {
         List<Enumeration> enumerations = Collect
                 .transfer(Arrays.asList(TradeStage.values()), tradeStage -> new Enumeration(tradeStage.name(), tradeStage.getDesc()));

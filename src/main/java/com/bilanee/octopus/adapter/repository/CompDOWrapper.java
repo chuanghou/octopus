@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter;
+package com.bilanee.octopus.adapter.repository;
 
 import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
