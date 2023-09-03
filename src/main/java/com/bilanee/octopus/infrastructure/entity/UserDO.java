@@ -3,7 +3,6 @@ package com.bilanee.octopus.infrastructure.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -12,9 +11,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("octopus_user_do")
-@EqualsAndHashCode(callSuper = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UserDO extends AbstractMpDO  {
+public class UserDO  {
 
     @TableId(type = IdType.INPUT)
     String userId;

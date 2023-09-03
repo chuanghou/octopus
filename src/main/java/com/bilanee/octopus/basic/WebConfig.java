@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.server.standard.ServerEndpointExporter;
@@ -56,31 +55,19 @@ public class WebConfig implements WebMvcConfigurer{
     }
 
 
-    @Bean
-    public WebMvcConfigurer webMvcConfigurer() {
-        return new WebMvcConfigurer() {
+    @Override
+    public void addCorsMappings(@NonNull CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowCredentials(true)
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE")
+                .allowedHeaders("*")
+                .exposedHeaders("*");
+    }
 
-            @Override
-            public void addCorsMappings(@NonNull CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowCredentials(true)
-                        .allowedOriginPatterns("*")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE")
-                        .allowedHeaders("*")
-                        .exposedHeaders("*");
-            }
-            @Override
-            public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-                String property = System.getProperty("static.resource");
-                registry.addResourceHandler("/**").addResourceLocations("file:" + property);
-            }
-
-            @Override
-            public void addInterceptors(@NonNull InterceptorRegistry registry) {
-                registry.addInterceptor(new TokenInterceptor()).addPathPatterns("/api/**").excludePathPatterns("/api/user/login");
-            }
-
-        };
+    @Override
+    public void addInterceptors(@NonNull InterceptorRegistry registry) {
+        registry.addInterceptor(new TokenInterceptor()).addPathPatterns("/api/**").excludePathPatterns("/api/user/login");
     }
 
 
