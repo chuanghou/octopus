@@ -37,6 +37,11 @@ public class WsHandler {
         sessions.put(userId, session);
     }
 
+    public static void main(String[] args) {
+        System.out.println(TokenUtils.sign("1000"));
+    }
+
+
     @OnClose
     public void onClose(Session session) {
         String userId = sessions.entrySet().stream()

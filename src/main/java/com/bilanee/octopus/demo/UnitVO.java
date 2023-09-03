@@ -1,4 +1,4 @@
-package com.bilanee.octopus.adapter.ws;
+package com.bilanee.octopus.demo;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class WsMessage {
-    WsTopic wsTopic;
-    Object entity;
+public class UnitVO {
+
+    Long unitId;
+    String unitName;
+
 }
