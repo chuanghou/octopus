@@ -18,6 +18,9 @@ public enum TimeFrame {
     final String desc;
     final List<Integer> prds;
 
+    public static List<TimeFrame> list() {
+        return Arrays.asList(TimeFrame.values());
+    }
 
 
 }

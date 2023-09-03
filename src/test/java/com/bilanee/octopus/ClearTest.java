@@ -5,6 +5,7 @@ import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.domain.ClearUtil;
+import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ClearTest {
@@ -154,5 +157,16 @@ public class ClearTest {
         Assertions.assertEquals(deal1.getQuantity(),100);
     }
 
+
+    @Test
+    public void testListMultiMap() {
+        Bid sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
+        ListMultimap<Direction, Bid> collect = Collect.asList(sellBid0, sellBid0).stream().collect(Collect.listMultiMap(Bid::getDirection));
+        collect.put(Direction.BUY, null);
+        Map<Direction, Collection<Bid>> map = collect.asMap();
+        Collection<Bid> bids = map.get(Direction.BUY);
+        System.out.println(bids);
+        System.out.println(map.keySet());
+    }
 
 }

@@ -121,6 +121,15 @@ public class CompTest {
         bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() > now));
+        Result<List<ClUnitVO>> listResult = unitFacade.listClUnitVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
+        Assertions.assertTrue(listResult.getSuccess());
+        List<ClUnitVO> data = listResult.getData();
+        Assertions.assertEquals(data.size(), 1);
+        ClUnitVO clUnitVO = data.get(0);
+        Assertions.assertEquals(clUnitVO.getUnitId(), unit.getUnitId());
+        Assertions.assertEquals(clUnitVO.getUnitName(), unit.getMetaUnit().getName());
+        Assertions.assertEquals(clUnitVO.getClBidVOs().size(), 3);
+
     }
 
 }

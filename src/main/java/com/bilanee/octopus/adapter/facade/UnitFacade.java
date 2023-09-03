@@ -24,9 +24,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -40,6 +38,7 @@ public class UnitFacade {
     final Tunnel tunnel;
     final DomainTunnel domainTunnel;
 
+    @SuppressWarnings("unchecked")
     @GetMapping("listClUnitVOs")
     public Result<List<ClUnitVO>> listClUnitVOs(String stageId, @RequestHeader String token) {
 
@@ -58,8 +57,10 @@ public class UnitFacade {
             Long uId = e.getKey();
             Collection<Bid> bs = e.getValue();
             Unit unit = domainTunnel.getByAggregateId(Unit.class, uId);
-            ListMultimap<TimeFrame, Bid> groupedByTimeFrame = bs.stream().collect(Collect.listMultiMap(Bid::getTimeFrame));
-            List<ClBidVO> clBidVOs = groupedByTimeFrame.asMap().entrySet().stream().map(ee -> {
+            Map<TimeFrame, Collection<Bid>> map = bs.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap();
+            Map<TimeFrame, Collection<Bid>> newMap = new HashMap<>(map);
+            Collect.subtract(new HashSet<>(TimeFrame.list()), map.keySet()).forEach(t -> newMap.put(t, Collections.EMPTY_LIST));
+            List<ClBidVO> clBidVOs = newMap.entrySet().stream().map(ee -> {
                 TimeFrame timeFrame = ee.getKey();
                 Collection<Bid> bids = ee.getValue();
                 Double capacity = unit.getMetaUnit().getCapacity().get(timeFrame).get(unit.getMetaUnit().getUnitType().generalDirection());
