@@ -10,7 +10,7 @@
         <Property name="args2">arg2\t: %X{arg2}</Property>
         <Property name="args3">arg3\t: %X{arg3}</Property>
         <Property name="args4">arg4\t: %X{arg4}</Property>
-        <Property name="line">===============================================</Property>
+        <Property name="line">-----------------------------------------------------------</Property>
         <Property name="LOG_PATH">logs</Property>
 
     </Properties>

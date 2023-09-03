@@ -222,6 +222,11 @@
             <artifactId>mybatis-plus-extension</artifactId>
             <version>3.5.3.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>3.9.0</version>
+        </dependency>
         <!--infrastructure-base end-->
 
         <dependency>
