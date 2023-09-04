@@ -1,8 +1,6 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.MarketStatus;
@@ -61,6 +59,14 @@ public class Routers implements EventRouters {
         }
         CompCmd.Clear command = CompCmd.Clear.builder().compId(now.getCompId()).build();
         CommandBus.driveByEvent(command, stepped);
+    }
+
+    @EventRouter
+    public void routeForRoundIdUpdate(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        if (now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.BID) {
+            tunnel.writeBackDbRoundId(stepped.getNow().getRoundId());
+        }
     }
 
 

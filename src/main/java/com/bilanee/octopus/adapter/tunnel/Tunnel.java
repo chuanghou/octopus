@@ -5,14 +5,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.infrastructure.entity.BidDO;
-import com.bilanee.octopus.infrastructure.entity.CompDO;
-import com.bilanee.octopus.infrastructure.entity.MarketSettingDO;
-import com.bilanee.octopus.infrastructure.entity.MetaUnitDO;
-import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
-import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
+import com.bilanee.octopus.infrastructure.entity.*;
+import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
@@ -35,6 +29,7 @@ public class Tunnel {
     final DomainTunnel domainTunnel;
     final CompDOMapper compDOMapper;
     final MarketSettingMapper marketSettingMapper;
+    final TransLimitDOMapper transLimitDOMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -97,12 +92,51 @@ public class Tunnel {
         }
     }
 
-    public GridLimit transLimit(TimeFrame timeFrame) {
-        return null;
+    //TODO minus already deal
+    public GridLimit transLimit(TradeStage tradeStage, TimeFrame timeFrame) {
+        Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
+        return prepare.get(tradeStage).get(timeFrame);
+    }
+
+    public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare() {
+        List<TransLimitDO> transLimitDOs = transLimitDOMapper.selectList(null);
+        Map<TradeStage, Map<TimeFrame, GridLimit>> marketTypeTransLimit = new HashMap<>();
+
+        Map<TimeFrame, GridLimit> transLimit = new HashMap<>();
+        for (TransLimitDO limitDO : transLimitDOs) {
+            TimeFrame timeFrame = Kit.enumOfMightEx(TimeFrame::getDbCode, limitDO.getPfvPrd());
+            GridLimit gridLimit = GridLimit.builder()
+                    .low(limitDO.getMinAnnualReceivingMw())
+                    .high(limitDO.getMaxAnnualReceivingMw())
+                    .build();
+            transLimit.put(timeFrame, gridLimit);
+        }
+        marketTypeTransLimit.put(TradeStage.AN_INTER, transLimit);
+
+        transLimit = new HashMap<>();
+        for (TransLimitDO limitDO : transLimitDOs) {
+            TimeFrame timeFrame = Kit.enumOfMightEx(TimeFrame::getDbCode, limitDO.getPfvPrd());
+            GridLimit gridLimit = GridLimit.builder()
+                    .low(limitDO.getMinMonthlyReceivingMw())
+                    .high(limitDO.getMaxMonthlyReceivingMw())
+                    .build();
+            transLimit.put(timeFrame, gridLimit);
+        }
+        marketTypeTransLimit.put(TradeStage.MO_INTER, transLimit);
+
+        return marketTypeTransLimit;
     }
 
 
-    public void updateNonMarketQuantity(StageId stageId, TimeFrame timeFrame, Double low) {
+    public void writeBackDbInterClear(WriteBackBO writeBackBO) {
+
+    }
+
+    public void writeBackDbRoundId(Integer roundId) {
+        MarketSettingDO marketSettingDO = new MarketSettingDO();
+        marketSettingDO.setMarketSettingId(1);
+        marketSettingDO.setRoundId(roundId + 1);
+        marketSettingMapper.updateById(marketSettingDO);
     }
 
 

@@ -2,6 +2,7 @@ package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.adapter.tunnel.WriteBackBO;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;
@@ -22,7 +23,6 @@ import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.aspectj.org.eclipse.jdt.core.IField;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -154,6 +154,7 @@ public class Comp extends AggregateRoot {
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
         tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().values().forEach(this::doClear);
     }
+
     @SuppressWarnings("UnstableApiUsage")
     private void doClear(Collection<Bid> bids) {
 
@@ -175,15 +176,12 @@ public class Comp extends AggregateRoot {
         }
 
         TimeFrame timeFrame = sortedBuyBids.get(0).getTimeFrame();
-        GridLimit transLimit = tunnel.transLimit(sortedBuyBids.get(0).getTimeFrame());
+        GridLimit transLimit = tunnel.transLimit(tradeStage, timeFrame);
 
-        if (interPoint.x <= transLimit.getLow()) {
-            Double nonMarketQuantity = transLimit.getLow() - interPoint.x;
-            tunnel.updateNonMarketQuantity(getStageId(), timeFrame, nonMarketQuantity);
-            if (Kit.eq(interPoint.x, 0D)) {
-                return;
-            }
-        } else if (interPoint.x > transLimit.getHigh()) {
+        double nonMarketQuantity = 0D;
+        if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
+            nonMarketQuantity = transLimit.getLow() - interPoint.x;
+        }else if (interPoint.x > transLimit.getHigh()) { // // 当出清点大于最大传输量限制时
             interPoint.x = transLimit.getHigh();
             Range<Double> bR = buyBrokenLine.get(interPoint.x);
             Range<Double> sR = sellBrokenLine.get(interPoint.x);
@@ -192,7 +190,18 @@ public class Comp extends AggregateRoot {
             }
             interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
         }
+        double marketQuantity = interPoint.x;
 
+        // 回写数据库，给现货使用
+        WriteBackBO writeBackBO = WriteBackBO.builder().stageId(getStageId())
+                .timeFrame(timeFrame).marketQuantity(marketQuantity).nonMarketQuantity(nonMarketQuantity).build();
+        tunnel.writeBackDbInterClear(writeBackBO);
+
+        if (Kit.eq(interPoint.x, 0D)) {
+            return;
+        }
+
+        // 出清
         ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
         ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
 

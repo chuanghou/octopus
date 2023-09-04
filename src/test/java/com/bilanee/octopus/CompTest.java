@@ -116,7 +116,6 @@ public class CompTest {
         Assertions.assertEquals(bids.size(), 9);
         long now = Clock.currentTimeMillis();
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() < now));
-        Thread.sleep(10L);
         result = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result.getSuccess());
         bids = tunnel.listBids(bidQuery);
