@@ -93,9 +93,9 @@ public class Tunnel {
     }
 
     //TODO minus already deal
-    public GridLimit transLimit(TradeStage tradeStage, TimeFrame timeFrame) {
+    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
         Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
-        return prepare.get(tradeStage).get(timeFrame);
+        return prepare.get(stageId.getTradeStage()).get(timeFrame);
     }
 
     public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare() {

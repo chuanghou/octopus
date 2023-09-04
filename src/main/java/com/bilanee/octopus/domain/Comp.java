@@ -154,7 +154,6 @@ public class Comp extends AggregateRoot {
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
         tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().values().forEach(this::doClear);
     }
-
     @SuppressWarnings("UnstableApiUsage")
     private void doClear(Collection<Bid> bids) {
 
@@ -176,7 +175,7 @@ public class Comp extends AggregateRoot {
         }
 
         TimeFrame timeFrame = sortedBuyBids.get(0).getTimeFrame();
-        GridLimit transLimit = tunnel.transLimit(tradeStage, timeFrame);
+        GridLimit transLimit = tunnel.transLimit(getStageId(), timeFrame);
 
         double nonMarketQuantity = 0D;
         if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
@@ -192,18 +191,16 @@ public class Comp extends AggregateRoot {
         }
         double marketQuantity = interPoint.x;
 
+        if (!Kit.eq(interPoint.x, 0D)) {
+            ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
+            ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
+        }
+
         // 回写数据库，给现货使用
         WriteBackBO writeBackBO = WriteBackBO.builder().stageId(getStageId())
                 .timeFrame(timeFrame).marketQuantity(marketQuantity).nonMarketQuantity(nonMarketQuantity).build();
         tunnel.writeBackDbInterClear(writeBackBO);
 
-        if (Kit.eq(interPoint.x, 0D)) {
-            return;
-        }
-
-        // 出清
-        ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
-        ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
 
     }
 
