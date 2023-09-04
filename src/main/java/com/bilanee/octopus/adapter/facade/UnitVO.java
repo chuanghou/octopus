@@ -1,4 +1,4 @@
-package com.bilanee.octopus.demo;
+package com.bilanee.octopus.adapter.facade;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -8,7 +8,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Section {
+public class UnitVO {
 
     /**
      * 单元id
@@ -16,18 +16,8 @@ public class Section {
     Long unitId;
 
     /**
-     * 线段左x轴坐标
+     * 单元名字
      */
-    Double lx;
-
-    /**
-     * 线段右x轴坐标
-     */
-    Double rx;
-
-    /**
-     * 线段y轴坐标
-     */
-    Double y;
+    String unitName;
 
 }

@@ -41,7 +41,7 @@ public class BidPO {
     Direction direction;
 
     /**
-     * 电力阶段
+     * 运行阶段
      */
     @NotNull
     TimeFrame timeFrame;

@@ -12,7 +12,14 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RealtimeBidPO {
 
+    /**
+     * 系统阶段id
+     */
     String stageId;
+
+    /**
+     * 省内竞赛的量价报单
+     */
     BidPO bidPO;
 
 }

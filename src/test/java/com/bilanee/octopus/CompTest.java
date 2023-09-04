@@ -5,7 +5,7 @@ import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.BidPO;
-import com.bilanee.octopus.adapter.facade.po.ClBidsPO;
+import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
 import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
@@ -79,7 +79,7 @@ public class CompTest {
                 .build();
 
         manageFacade.createComp(compCreatePO);
-        Result<CompVO> compVOResult = compFacade.runningComp();
+        Result<CompVO> compVOResult = compFacade.runningCompVO();
         Assertions.assertTrue(compVOResult.getSuccess());
         Long compId = compVOResult.getData().getCompId();
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, compId);
@@ -108,27 +108,27 @@ public class CompTest {
                 .timeFrame(TimeFrame.VALLEY).price(100D).quantity(100D).build();
         List<BidPO> list2 = Collect.asList(bidPO2, bidPO2, bidPO2);
         List<BidPO> bidPOs = Stream.of(list0, list1, list2).flatMap(Collection::stream).collect(Collectors.toList());
-        ClBidsPO clBidsPO = ClBidsPO.builder().stageId(stageId.toString()).bidPOs(bidPOs).build();
-        Result<Void> result = unitFacade.submitClBidsPO(clBidsPO);
+        InterBidsPO interBidsPO = InterBidsPO.builder().stageId(stageId.toString()).bidPOs(bidPOs).build();
+        Result<Void> result = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result.getSuccess());
         BidQuery bidQuery = BidQuery.builder().unitId(unit.getUnitId()).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         long now = Clock.currentTimeMillis();
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() < now));
-        result = unitFacade.submitClBidsPO(clBidsPO);
+        result = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result.getSuccess());
         bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() > now));
-        Result<List<ClUnitVO>> listResult = unitFacade.listClUnitVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
+        Result<List<InterUnitVO>> listResult = unitFacade.listClUnitVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
         Assertions.assertTrue(listResult.getSuccess());
-        List<ClUnitVO> data = listResult.getData();
+        List<InterUnitVO> data = listResult.getData();
         Assertions.assertEquals(data.size(), 1);
-        ClUnitVO clUnitVO = data.get(0);
-        Assertions.assertEquals(clUnitVO.getUnitId(), unit.getUnitId());
-        Assertions.assertEquals(clUnitVO.getUnitName(), unit.getMetaUnit().getName());
-        Assertions.assertEquals(clUnitVO.getClBidVOs().size(), 3);
+        InterUnitVO interUnitVO = data.get(0);
+        Assertions.assertEquals(interUnitVO.getUnitId(), unit.getUnitId());
+        Assertions.assertEquals(interUnitVO.getUnitName(), unit.getMetaUnit().getName());
+        Assertions.assertEquals(interUnitVO.getInterBidVOS().size(), 3);
 
     }
 

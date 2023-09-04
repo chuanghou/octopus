@@ -44,7 +44,7 @@ public class UnitCmd {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class CentralizedBids extends Command {
+    static public class InterBids extends Command {
 
         StageId stageId;
         List<Bid> bids;

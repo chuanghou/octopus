@@ -1,6 +1,5 @@
 package com.bilanee.octopus.basic;
 
-import com.bilanee.octopus.basic.enums.TimeFrame;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -11,10 +10,26 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ClUnitVO {
+public class InterUnitVO {
 
+    /**
+     * 单元id
+     */
     Long unitId;
+
+    /**
+     * 价格约束
+     */
+    GridLimit priceLimit;
+
+    /**
+     * 单元名
+     */
     String unitName;
-    List<ClBidVO> clBidVOs;
+
+    /**
+     * 峰平谷三段报价报量
+     */
+    List<InterBidVO> interBidVOS;
 
 }

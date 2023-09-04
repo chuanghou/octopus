@@ -1,15 +1,13 @@
 package com.bilanee.octopus.adapter.facade;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.vo.InterClearVO;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.infrastructure.entity.CompDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.stellariver.milky.common.base.Result;
-import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,6 +16,8 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,11 +33,23 @@ public class CompFacade {
      * 当前运行竞赛查看
      * @return 当前运行竞赛概况
      */
-    @GetMapping("/runningComp")
-    public Result<CompVO> runningComp() {
+    @GetMapping("/runningCompVO")
+    public Result<CompVO> runningCompVO() {
         Comp comp = tunnel.runningComp();
         return Result.success(Convertor.INST.to(comp));
     }
+
+    /**
+     * 省间出清结果
+     * @return 省间出清结果
+     */
+    @GetMapping("/interClearVO")
+    public Result<List<InterClearVO>> interClearVO(String stageId) {
+        InterClearVO interClearVO = InterClearVO.builder().build();
+
+        return Result.success(null);
+    }
+
 
 
 

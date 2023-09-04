@@ -58,7 +58,7 @@ public class Unit extends AggregateRoot {
 
 
     @MethodHandler
-    public void handle(UnitCmd.CentralizedBids command, Context context) {
+    public void handle(UnitCmd.InterBids command, Context context) {
 
         List<Bid> bids = command.getBids();
 

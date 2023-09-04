@@ -19,15 +19,15 @@ public class DemoFacade {
 
     @GetMapping("/centralizedClearance")
     public Result<CentralizedClearance> centralizedClearance() {
-        Section sellSection0 = Section.builder().unitId(1L).leftX(0D).rightX(100D).y(100D).build();
-        Section sellSection1 = Section.builder().unitId(2L).leftX(100D).rightX(300D).y(250D).build();
-        Section sellSection2 = Section.builder().unitId(3L).leftX(300D).rightX(350D).y(300D).build();
-        Section sellSection3 = Section.builder().unitId(1L).leftX(350D).rightX(500D).y(400D).build();
+        Section sellSection0 = Section.builder().unitId(1L).lx(0D).rx(100D).y(100D).build();
+        Section sellSection1 = Section.builder().unitId(2L).lx(100D).rx(300D).y(250D).build();
+        Section sellSection2 = Section.builder().unitId(3L).lx(300D).rx(350D).y(300D).build();
+        Section sellSection3 = Section.builder().unitId(1L).lx(350D).rx(500D).y(400D).build();
 
-        Section buySection0 = Section.builder().unitId(4L).leftX(0D).rightX(50D).y(800D).build();
-        Section buySection1 = Section.builder().unitId(5L).leftX(50D).rightX(190D).y(4500D).build();
-        Section buySection2 = Section.builder().unitId(6L).leftX(190D).rightX(400D).y(200D).build();
-        Section buySection3 = Section.builder().unitId(4L).leftX(400D).rightX(500D).y(80D).build();
+        Section buySection0 = Section.builder().unitId(4L).lx(0D).rx(50D).y(800D).build();
+        Section buySection1 = Section.builder().unitId(5L).lx(50D).rx(190D).y(4500D).build();
+        Section buySection2 = Section.builder().unitId(6L).lx(190D).rx(400D).y(200D).build();
+        Section buySection3 = Section.builder().unitId(4L).lx(400D).rx(500D).y(80D).build();
 
         UnitVO unitVO1 = UnitVO.builder().unitId(1L).unitName("机组1").build();
         UnitVO unitVO2 = UnitVO.builder().unitId(2L).unitName("机组2").build();

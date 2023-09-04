@@ -55,7 +55,7 @@ public class CompVO {
     /**
      * 本次参赛的用户id列表
      */
-    List<String> traderIds;
+    List<String> userIds;
 
 
 }
