@@ -3,11 +3,7 @@ package com.bilanee.octopus.adapter.tunnel;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.UnitType;
-import com.bilanee.octopus.basic.enums.BidStatus;
-import com.bilanee.octopus.basic.enums.Province;
-import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.entity.CompDO;
@@ -99,6 +95,14 @@ public class Tunnel {
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
+    }
+
+    public GridLimit transLimit(TimeFrame timeFrame) {
+        return null;
+    }
+
+
+    public void updateNonMarketQuantity(StageId stageId, TimeFrame timeFrame, Double low) {
     }
 
 

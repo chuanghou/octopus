@@ -1,5 +1,6 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.MetaUnit;
@@ -39,16 +40,12 @@ public class CompEvent {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class Step extends Command {
+    static public class Stepped extends Event {
 
         Long compId;
 
-        CompStage compStage;
-        Integer roundId;
-        TradeStage tradeStage;
-        MarketStatus marketStatus;
-
-        Long endingTimeStamp;
+        StageId last;
+        StageId now;
 
         @Override
         public String getAggregateId() {

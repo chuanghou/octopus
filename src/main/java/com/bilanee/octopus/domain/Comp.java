@@ -3,11 +3,10 @@ package com.bilanee.octopus.domain;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.CompStage;
-import com.bilanee.octopus.basic.enums.MarketStatus;
-import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -23,6 +22,7 @@ import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.aspectj.org.eclipse.jdt.core.IField;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -152,38 +152,67 @@ public class Comp extends AggregateRoot {
         SysEx.trueThrow((tradeStage != TradeStage.AN_INTER) && (tradeStage != TradeStage.MO_INTER), ErrorEnums.SYS_EX);
         SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
-        List<Bid> bids = tunnel.listBids(bidQuery);
-        List<Object> collect = tunnel.listBids(bidQuery)
-                .stream().collect(Collect.listMultiMap(Bid::getTimeFrame))
-                .asMap().values().stream().map(this::doClear).collect(Collectors.toList());
-//        tunnel.
+        tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().values().forEach(this::doClear);
     }
+    @SuppressWarnings("UnstableApiUsage")
+    private void doClear(Collection<Bid> bids) {
 
-    private Object doClear(Collection<Bid> bids) {
-        List<Bid> buyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
-                .sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList());
-        List<Bid> sellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
-                .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
-        Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBids, sellBids);
-        if (interPoint == null || Kit.eq(interPoint.x, 0D)) {
-            return null;
+        List<Bid> sortedBuyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
+                .sorted(Comparator.comparing(Bid::getPrice).reversed())
+                .collect(Collectors.toList());
+        List<Bid> sortedSellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
+                .sorted(Comparator.comparing(Bid::getPrice))
+                .collect(Collectors.toList());
+
+        RangeMap<Double, Range<Double>> buyBrokenLine = ClearUtil.buildRangeMap(sortedBuyBids, Double.MAX_VALUE, 0D);
+        RangeMap<Double, Range<Double>> sellBrokenLine = ClearUtil.buildRangeMap(sortedSellBids, 0D, Double.MAX_VALUE);
+
+        Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
+
+        //  当没有报价的时候，此时相当于交点处于y轴上，因为成交量是0，所以此时成交价格没有意义
+        if (interPoint == null) {
+            interPoint = new Point<>(0D, null);
         }
-        ClearUtil.deal(buyBids, interPoint, uniqueIdGetter);
-        ClearUtil.deal(sellBids, interPoint, uniqueIdGetter);
 
-        return null;
+        TimeFrame timeFrame = sortedBuyBids.get(0).getTimeFrame();
+        GridLimit transLimit = tunnel.transLimit(sortedBuyBids.get(0).getTimeFrame());
+
+        if (interPoint.x <= transLimit.getLow()) {
+            Double nonMarketQuantity = transLimit.getLow() - interPoint.x;
+            tunnel.updateNonMarketQuantity(getStageId(), timeFrame, nonMarketQuantity);
+            if (Kit.eq(interPoint.x, 0D)) {
+                return;
+            }
+        } else if (interPoint.x > transLimit.getHigh()) {
+            interPoint.x = transLimit.getHigh();
+            Range<Double> bR = buyBrokenLine.get(interPoint.x);
+            Range<Double> sR = sellBrokenLine.get(interPoint.x);
+            if (bR == null || sR == null) {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+            interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
+        }
+
+        ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
+        ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
 
     }
 
 
     @MethodHandler
     public void step(CompCmd.Step command, Context context) {
+        StageId last = StageId.builder().compId(compId)
+                .compStage(compStage).roundId(roundId).tradeStage(tradeStage).marketStatus(marketStatus).build();
+
         this.compStage = command.getCompStage();
         this.roundId = command.getRoundId();
         this.tradeStage = command.getTradeStage();
         this.marketStatus = command.getMarketStatus();
         this.endingTimeStamp = command.getEndingTimeStamp();
-        context.publishPlaceHolderEvent(getAggregateId());
+        StageId now = StageId.builder().compId(compId)
+                .compStage(compStage).roundId(roundId).tradeStage(tradeStage).marketStatus(marketStatus).build();
+        CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
+        context.publish(stepped);
     }
 
 

@@ -6,6 +6,8 @@ import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.domain.ClearUtil;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import org.junit.jupiter.api.Assertions;
@@ -21,22 +23,33 @@ import java.util.stream.Collectors;
 public class ClearTest {
 
     @Test
+    @SuppressWarnings("UnstableApiUsage")
     public void interPointTest() {
 
-        Point<Double> point = ClearUtil.analyzeInterPoint(new ArrayList<>(), new ArrayList<>());
+        RangeMap<Double, Range<Double>> buyBrokenLine = ClearUtil.buildRangeMap(new ArrayList<>(), Double.MAX_VALUE, 0D);
+        RangeMap<Double, Range<Double>> sellBrokenLine = ClearUtil.buildRangeMap(new ArrayList<>(), 0D, Double.MAX_VALUE);
+
+        Point<Double> point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNull(point);
 
         Bid buyBid = Bid.builder().direction(Direction.BUY).quantity(100D).price(100D).build();
-        point = ClearUtil.analyzeInterPoint(Collect.asList(buyBid), new ArrayList<>());
+        buyBrokenLine = ClearUtil.buildRangeMap(Collect.asList(buyBid), Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(new ArrayList<>(), 0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNull(point);
 
         Bid sellBid = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
-        point = ClearUtil.analyzeInterPoint(Collect.asList(buyBid), Collect.asList(sellBid));
+        buyBrokenLine = ClearUtil.buildRangeMap(Collect.asList(buyBid), Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap( Collect.asList(sellBid), 0D, Double.MAX_VALUE);
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(0D, 150D));
 
         sellBid = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
-        point = ClearUtil.analyzeInterPoint(Collect.asList(buyBid), Collect.asList(sellBid));
+        buyBrokenLine = ClearUtil.buildRangeMap(Collect.asList(buyBid), Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap( Collect.asList(sellBid), 0D, Double.MAX_VALUE);
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(100D, 100D));
 
@@ -49,9 +62,13 @@ public class ClearTest {
         Bid sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         Bid sellBid3 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1, buyBid2).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1, sellBid2, sellBid3).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1, sellBid2, sellBid3).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(200D, 250D));
 
@@ -61,9 +78,14 @@ public class ClearTest {
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(100D, 175D));
 
@@ -74,9 +96,14 @@ public class ClearTest {
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(150D, 200D));
 
@@ -86,9 +113,14 @@ public class ClearTest {
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(150D, 200D));
 
@@ -99,9 +131,15 @@ public class ClearTest {
         sellBid0 = Bid.builder().direction(Direction.SELL).quantity(100D).price(100D).build();
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(200D, 200D));
 
@@ -112,9 +150,14 @@ public class ClearTest {
         sellBid1 = Bid.builder().direction(Direction.SELL).quantity(100D).price(200D).build();
         sellBid2 = Bid.builder().direction(Direction.SELL).quantity(100D).price(300D).build();
 
-        point = ClearUtil.analyzeInterPoint(
+        buyBrokenLine = ClearUtil.buildRangeMap(
                 Collect.asList(buyBid0, buyBid1).stream().sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList()),
-                Collect.asList(sellBid0, sellBid1, sellBid2).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()));
+                Double.MAX_VALUE, 0D);
+        sellBrokenLine = ClearUtil.buildRangeMap(
+                Collect.asList(sellBid0, sellBid1, sellBid2).stream().sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList()),
+                0D, Double.MAX_VALUE);
+
+        point = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         Assertions.assertNotNull(point);
         Assertions.assertEquals(point, new Point<>(200D, 200D));
     }

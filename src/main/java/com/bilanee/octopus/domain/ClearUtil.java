@@ -19,12 +19,9 @@ import java.util.stream.Stream;
 public class ClearUtil {
 
     @Nullable
-    public static Point<Double> analyzeInterPoint(List<Bid> sortedBuyBids, List<Bid> sortedSellBids) {
+    public static Point<Double> analyzeInterPoint(RangeMap<Double, Range<Double>> buyBrokenLine, RangeMap<Double, Range<Double>> sellBrokenLine) {
 
         Point<Double> interPoint = null;
-
-        RangeMap<Double, Range<Double>> buyBrokenLine = buildRangeMap(sortedBuyBids, Double.MAX_VALUE, 0D);
-        RangeMap<Double, Range<Double>> sellBrokenLine = buildRangeMap(sortedSellBids, 0D, Double.MAX_VALUE);
 
         List<Double> xes = Stream.of(buyBrokenLine.asMapOfRanges().keySet(), sellBrokenLine.asMapOfRanges().keySet())
                 .flatMap(Collection::stream)
@@ -52,7 +49,7 @@ public class ClearUtil {
         return interPoint;
     }
 
-    private static RangeMap<Double, Range<Double>> buildRangeMap(List<Bid> sortedBids, Double startY, Double endY) {
+    public static RangeMap<Double, Range<Double>> buildRangeMap(List<Bid> sortedBids, Double startY, Double endY) {
 
         RangeMap<Double, Range<Double>> rangeMap = TreeRangeMap.create();
 

@@ -1,6 +1,12 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.MetaUnit;
+import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.enums.MarketStatus;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
@@ -20,6 +26,7 @@ import java.util.Map;
 public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
+    final Tunnel tunnel;
 
     @EventRouter
     public void route(CompEvent.Created created, Context context) {
@@ -41,7 +48,19 @@ public class Routers implements EventRouters {
                 }
             }
         }
+    }
 
+
+    @EventRouter
+    public void routeForInterClear(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
+        boolean b1 = now.getTradeStage() == TradeStage.MO_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
+        if (!(b0 || b1)) {
+            return;
+        }
+        CompCmd.Clear command = CompCmd.Clear.builder().compId(now.getCompId()).build();
+        CommandBus.driveByEvent(command, stepped);
     }
 
 
