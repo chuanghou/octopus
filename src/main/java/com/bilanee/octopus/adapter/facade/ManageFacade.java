@@ -28,7 +28,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/manage")
+@RequestMapping("/manage")
 public class ManageFacade {
 
     final UniqueIdGetter uniqueIdGetter;
