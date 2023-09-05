@@ -25,6 +25,7 @@ import java.util.List;
 /**
  * 管理页面
  */
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/manage")

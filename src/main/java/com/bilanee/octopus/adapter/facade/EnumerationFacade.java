@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 枚举列表
+ */
 
 @RestController("/api/enumeration")
 @FieldDefaults(level = AccessLevel.PRIVATE)

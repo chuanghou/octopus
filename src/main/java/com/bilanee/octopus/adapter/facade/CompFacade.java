@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade;
 
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.InterClearVO;
+import com.bilanee.octopus.adapter.facade.vo.UnitVO;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
@@ -30,6 +31,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 竞赛相关
+ */
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)

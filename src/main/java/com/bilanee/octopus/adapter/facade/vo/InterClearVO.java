@@ -1,6 +1,5 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.adapter.facade.UnitVO;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.enums.TimeFrame;

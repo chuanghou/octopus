@@ -6,9 +6,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 测试相关
+ */
+
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/test")
+@RequestMapping("/test")
 public class TestFacade {
 
     @GetMapping("hello")
