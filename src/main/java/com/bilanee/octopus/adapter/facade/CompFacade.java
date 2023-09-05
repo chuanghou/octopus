@@ -67,7 +67,7 @@ public class CompFacade {
         List<Long> unitIds = bids.stream().map(Bid::getUnitId).collect(Collectors.toList());
         List<UnitVO> unitVOs = unitIds.stream().map(unitId -> domainTunnel.getByAggregateId(Unit.class, unitId))
                 .map(unit -> new UnitVO(unit.getUnitId(), unit.getMetaUnit().getName())).collect(Collectors.toList());
-        tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().entrySet().stream().map(e -> {
+        List<Object> collect = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().entrySet().stream().map(e -> {
             TimeFrame timeFrame = e.getKey();
             Collection<Bid> bs = e.getValue();
             List<Bid> sellBids = bs.stream().filter(bid -> bid.getDirection() == Direction.SELL).collect(Collectors.toList());
@@ -80,8 +80,8 @@ public class CompFacade {
             GridLimit transLimit = tunnel.transLimit(parsedStageId, timeFrame);
             List<Section> buildSections = buildSections(buyBids, Comparator.comparing(Bid::getPrice).reversed());
             List<Section> sellSections = buildSections(sellBids, Comparator.comparing(Bid::getPrice));
-
-        })
+            return null;
+        }).collect(Collectors.toList());
         return Result.success(null);
     }
 

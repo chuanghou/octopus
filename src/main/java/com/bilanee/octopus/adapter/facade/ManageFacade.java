@@ -22,7 +22,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 
-
+/**
+ * 管理页面
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/manage")
