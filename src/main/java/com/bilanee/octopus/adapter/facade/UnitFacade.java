@@ -1,15 +1,22 @@
 package com.bilanee.octopus.adapter.facade;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
 import com.bilanee.octopus.adapter.facade.po.RealtimeBidPO;
+import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.enums.CompStage;
+import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.UnitType;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
+import com.bilanee.octopus.infrastructure.entity.UnitDO;
+import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
@@ -38,6 +45,7 @@ public class UnitFacade {
 
     final Tunnel tunnel;
     final DomainTunnel domainTunnel;
+    final UnitDOMapper unitDOMapper;
 
     /**
      * 省间报价回填页面，包含省间年度，省间月度
@@ -46,14 +54,25 @@ public class UnitFacade {
      * @return 省间报价回填输入内容
      */
     @SuppressWarnings("unchecked")
-    @GetMapping("listInterUnitBidsVOs")
-    public Result<List<InterUnitBidsVO>> listInterUnitBidsVOs(String stageId, @RequestHeader String token) {
+    @GetMapping("listInterBidsVOs")
+    public Result<List<InterBidsVO>> listInterBidsVOs(String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
 
+
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsedStageId.getCompId())
+                .eq(UnitDO::getRoundId, parsedStageId.getRoundId())
+                .eq(UnitDO::getUserId, userId);
+
+        Map<Long, Unit> unitMap = Collect.transfer(unitDOMapper.selectList(queryWrapper), UnitAdapter.Convertor.INST::to).stream()
+                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection())
+                .collect(Collectors.toMap(Unit::getUnitId, u -> u));
+
+
         BidQuery bidQuery = BidQuery.builder().compId(parsedStageId.getCompId())
-                .userId(userId)
+                .unitIds(Collect.transfer(unitMap.values(), Unit::getUnitId, HashSet::new))
                 .roundId(parsedStageId.getRoundId())
                 .tradeStage(parsedStageId.getTradeStage())
                 .build();
@@ -61,10 +80,11 @@ public class UnitFacade {
 
         ListMultimap<Long, Bid> groupedByUnitId = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
-        List<InterUnitBidsVO> interUnitBidsVOS = groupedByUnitId.asMap().entrySet().stream().map(e -> {
+        List<InterBidsVO> interBidsVOs = unitMap.entrySet().stream().map(e -> {
             Long uId = e.getKey();
-            Collection<Bid> bs = e.getValue();
-            Unit unit = domainTunnel.getByAggregateId(Unit.class, uId);
+            Unit unit = e.getValue();
+            Collection<Bid> bs = groupedByUnitId.get(uId);
+
             GridLimit priceLimit = tunnel.priceLimit(unit.getMetaUnit().getUnitType());
 
             Map<TimeFrame, Collection<Bid>> map = bs.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap();
@@ -81,11 +101,13 @@ public class UnitFacade {
                         .balanceVOs(balanceVOs)
                         .build();
             }).collect(Collectors.toList());
-            return InterUnitBidsVO.builder().unitId(unit.getUnitId())
+            return InterBidsVO.builder().unitId(unit.getUnitId())
+                    .unitType(unit.getMetaUnit().getUnitType())
+                    .province(unit.getMetaUnit().getProvince())
                     .unitName(unit.getMetaUnit().getName()).priceLimit(priceLimit).interBidVOS(interBidVOS).build();
         }).collect(Collectors.toList());
 
-        return Result.success(interUnitBidsVOS);
+        return Result.success(interBidsVOs);
     }
 
     /**

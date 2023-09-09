@@ -7,6 +7,8 @@ import com.bilanee.octopus.basic.enums.TradeStage;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,7 +18,7 @@ public class BidQuery {
 
     Long compId;
     String userId;
-    Long unitId;
+    Set<Long> unitIds;
     Integer roundId;
     Province province;
     TradeStage tradeStage;

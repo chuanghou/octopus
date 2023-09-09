@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
 import com.bilanee.octopus.adapter.facade.vo.InterDealVO;
 import com.bilanee.octopus.adapter.facade.vo.UnitVO;
+import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -13,6 +14,7 @@ import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.demo.Section;
 import com.bilanee.octopus.domain.Comp;
+import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.ClearanceDO;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.ClearanceDOMapper;
@@ -75,14 +77,16 @@ public class CompFacade {
         List<InterClearance> interClearances = Collect.transfer(clearanceDOs, clearanceDO -> Json.parse(clearanceDO.getClearance(), InterClearance.class));
         Map<TimeFrame, InterClearanceVO> interClearVOs = interClearances.stream().map(Convertor.INST::to).collect(Collectors.toMap(InterClearanceVO::getTimeFrame, i -> i));
 
-        boolean ranking = parsedStageId.getCompStage() == CompStage.RANKING;
+        boolean ranking = tunnel.runningComp().getCompStage() == CompStage.RANKING;
 
         // 单元信息
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, parsedStageId.getCompId())
                 .eq(UnitDO::getRoundId, parsedStageId.getRoundId())
                 .eq(!ranking, UnitDO::getUserId, TokenUtils.getUserId(token));
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
-        List<UnitVO> unitVOs = Collect.transfer(unitDOs, unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getUnitName()));
+        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName()));
         interClearVOs.values().forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
 
         // 委托及成交信息

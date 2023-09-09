@@ -8,20 +8,21 @@ import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
 import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
+import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.TimeFrame;
-import com.bilanee.octopus.basic.enums.CompStage;
-import com.bilanee.octopus.basic.enums.MarketStatus;
-import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -60,7 +61,7 @@ public class CompTest {
     Tunnel tunnel;
 
     @Test
-    public void testDelay() throws InterruptedException {
+    public void testDelay() {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
@@ -111,7 +112,7 @@ public class CompTest {
         InterBidsPO interBidsPO = InterBidsPO.builder().stageId(stageId.toString()).bidPOs(bidPOs).build();
         Result<Void> result = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result.getSuccess());
-        BidQuery bidQuery = BidQuery.builder().unitId(unit.getUnitId()).build();
+        BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(unit.getUnitId())).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         long now = Clock.currentTimeMillis();
@@ -121,18 +122,145 @@ public class CompTest {
         bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() > now));
-        Result<List<InterUnitBidsVO>> listResult = unitFacade.listInterUnitBidsVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
+        Result<List<InterBidsVO>> listResult = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
         Assertions.assertTrue(listResult.getSuccess());
-        List<InterUnitBidsVO> data = listResult.getData();
+        List<InterBidsVO> data = listResult.getData();
         Assertions.assertEquals(data.size(), 1);
-        InterUnitBidsVO interUnitBidsVO = data.get(0);
-        Assertions.assertEquals(interUnitBidsVO.getUnitId(), unit.getUnitId());
-        Assertions.assertEquals(interUnitBidsVO.getUnitName(), unit.getMetaUnit().getName());
-        Assertions.assertEquals(interUnitBidsVO.getInterBidVOS().size(), 3);
+        InterBidsVO interBidsVO = data.get(0);
+        Assertions.assertEquals(interBidsVO.getUnitId(), unit.getUnitId());
+        Assertions.assertEquals(interBidsVO.getUnitName(), unit.getMetaUnit().getName());
+        Assertions.assertEquals(interBidsVO.getInterBidVOS().size(), 3);
+
+    }
 
 
 
+    @Test
+    public void testClearProcedure() {
 
+        // 创建比赛
+        List<UserVO> userVOs = manageFacade.listUserVOs();
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 1);
+            marketStageClearLengths.put(marketStage, 1);
+        }
+
+        // 比赛参数
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .compInitLength(1000)
+                .quitCompeteLength(1)
+                .quitResultLength(1)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(1)
+                .userIds(Collect.transfer(userVOs, UserVO::getUserId))
+                .build();
+        Result<Void> result = manageFacade.createComp(compCreatePO);
+        Assertions.assertTrue(result.getSuccess());
+
+        Comp comp = tunnel.runningComp();
+
+        CompCmd.Step command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.AN_INTER)
+                .marketStatus(MarketStatus.BID)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+        StageId rawStageId = tunnel.runningComp().getStageId();
+        StageId stageId = StageId.builder().compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.AN_INTER)
+                .marketStatus(MarketStatus.BID)
+                .build();
+        Assertions.assertEquals(rawStageId, stageId);
+
+        Result<List<InterBidsVO>> resultBidsVO0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Assertions.assertTrue(resultBidsVO0.getSuccess() && resultBidsVO0.getData().size() == 2);
+        Result<List<InterBidsVO>> resultBidsVO1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
+        Assertions.assertTrue(resultBidsVO1.getSuccess() && resultBidsVO1.getData().size() == 2);
+
+        InterBidsVO interBidsVO0 = resultBidsVO0.getData().stream()
+                .filter(u -> u.getProvince().equals(Province.TRANSFER) && u.getUnitType().equals(UnitType.GENERATOR))
+                .findFirst().orElseThrow((SysEx::unreachable));
+        Long unitId0 = interBidsVO0.getUnitId();
+
+        InterBidsVO interBidsVO1 = resultBidsVO0.getData().stream()
+                .filter(u -> u.getProvince().equals(Province.RECEIVER) && u.getUnitType().equals(UnitType.LOAD))
+                .findFirst().orElseThrow((SysEx::unreachable));
+
+
+        BidPO bidPO0 = BidPO.builder().unitId(unitId0).direction(Direction.SELL)
+                .timeFrame(TimeFrame.PEAK).price(100D).quantity(100D).build();
+        List<BidPO> list0 = Collect.asList(bidPO0, bidPO0, bidPO0);
+        BidPO bidPO1 = BidPO.builder().unitId(unitId0).direction(Direction.SELL)
+                .timeFrame(TimeFrame.FLAT).price(100D).quantity(100D).build();
+        List<BidPO> list1 = Collect.asList(bidPO1, bidPO1, bidPO1);
+        BidPO bidPO2 = BidPO.builder().unitId(unitId0).direction(Direction.SELL)
+                .timeFrame(TimeFrame.VALLEY).price(100D).quantity(100D).build();
+        List<BidPO> list2 = Collect.asList(bidPO2, bidPO2, bidPO2);
+        List<BidPO> bidPO0s = Stream.of(list0, list1, list2).flatMap(Collection::stream).collect(Collectors.toList());
+        InterBidsPO interBidsPO = InterBidsPO.builder().stageId(stageId.toString()).bidPOs(bidPO0s).build();
+        Result<Void> result0 = unitFacade.submitInterBidsPO(interBidsPO);
+        Assertions.assertTrue(result0.getSuccess());
+
+
+        Long unitId1 = interBidsVO1.getUnitId();
+
+        BidPO bidPO3 = BidPO.builder().unitId(unitId1).direction(Direction.BUY)
+                .timeFrame(TimeFrame.PEAK).price(100D).quantity(100D).build();
+        List<BidPO> list3 = Collect.asList(bidPO3, bidPO3, bidPO3);
+        BidPO bidPO4 = BidPO.builder().unitId(unitId1).direction(Direction.BUY)
+                .timeFrame(TimeFrame.FLAT).price(100D).quantity(100D).build();
+        List<BidPO> list4 = Collect.asList(bidPO4, bidPO4, bidPO4);
+        BidPO bidPO5 = BidPO.builder().unitId(unitId1).direction(Direction.BUY)
+                .timeFrame(TimeFrame.VALLEY).price(100D).quantity(100D).build();
+        List<BidPO> list5 = Collect.asList(bidPO5, bidPO5, bidPO5);
+        List<BidPO> bidPO1s = Stream.of(list3, list4, list5).flatMap(Collection::stream).collect(Collectors.toList());
+        InterBidsPO interBidsPO0 = InterBidsPO.builder().stageId(stageId.toString()).bidPOs(bidPO1s).build();
+
+        Result<Void> result1 = unitFacade.submitInterBidsPO(interBidsPO0);
+        Assertions.assertTrue(result1.getSuccess());
+
+        Result<List<InterBidsVO>> listResult0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Assertions.assertTrue(listResult0.getSuccess());
+        interBidsVO0 = listResult0.getData().stream().filter(i -> i.getUnitId().equals(unitId0)).findFirst().orElseThrow(SysEx::unreachable);
+        Assertions.assertEquals(3, interBidsVO0.getInterBidVOS().size());
+        interBidsVO0.getInterBidVOS().forEach(interBidVO -> Assertions.assertEquals(3, interBidVO.getBidVOs().size()));
+        Result<List<InterBidsVO>> listResult1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Assertions.assertTrue(listResult1.getSuccess());
+        Assertions.assertEquals(3, interBidsVO1.getInterBidVOS().size());
+        interBidsVO1 = listResult1.getData().stream().filter(i -> i.getUnitId().equals(unitId1)).findFirst().orElseThrow(SysEx::unreachable);
+        interBidsVO1.getInterBidVOS().forEach(interBidVO -> Assertions.assertEquals(3, interBidVO.getBidVOs().size()));
+
+        // 清算
+        command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.AN_INTER)
+                .marketStatus(MarketStatus.CLEAR)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+
+        stageId = StageId.builder().compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.AN_INTER)
+                .marketStatus(MarketStatus.CLEAR)
+                .build();
+
+        Result<List<InterClearanceVO>> clearance0 = compFacade.interClearVO(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Result<List<InterClearanceVO>> clearance1 = compFacade.interClearVO(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
+
+        Assertions.assertTrue(clearance0.getSuccess());
+        Assertions.assertTrue(clearance1.getSuccess());
     }
 
 }
