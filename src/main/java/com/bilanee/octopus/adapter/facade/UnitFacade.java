@@ -46,8 +46,8 @@ public class UnitFacade {
      * @return 省间报价回填输入内容
      */
     @SuppressWarnings("unchecked")
-    @GetMapping("listInterUnitVOs")
-    public Result<List<InterUnitVO>> listClUnitVOs(String stageId, @RequestHeader String token) {
+    @GetMapping("listInterUnitBidsVOs")
+    public Result<List<InterUnitBidsVO>> listInterUnitBidsVOs(String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
@@ -61,7 +61,7 @@ public class UnitFacade {
 
         ListMultimap<Long, Bid> groupedByUnitId = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
-        List<InterUnitVO> interUnitVOS = groupedByUnitId.asMap().entrySet().stream().map(e -> {
+        List<InterUnitBidsVO> interUnitBidsVOS = groupedByUnitId.asMap().entrySet().stream().map(e -> {
             Long uId = e.getKey();
             Collection<Bid> bs = e.getValue();
             Unit unit = domainTunnel.getByAggregateId(Unit.class, uId);
@@ -81,11 +81,11 @@ public class UnitFacade {
                         .balanceVOs(balanceVOs)
                         .build();
             }).collect(Collectors.toList());
-            return InterUnitVO.builder().unitId(unit.getUnitId())
+            return InterUnitBidsVO.builder().unitId(unit.getUnitId())
                     .unitName(unit.getMetaUnit().getName()).priceLimit(priceLimit).interBidVOS(interBidVOS).build();
         }).collect(Collectors.toList());
 
-        return Result.success(interUnitVOS);
+        return Result.success(interUnitBidsVOS);
     }
 
     /**

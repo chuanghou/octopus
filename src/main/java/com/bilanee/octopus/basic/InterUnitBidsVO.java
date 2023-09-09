@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class InterUnitVO {
+public class InterUnitBidsVO {
 
     /**
      * 单元id
