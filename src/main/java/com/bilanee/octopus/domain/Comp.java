@@ -234,7 +234,7 @@ public class Comp extends AggregateRoot {
         for (Bid sortedBid : sortedBids) {
             Section section = Section.builder().unitId(sortedBid.getUnitId())
                     .lx(x).y(sortedBid.getPrice()).rx(x + sortedBid.getQuantity()).build();
-            x += section.getRx();
+            x += sortedBid.getQuantity();
             sections.add(section);
         }
         return sections;
