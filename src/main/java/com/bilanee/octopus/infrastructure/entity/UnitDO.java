@@ -28,6 +28,7 @@ public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {
     Integer roundId;
     String userId;
     Long metaUnitId;
+    String unitName;
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> balance;
 

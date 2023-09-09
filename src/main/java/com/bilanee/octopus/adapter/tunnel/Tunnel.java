@@ -10,6 +10,7 @@ import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.*;
@@ -30,6 +31,8 @@ public class Tunnel {
     final CompDOMapper compDOMapper;
     final MarketSettingMapper marketSettingMapper;
     final TransLimitDOMapper transLimitDOMapper;
+    final ClearanceDOMapper clearanceDOMapper;
+
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -75,6 +78,11 @@ public class Tunnel {
         bidDOs.forEach(bidDOMapper::insert);
     }
 
+    public void updateBids(List<Bid> bids) {
+        List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
+        bidDOs.forEach(bidDOMapper::updateById);
+    }
+
     public Comp runningComp() {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
         CompDO compDO = compDOMapper.selectOne(queryWrapper);
@@ -95,7 +103,26 @@ public class Tunnel {
     //TODO minus already deal
     public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
         Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
-        return prepare.get(stageId.getTradeStage()).get(timeFrame);
+        GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
+        if (stageId.getTradeStage() == TradeStage.AN_INTER) {
+            return originalTransLimit;
+        } else if (stageId.getTradeStage() == TradeStage.MO_INTER) {
+            stageId = StageId.parse(stageId.toString());
+            stageId.setTradeStage(TradeStage.AN_INTER);
+            LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>()
+                    .eq(ClearanceDO::getStageId, stageId.toString())
+                    .eq(ClearanceDO::getTimeFrame, timeFrame)
+                    ;
+            ClearanceDO clearanceDO = clearanceDOMapper.selectOne(eq);
+            InterClearance interClearance = Json.parse(clearanceDO.getClearance(), InterClearance.class);
+            double dealQuantity = interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity();
+            return GridLimit.builder()
+                    .low(originalTransLimit.getLow() - dealQuantity)
+                    .high(originalTransLimit.getHigh() - dealQuantity)
+                    .build();
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
     }
 
     public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare() {
@@ -128,8 +155,13 @@ public class Tunnel {
     }
 
 
-    public void writeBackDbInterClear(WriteBackBO writeBackBO) {
-
+    public void persistInterClearance(InterClearance interClearance) {
+        StageId stageId = interClearance.getStageId();
+        ClearanceDO clearanceDO = ClearanceDO.builder().stageId(stageId.toString())
+                .timeFrame(interClearance.getTimeFrame())
+                .clearance(Json.toJson(interClearance))
+                .build();
+        clearanceDOMapper.insert(clearanceDO);
     }
 
     public void writeBackDbRoundId(Integer roundId) {

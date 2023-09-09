@@ -2,10 +2,11 @@ package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.adapter.tunnel.WriteBackBO;
+import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;
+import com.bilanee.octopus.demo.Section;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.base.StaticWire;
@@ -196,12 +197,47 @@ public class Comp extends AggregateRoot {
             ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
         }
 
-        // 回写数据库，给现货使用
-        WriteBackBO writeBackBO = WriteBackBO.builder().stageId(getStageId())
-                .timeFrame(timeFrame).marketQuantity(marketQuantity).nonMarketQuantity(nonMarketQuantity).build();
-        tunnel.writeBackDbInterClear(writeBackBO);
+        InterClearance.InterClearanceBuilder interClearBOBuilder = InterClearance.builder()
+                .stageId(getStageId()).timeFrame(timeFrame)
+                .nonMarketQuantity(nonMarketQuantity)
+                .marketQuantity(marketQuantity)
+                ;
 
+        Double buyDeclaredQuantity = sortedBuyBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
+        Double sellDeclaredQuantity = sortedSellBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
+        List<Deal> buyDeals = sortedBuyBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+        Double dealQuantity = buyDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        Double dealPrice = buyDeals.get(0).getPrice();
+        interClearBOBuilder.buyDeclaredQuantity(buyDeclaredQuantity)
+                .sellDeclaredQuantity(sellDeclaredQuantity)
+                .dealQuantity(dealQuantity)
+                .dealPrice(dealPrice);
 
+        GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
+
+        List<Section> buildSections = buildSections(sortedBuyBids);
+        List<Section> sellSections = buildSections(sortedSellBids);
+        interClearBOBuilder.buySections(buildSections)
+                .buyTerminus(new Point<>(buildSections.get(buildSections.size() - 1).getRx(), priceLimit.getHigh()))
+                .sellSections(sellSections)
+                .sellTerminus(new Point<>(sellSections.get(sellSections.size() -  1).getRx(), 0D))
+                .transLimit(transLimit)
+                ;
+        tunnel.persistInterClearance(interClearBOBuilder.build());
+        tunnel.updateBids(sortedBuyBids);
+        tunnel.updateBids(sortedSellBids);
+    }
+
+    private List<Section> buildSections(List<Bid> sortedBids) {
+        Double x = 0D;
+        List<Section> sections = new ArrayList<>();
+        for (Bid sortedBid : sortedBids) {
+            Section section = Section.builder().unitId(sortedBid.getUnitId())
+                    .lx(x).y(sortedBid.getPrice()).rx(x + sortedBid.getQuantity()).build();
+            x += section.getRx();
+            sections.add(section);
+        }
+        return sections;
     }
 
 

@@ -1,20 +1,26 @@
 package com.bilanee.octopus.adapter.facade;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
-import com.bilanee.octopus.adapter.facade.vo.InterClearVO;
+import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
+import com.bilanee.octopus.adapter.facade.vo.InterDealVO;
 import com.bilanee.octopus.adapter.facade.vo.UnitVO;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.demo.Section;
 import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.Unit;
+import com.bilanee.octopus.infrastructure.entity.ClearanceDO;
+import com.bilanee.octopus.infrastructure.entity.UnitDO;
+import com.bilanee.octopus.infrastructure.mapper.ClearanceDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +28,11 @@ import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -44,7 +48,7 @@ public class CompFacade {
     final CompDOMapper compDOMapper;
     final UnitDOMapper unitDOMapper;
     final DomainTunnel domainTunnel;
-
+    final ClearanceDOMapper clearanceDOMapper;
 
     /**
      * 当前运行竞赛查看
@@ -62,31 +66,51 @@ public class CompFacade {
      * @return 省间出清结果
      */
     @GetMapping("/interClearVO")
-    public Result<List<InterClearVO>> interClearVO(String stageId) {
-        InterClearVO interClearVO = InterClearVO.builder().build();
+    public Result<List<InterClearanceVO>> interClearVO(String stageId, @RequestHeader String token) {
         StageId parsedStageId = StageId.parse(stageId);
 
-        BidQuery bidQuery = BidQuery.builder().roundId(parsedStageId.getRoundId()).tradeStage(parsedStageId.getTradeStage()).build();
-        List<Bid> bids = tunnel.listBids(bidQuery);
-        List<Long> unitIds = bids.stream().map(Bid::getUnitId).collect(Collectors.toList());
-        List<UnitVO> unitVOs = unitIds.stream().map(unitId -> domainTunnel.getByAggregateId(Unit.class, unitId))
-                .map(unit -> new UnitVO(unit.getUnitId(), unit.getMetaUnit().getName())).collect(Collectors.toList());
-        List<Object> collect = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().entrySet().stream().map(e -> {
-            TimeFrame timeFrame = e.getKey();
-            Collection<Bid> bs = e.getValue();
-            List<Bid> sellBids = bs.stream().filter(bid -> bid.getDirection() == Direction.SELL).collect(Collectors.toList());
-            List<Bid> buyBids = bs.stream().filter(bid -> bid.getDirection() == Direction.BUY).collect(Collectors.toList());
-            Double sellDeclaredQuantity = sellBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
-            Double buyDeclaredQuantity = buyBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
-            List<Deal> buyDeals = sellBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
-            Double dealQuantity = buyDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-            Double dealPrice = buyDeals.get(0).getPrice();
-            GridLimit transLimit = tunnel.transLimit(parsedStageId, timeFrame);
-            List<Section> buildSections = buildSections(buyBids, Comparator.comparing(Bid::getPrice).reversed());
-            List<Section> sellSections = buildSections(sellBids, Comparator.comparing(Bid::getPrice));
-            return null;
-        }).collect(Collectors.toList());
-        return Result.success(null);
+        // 清算值
+        LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>().eq(ClearanceDO::getStageId, stageId);
+        List<ClearanceDO> clearanceDOs = clearanceDOMapper.selectList(eq);
+        List<InterClearance> interClearances = Collect.transfer(clearanceDOs, clearanceDO -> Json.parse(clearanceDO.getClearance(), InterClearance.class));
+        Map<TimeFrame, InterClearanceVO> interClearVOs = interClearances.stream().map(Convertor.INST::to).collect(Collectors.toMap(InterClearanceVO::getTimeFrame, i -> i));
+
+        boolean ranking = parsedStageId.getCompStage() == CompStage.RANKING;
+
+        // 单元信息
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, parsedStageId.getCompId())
+                .eq(UnitDO::getRoundId, parsedStageId.getRoundId())
+                .eq(!ranking, UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+        List<UnitVO> unitVOs = Collect.transfer(unitDOs, unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getUnitName()));
+        interClearVOs.values().forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
+
+        // 委托及成交信息
+        BidQuery bidQuery = BidQuery.builder()
+                .compId(parsedStageId.getCompId())
+                .roundId(parsedStageId.getRoundId())
+                .tradeStage(parsedStageId.getTradeStage())
+                .userId(ranking ? null : TokenUtils.getUserId(token))
+                .build();
+
+        tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((timeFrame, bids) -> {
+            List<InterDealVO> interDealVOs = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(e -> {
+                Long unitId = e.getKey();
+                Collection<Bid> unitBids = e.getValue();
+                List<Deal> deals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+                Double totalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                Double totalVolume = deals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
+                return InterDealVO.builder()
+                        .unitId(unitId)
+                        .averagePrice(totalVolume / totalQuantity)
+                        .totalQuantity(totalQuantity)
+                        .deals(deals)
+                        .build();
+            }).collect(Collectors.toList());
+            interClearVOs.get(timeFrame).setInterDealVOs(interDealVOs);
+        });
+
+        return Result.success(new ArrayList<>(interClearVOs.values()));
     }
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
@@ -124,6 +148,9 @@ public class CompFacade {
                     .build();
             compVO.setStageId(stageId);
         }
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        InterClearanceVO to(InterClearance interClearance);
 
     }
 

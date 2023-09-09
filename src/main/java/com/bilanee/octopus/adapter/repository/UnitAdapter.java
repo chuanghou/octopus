@@ -57,6 +57,7 @@ public class UnitAdapter implements DaoAdapter<Unit> {
         @AfterMapping
         default void after(Unit unit, @MappingTarget UnitDO unitDO) {
             unitDO.setMetaUnitId(unit.getMetaUnit().getMetaUnitId());
+            unitDO.setUnitName(unit.getMetaUnit().getName());
         }
 
     }
