@@ -42,6 +42,8 @@ public class Unit extends AggregateRoot {
     static private UniqueIdGetter uniqueIdGetter;
     @StaticWire
     static private Tunnel tunnel;
+    @StaticWire
+    static private IntraManager intraManager;
 
     @Override
     public String getAggregateId() {
@@ -100,8 +102,24 @@ public class Unit extends AggregateRoot {
 
 
     @MethodHandler
-    public void handle(UnitCmd.RealtimeBid command, Context context) {
+    public void handle(UnitCmd.IntraBid command, Context context) {
+        Bid bid = command.getBid();
+        bid.setBidId(uniqueIdGetter.get());
+        bid.setUserId(userId);
+        bid.setCompId(command.getStageId().getCompId());
+        bid.setProvince(metaUnit.getProvince());
+        bid.setRoundId(tunnel.runningComp().getRoundId());
+        bid.setTradeStage(command.getStageId().getTradeStage());
+        bid.setDeclareTimeStamp(Clock.currentTimeMillis());
+        bid.setBidStatus(BidStatus.NEW_DECELERATED);
+        intraManager.declare(bid);
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
 
+    @MethodHandler
+    public void handle(UnitCmd.IntraCancel command, Context context) {
+        intraManager.cancel(command.getCancelBidId());
+        context.publishPlaceHolderEvent(getAggregateId());
     }
 
 

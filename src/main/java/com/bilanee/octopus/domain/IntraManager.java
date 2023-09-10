@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor
@@ -41,7 +40,7 @@ public class IntraManager implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws Exception {
+    public void run(ApplicationArguments args) {
 
         for (Province province : Province.values()) {
             for (TimeFrame timeFrame : TimeFrame.values()) {

@@ -3,7 +3,8 @@ package com.bilanee.octopus.domain;
 import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
-import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -61,25 +62,34 @@ public class UnitCmd {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class RealtimeBid extends Command {
+    static public class IntraBid extends Command {
 
-        Long compId;
-
-        CompStage compStage;
-        Integer roundId;
-        TradeStage tradeStage;
-        MarketStatus marketStatus;
-
-        Long endingTimeStamp;
+        StageId stageId;
+        Bid bid;
 
         @Override
         public String getAggregateId() {
-            return compId.toString();
+            return bid.getUnitId().toString();
         }
 
     }
 
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class IntraCancel extends Command{
 
+        Long unitId;
+        Long cancelBidId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+    }
 
 }

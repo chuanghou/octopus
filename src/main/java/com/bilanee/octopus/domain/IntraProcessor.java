@@ -13,9 +13,7 @@ import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import lombok.AccessLevel;
-
 import lombok.experimental.FieldDefaults;
-
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -101,16 +99,12 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     private void doClose() {
 
-        buyPriorityQueue.forEach(bid -> {
-            bid.setBidStatus(BidStatus.CANCELLED);
-        });
+        buyPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
-
-        sellPriorityQueue.forEach(bid -> {
-            bid.setBidStatus(BidStatus.CANCELLED);
-        });
+        buyPriorityQueue.clear();
+        sellPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
-
+        sellPriorityQueue.clear();
     }
 
     private void doProcessCancel(Long cancelBidId) {

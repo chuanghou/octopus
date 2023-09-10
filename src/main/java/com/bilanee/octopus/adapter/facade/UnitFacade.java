@@ -4,7 +4,8 @@ package com.bilanee.octopus.adapter.facade;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
-import com.bilanee.octopus.adapter.facade.po.RealtimeBidPO;
+import com.bilanee.octopus.adapter.facade.po.IntraBidPO;
+import com.bilanee.octopus.adapter.facade.po.IntraCancelPO;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -13,12 +14,12 @@ import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
+import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
-import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +42,8 @@ import java.util.stream.Collectors;
 public class UnitFacade {
 
     final Tunnel tunnel;
-    final DomainTunnel domainTunnel;
     final UnitDOMapper unitDOMapper;
+    final BidDOMapper bidDOMapper;
 
     /**
      * 省间报价回填页面，包含省间年度，省间月度
@@ -128,9 +129,24 @@ public class UnitFacade {
     }
 
     @PostMapping("submitIntraBidPO")
-    public Result<Void> submitIntraBidPO(RealtimeBidPO realtimeBidPO) {
+    public Result<Void> submitIntraBidPO(IntraBidPO intraBidPO) {
+        StageId pStageId = StageId.parse(intraBidPO.getStageId());
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        UnitCmd.IntraBid command = UnitCmd.IntraBid.builder().bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
+        CommandBus.accept(command, new HashMap<>());
+        return Result.success();
+    }
 
-        return null;
+    @PostMapping("submitIntraCancelPO")
+    public Result<Void> submitIntraBidPO(IntraCancelPO intraCancelPO) {
+        StageId pStageId = StageId.parse(intraCancelPO.getStageId());
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        Long unitId = bidDOMapper.selectById(intraCancelPO.getBidId()).getUnitId();
+        UnitCmd.IntraCancel command = UnitCmd.IntraCancel.builder().unitId(unitId).cancelBidId(intraCancelPO.getBidId()).build();
+        CommandBus.accept(command, new HashMap<>());
+        return Result.success();
     }
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,

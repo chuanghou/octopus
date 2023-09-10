@@ -3,16 +3,14 @@ package com.bilanee.octopus.adapter.facade.po;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RealtimeBidPO {
+public class IntraCancelPO {
 
     /**
      * 系统阶段id
@@ -21,9 +19,8 @@ public class RealtimeBidPO {
     String stageId;
 
     /**
-     * 省内竞赛的量价报单
+     * 待取消的量价单Id
      */
-    @NotNull @Valid
-    BidPO bidPO;
+    Long bidId;
 
 }
