@@ -12,9 +12,7 @@ import javax.validation.constraints.NotBlank;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserEditPO {
 
-    @NotBlank
     String password;
-    @NotBlank
     String userName;
 
 }

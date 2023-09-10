@@ -13,6 +13,7 @@ import com.stellariver.milky.common.tool.common.Kit;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -54,8 +55,13 @@ public class UserFacade {
     public Result<Void> edit(@RequestBody UserEditPO userEditPO, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         UserDO userDO = userDOMapper.selectById(userId);
-        userDO.setPassword(userEditPO.getPassword());
-        userDO.setUserName(userEditPO.getUserName());
+        if (StringUtils.isNotBlank(userEditPO.getUserName())) {
+            userDO.setUserName(userEditPO.getUserName());
+        }
+        if (StringUtils.isNotBlank(userEditPO.getPassword())) {
+            userDO.setPassword(userEditPO.getPassword());
+        }
+        userDOMapper.updateById(userDO);
         return Result.success();
     }
 
