@@ -1,10 +1,14 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.infrastructure.entity.BidDO;
+import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -37,6 +41,7 @@ public class Unit extends AggregateRoot {
     String userId;
     MetaUnit metaUnit;
     Map<TimeFrame, Map<Direction, Double>> balance;
+    Direction stageFourDirection;
 
     @StaticWire
     static private UniqueIdGetter uniqueIdGetter;
@@ -44,6 +49,8 @@ public class Unit extends AggregateRoot {
     static private Tunnel tunnel;
     @StaticWire
     static private IntraManager intraManager;
+    @StaticWire
+    static private BidDOMapper bidDOMapper;
 
     @Override
     public String getAggregateId() {
@@ -99,10 +106,27 @@ public class Unit extends AggregateRoot {
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
+    @MethodHandler
+    public void handle(UnitCmd.InterDeduct command, Context context) {
+        StageId stageId = tunnel.runningComp().getStageId();
+        BidQuery bidQuery = BidQuery.builder().compId(stageId.getCompId())
+                .roundId(stageId.getRoundId())
+                .tradeStage(stageId.getTradeStage())
+                .unitIds(Collect.asSet(unitId)).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((timeFrame, bs) -> bs.forEach(bid -> {
+            Double originalBalance = balance.get(timeFrame).get(bid.getDirection());
+            Double dealed = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            balance.get(timeFrame).put(bid.getDirection(), originalBalance - dealed);
+        }));
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
 
 
     @MethodHandler
     public void handle(UnitCmd.IntraBid command, Context context) {
+
         Bid bid = command.getBid();
         bid.setBidId(uniqueIdGetter.get());
         bid.setUserId(userId);
@@ -112,6 +136,20 @@ public class Unit extends AggregateRoot {
         bid.setTradeStage(command.getStageId().getTradeStage());
         bid.setDeclareTimeStamp(Clock.currentTimeMillis());
         bid.setBidStatus(BidStatus.NEW_DECELERATED);
+
+        TradeStage tradeStage = tunnel.runningComp().getStageId().getTradeStage();
+        if (tradeStage == TradeStage.MO_INTRA) {
+            if (stageFourDirection == null) {
+                stageFourDirection = bid.getDirection();
+            }
+            BizEx.trueThrow(bid.getDirection() != stageFourDirection, ErrorEnums.PARAM_FORMAT_WRONG.message("第4阶段报单必须保持同一个方向"));
+        }
+
+        Double originalBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        BizEx.trueThrow(originalBalance < bid.getBalance(), ErrorEnums.PARAM_FORMAT_WRONG.message("报单超过持仓量"));
+
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance - bid.getBalance());
+
         intraManager.declare(bid);
         context.publishPlaceHolderEvent(getAggregateId());
     }
@@ -122,6 +160,23 @@ public class Unit extends AggregateRoot {
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
+    @MethodHandler
+    public void handle(UnitCmd.IntraCancelled command, Context context) {
+        Bid bid = tunnel.getByBidId(command.getCancelBidId());
+        Double originalBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance - bid.getBalance());
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
+    public void handle(UnitCmd.FillBalance command, Context context) {
+        balance.forEach(((timeFrame, balances) -> {
+            Direction generalDirection = metaUnit.getUnitType().generalDirection();
+            Double reverseBalance = metaUnit.getCapacity().get(timeFrame).get(generalDirection) - balances.get(generalDirection);
+            balances.put(generalDirection.opposite(), reverseBalance);
+        }));
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

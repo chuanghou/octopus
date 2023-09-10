@@ -2,17 +2,23 @@ package com.bilanee.octopus.adapter.tunnel;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
+import com.bilanee.octopus.domain.IntraSymbol;
+import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Component;
@@ -32,6 +38,9 @@ public class Tunnel {
     final MarketSettingMapper marketSettingMapper;
     final TransLimitDOMapper transLimitDOMapper;
     final ClearanceDOMapper clearanceDOMapper;
+    final HistoryMarketDOMapper historyMarketDOMapper;
+    final RealtimeMarketDOMapper realtimeMarketDOMapper;
+    final UnitDOMapper unitDOMapper;
 
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
@@ -67,6 +76,21 @@ public class Tunnel {
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
 
+    public Bid getByBidId(Long bidId) {
+        BidDO bidDO = bidDOMapper.selectById(bidId);
+        return Convertor.INST.to(bidDO);
+    }
+
+
+    public List<Unit> listUnits(Long compId, Integer roundId, String userId) {
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(compId != null, UnitDO::getCompId, compId)
+                .eq(roundId != null, UnitDO::getRoundId, roundId)
+                .eq(StringUtils.isNotBlank(userId), UnitDO::getUserId, userId);
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+        return Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to);
+    }
+
     public void coverBids(List<Bid> bids) {
         List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
         BidDO bidDO = bidDOs.get(0);
@@ -87,6 +111,20 @@ public class Tunnel {
         List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
         bidDOs.forEach(bidDOMapper::updateById);
     }
+
+    public void record(IntraMarketHistoryDO intraMarketHistoryDO, IntraMarketRealtimeDO intraMarketRealtimeDO) {
+        historyMarketDOMapper.insert(intraMarketHistoryDO);
+        LambdaQueryWrapper<IntraMarketRealtimeDO> eq = new LambdaQueryWrapper<IntraMarketRealtimeDO>()
+                .eq(IntraMarketRealtimeDO::getStageId, intraMarketRealtimeDO.getStageId())
+                .eq(IntraMarketRealtimeDO::getProvince, intraMarketRealtimeDO.getProvince())
+                .eq(IntraMarketRealtimeDO::getTimeFrame, intraMarketRealtimeDO.getTimeFrame());
+        if (realtimeMarketDOMapper.selectOne(eq) == null) {
+            realtimeMarketDOMapper.insert(intraMarketRealtimeDO);
+        } else {
+            realtimeMarketDOMapper.update(intraMarketRealtimeDO, eq);
+        }
+    }
+
 
     public Comp runningComp() {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");

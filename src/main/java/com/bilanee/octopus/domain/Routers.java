@@ -69,5 +69,20 @@ public class Routers implements EventRouters {
         }
     }
 
+    @EventRouter
+    public void routeForFillReverse(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.BID;
+        if (b0) {
+
+            List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
+            units.forEach(unit -> {
+                UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(unit.getUnitId()).build();
+                CommandBus.driveByEvent(command, stepped);
+            });
+        }
+    }
+
+
 
 }

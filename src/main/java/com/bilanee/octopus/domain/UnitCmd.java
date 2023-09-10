@@ -55,6 +55,23 @@ public class UnitCmd {
 
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class InterDeduct extends Command {
+
+        Long unitId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+
+    }
+
 
     @Data
     @Builder
@@ -90,6 +107,41 @@ public class UnitCmd {
         public String getAggregateId() {
             return unitId.toString();
         }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class IntraCancelled extends Command{
+
+        Long unitId;
+        Long cancelBidId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+    }
+
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class FillBalance extends Command {
+
+        Long unitId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+
     }
 
 }

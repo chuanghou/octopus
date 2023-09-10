@@ -44,8 +44,9 @@ public class IntraManager implements ApplicationRunner {
 
         for (Province province : Province.values()) {
             for (TimeFrame timeFrame : TimeFrame.values()) {
-                IntraProcessor intraProcessor = new IntraProcessor(tunnel);
-                intraProcessors.put(new IntraSymbol(province, timeFrame), intraProcessor);
+                IntraSymbol intraSymbol = new IntraSymbol(province, timeFrame);
+                IntraProcessor intraProcessor = new IntraProcessor(tunnel, intraSymbol);
+                intraProcessors.put(intraSymbol, intraProcessor);
             }
         }
 

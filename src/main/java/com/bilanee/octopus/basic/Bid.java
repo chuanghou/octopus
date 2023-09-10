@@ -32,4 +32,8 @@ public class Bid {
     Long cancelledTimeStamp;
     BidStatus bidStatus;
 
+    public Double getBalance() {
+        return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+    }
+
 }
