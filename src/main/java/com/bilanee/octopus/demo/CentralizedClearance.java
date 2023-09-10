@@ -1,11 +1,9 @@
 package com.bilanee.octopus.demo;
 
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Data
 @Builder

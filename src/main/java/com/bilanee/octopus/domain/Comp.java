@@ -1,8 +1,8 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
-import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.tunnel.InterClearance;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;

@@ -3,6 +3,7 @@ package com.bilanee.octopus.domain;
 import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.Point;
+import com.bilanee.octopus.basic.enums.BidStatus;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
@@ -118,14 +119,19 @@ public class ClearUtil {
         Double originalAverageBidsQuantity = averageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
         averageBids.forEach(b -> {
             double averageQuantity = (averageBidsQuantity / originalAverageBidsQuantity) * b.getQuantity();
-            Deal deal = Deal.builder().dealId(uniqueIdGetter.get())
-                    .quantity(averageQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            Deal deal = Deal.builder().quantity(averageQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
         });
         notAverageBids.forEach(b -> {
-            Deal deal = Deal.builder().dealId(uniqueIdGetter.get())
-                    .quantity(b.getQuantity()).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            Deal deal = Deal.builder().quantity(b.getQuantity()).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
+        });
+
+        bids.forEach(bid -> {
+            Double dealQuantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            if (dealQuantity > 0) {
+                bid.setBidStatus(dealQuantity < bid.getQuantity() ? BidStatus.PART_DEAL : BidStatus.COMPLETE_DEAL);
+            }
         });
     }
 

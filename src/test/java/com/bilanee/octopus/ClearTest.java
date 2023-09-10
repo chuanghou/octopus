@@ -2,8 +2,8 @@ package com.bilanee.octopus;
 
 import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.Deal;
-import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.Point;
+import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.domain.ClearUtil;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Range;

@@ -78,6 +78,11 @@ public class Tunnel {
         bidDOs.forEach(bidDOMapper::insert);
     }
 
+    public void insertBid(Bid bid) {
+        BidDO bidDO = Convertor.INST.to(bid);
+        bidDOMapper.insert(bidDO);
+    }
+
     public void updateBids(List<Bid> bids) {
         List<BidDO> bidDOs = Collect.transfer(bids, Convertor.INST::to);
         bidDOs.forEach(bidDOMapper::updateById);
