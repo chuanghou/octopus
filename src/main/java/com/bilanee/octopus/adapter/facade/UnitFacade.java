@@ -128,6 +128,11 @@ public class UnitFacade {
         return Result.success();
     }
 
+    /**
+     * 省内报价接口
+     * @param intraBidPO 省内报价请求结构体
+     * @return 报单结果
+     */
     @PostMapping("submitIntraBidPO")
     public Result<Void> submitIntraBidPO(IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
@@ -138,6 +143,11 @@ public class UnitFacade {
         return Result.success();
     }
 
+    /**
+     * 省内撤单接口
+     * @param intraCancelPO 省内撤单请求结构体
+     * @return 报单结果
+     */
     @PostMapping("submitIntraCancelPO")
     public Result<Void> submitIntraBidPO(IntraCancelPO intraCancelPO) {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
