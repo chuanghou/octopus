@@ -86,7 +86,7 @@ public class CompFacade {
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
         List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                 .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
-        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName()));
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
         interClearVOs.values().forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
 
         // 委托及成交信息

@@ -6,6 +6,7 @@ import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
 import com.bilanee.octopus.adapter.facade.po.IntraBidPO;
 import com.bilanee.octopus.adapter.facade.po.IntraCancelPO;
+import com.bilanee.octopus.adapter.facade.vo.UnitVO;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -44,6 +45,24 @@ public class UnitFacade {
     final Tunnel tunnel;
     final UnitDOMapper unitDOMapper;
     final BidDOMapper bidDOMapper;
+
+    /**
+     * 本轮被分配的机组信息
+     * @param stageId 阶段id
+     * @param token 前端携带的token
+     * @return 本轮被分配的机组信息
+     */
+    @GetMapping("listAssignUnitVOs")
+    public Result<List<UnitVO>> listAssignUnitVOs(String stageId, @RequestHeader String token) {
+        StageId parsedStageId = StageId.parse(stageId);
+        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
+        List<UnitVO> unitVOs = Collect.transfer(units, unit -> UnitVO.builder()
+                .unitId(unit.getUnitId())
+                .unitName(unit.getMetaUnit().getName())
+                .metaUnit(unit.getMetaUnit()).build());
+        return Result.success(unitVOs);
+    }
+
 
     /**
      * 省间报价回填页面，包含省间年度，省间月度
