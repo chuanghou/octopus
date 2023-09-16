@@ -30,6 +30,20 @@ public class WsHandler {
         }
     }
 
+    @SneakyThrows
+    static public void push(String userId, WsMessage wsMessage) {
+        Session session = sessions.get(userId);
+        if (session == null) {
+            log.warn("userId: {} not login, wsMessage: {}", userId, wsMessage.toString());
+            return;
+        }
+        session.getBasicRemote().sendText(Json.toJson(wsMessage));
+    }
+
+    public static void main(String[] args) {
+        System.out.println(TokenUtils.sign("1000"));
+    }
+
     @OnOpen
     public void onOpen(Session session) {
         String token = session.getRequestParameterMap().get("token").get(0);
@@ -52,14 +66,5 @@ public class WsHandler {
         log.error(session.toString(), error);
     }
 
-    @SneakyThrows
-    static public void push(String userId, WsMessage wsMessage) {
-        Session session = sessions.get(userId);
-        if (session == null) {
-            log.warn("userId: {} not login, wsMessage: {}", userId, wsMessage.toString());
-            return;
-        }
-        session.getBasicRemote().sendText(Json.toJson(wsMessage));
-    }
 
 }

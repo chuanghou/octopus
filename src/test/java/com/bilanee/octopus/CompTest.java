@@ -141,6 +141,7 @@ public class CompTest {
     @Test
     public void testClearProcedure() throws InterruptedException {
 
+        Thread.sleep(3000);
         // 创建比赛
         List<UserVO> userVOs = manageFacade.listUserVOs();
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();

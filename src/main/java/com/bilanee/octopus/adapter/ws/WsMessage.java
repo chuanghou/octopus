@@ -10,5 +10,5 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class WsMessage {
     WsTopic wsTopic;
-    Object entity;
+    Object body;
 }
