@@ -25,6 +25,7 @@ public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
     final Tunnel tunnel;
+    final IntraManager intraManager;
 
     @EventRouter
     public void route(CompEvent.Created created, Context context) {
@@ -49,6 +50,9 @@ public class Routers implements EventRouters {
     }
 
 
+    /**
+     * 年度省间出清和月度省间出清，主要是为了清算集中竞价结果，算成交价格，确定各个量价最后的成交数量
+     */
     @EventRouter
     public void routeForInterClear(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
@@ -64,6 +68,20 @@ public class Routers implements EventRouters {
             UnitCmd.InterDeduct interDeduct = UnitCmd.InterDeduct.builder().unitId(unit.getUnitId()).build();
             CommandBus.driveByEvent(interDeduct, stepped);
         } );
+    }
+
+    /**
+     * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
+     */
+    @EventRouter
+    public void routeForIntraClear(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.AN_INTRA && now.getMarketStatus() == MarketStatus.CLEAR;
+        boolean b1 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.CLEAR;
+        if (!(b0 || b1)) {
+            return;
+        }
+        intraManager.close();
     }
 
     @EventRouter

@@ -12,6 +12,7 @@ import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.BidStatus;
+import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeType;
 import com.bilanee.octopus.domain.Unit;
@@ -142,9 +143,11 @@ public class UnitFacade {
 
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTER, PARAM_FORMAT_WRONG.message("当前为中长期省间报价阶段"));
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTER,
+                PARAM_FORMAT_WRONG.message("当前为中长期省省间报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
         List<BidPO> bidPOs = interBidsPO.getBidPOs();
         UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
                 .bids(Collect.transfer(bidPOs, Convertor.INST::to))
@@ -162,10 +165,17 @@ public class UnitFacade {
     public Result<Void> submitIntraBidPO(IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA, PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-        UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder().bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA,
+                PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+
+        UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder()
+                .bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
         CommandBus.accept(command, new HashMap<>());
+
         return Result.success();
     }
 
@@ -175,10 +185,16 @@ public class UnitFacade {
      * @return 报单结果
      */
     @PostMapping("submitIntraCancelPO")
-    public Result<Void> submitIntraBidPO(IntraCancelPO intraCancelPO) {
+    public Result<Void> submitIntraCancelPO(IntraCancelPO intraCancelPO) {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
+
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA,
+                PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("竞价阶段已经关闭，未达成挂牌，将由系统自动撤单"));
+
         BidDO bidDO = bidDOMapper.selectById(intraCancelPO.getBidId());
         boolean b0 = bidDO.getBidStatus() == BidStatus.NEW_DECELERATED;
         boolean b1 = bidDO.getBidStatus() == BidStatus.PART_DEAL;
