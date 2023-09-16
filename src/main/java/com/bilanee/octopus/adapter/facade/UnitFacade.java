@@ -11,9 +11,11 @@ import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
+import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
@@ -157,7 +159,7 @@ public class UnitFacade {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
         BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-        UnitCmd.IntraBid command = UnitCmd.IntraBid.builder().bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
+        UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder().bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
         CommandBus.accept(command, new HashMap<>());
         return Result.success();
     }
@@ -172,8 +174,12 @@ public class UnitFacade {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
         BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-        Long unitId = bidDOMapper.selectById(intraCancelPO.getBidId()).getUnitId();
-        UnitCmd.IntraCancel command = UnitCmd.IntraCancel.builder().unitId(unitId).cancelBidId(intraCancelPO.getBidId()).build();
+        BidDO bidDO = bidDOMapper.selectById(intraCancelPO.getBidId());
+        boolean b0 = bidDO.getBidStatus() == BidStatus.NEW_DECELERATED;
+        boolean b1 = bidDO.getBidStatus() == BidStatus.PART_DEAL;
+        BizEx.falseThrow(b0 || b1, ErrorEnums.PARAM_FORMAT_WRONG.message("当前报单处于处于不可撤状态"));
+        Long unitId = bidDO.getUnitId();
+        UnitCmd.IntraBidCancel command = UnitCmd.IntraBidCancel.builder().unitId(unitId).cancelBidId(intraCancelPO.getBidId()).build();
         CommandBus.accept(command, new HashMap<>());
         return Result.success();
     }

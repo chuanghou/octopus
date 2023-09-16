@@ -7,13 +7,14 @@ import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
+import com.bilanee.octopus.basic.enums.Operation;
 import com.bilanee.octopus.infrastructure.entity.Ask;
 import com.bilanee.octopus.infrastructure.entity.IntraMarketHistoryDO;
 import com.bilanee.octopus.infrastructure.entity.IntraMarketRealtimeDO;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -65,41 +66,33 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     public void declare(Bid bid) {
         disruptor.publishEvent((rtBidContainer, sequence) -> {
-            rtBidContainer.setClose(false);
-            rtBidContainer.setCancelBidId(null);
+            rtBidContainer.setOperation(Operation.DECLARE);
             rtBidContainer.setDeclareBid(bid);
         });
     }
 
-    public void cancel(Long cancelBidId) {
+    public void cancel(Long cancelBidId, Direction cancelBidDirection) {
         disruptor.publishEvent((rtBidContainer, sequence) -> {
-            rtBidContainer.setClose(false);
+            rtBidContainer.setOperation(Operation.CANCEL);
             rtBidContainer.setCancelBidId(cancelBidId);
-            rtBidContainer.setDeclareBid(null);
+            rtBidContainer.setCancelBidDirection(cancelBidDirection);
         });
     }
 
-    public void cancelAll() {
-        disruptor.publishEvent((rtBidContainer, sequence) -> {
-            rtBidContainer.setClose(true);
-            rtBidContainer.setDeclareBid(null);
-            rtBidContainer.setCancelBidId(null);
-        });
+    public void close() {
+        disruptor.publishEvent((rtBidContainer, sequence) -> rtBidContainer.setOperation(Operation.CLOSE));
     }
 
 
     @Override
     public void onEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
-        if (event.getDeclareBid() != null){
-            doProcessNewBid(event.getDeclareBid());
-        } else if (event.getCancelBidId() != null) {
-            doProcessCancel(event.getCancelBidId());
-        } else if (event.getClose()) {
+        if (event.getOperation() == Operation.DECLARE) {
+            doNewBid(event.getDeclareBid());
+        } else if (event.getOperation() == Operation.CANCEL) {
+            doCancel(event.getCancelBidId(), event.getCancelBidDirection());
+        } else if (event.getOperation() == Operation.CLOSE) {
             doClose();
-        } else {
-            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
-
     }
 
     private void doClose() {
@@ -107,7 +100,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         buyPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
         buyPriorityQueue.forEach(bid -> {
-            UnitCmd.IntraCancelled command = UnitCmd.IntraCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+            UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
             CommandBus.accept(command, new HashMap<>());
         });
         buyPriorityQueue.clear();
@@ -115,38 +108,29 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         sellPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
         sellPriorityQueue.forEach(bid -> {
-            UnitCmd.IntraCancelled command = UnitCmd.IntraCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+            UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
             CommandBus.accept(command, new HashMap<>());
         });
         sellPriorityQueue.clear();
     }
 
-    private void doProcessCancel(Long cancelBidId) {
-        boolean b = buyPriorityQueue.removeIf(bid -> {
+    private void doCancel(Long cancelBidId, Direction cancelBidDirection) {
+        PriorityQueue<Bid> bids = cancelBidDirection == Direction.BUY ? buyPriorityQueue : sellPriorityQueue;
+        boolean b = bids.removeIf(bid -> {
             if (bid.getBidId().equals(cancelBidId)) {
                 bid.setBidStatus(BidStatus.CANCELLED);
                 tunnel.updateBids(Collect.asList(bid));
-                UnitCmd.IntraCancelled command = UnitCmd.IntraCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
+                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
                 CommandBus.accept(command, new HashMap<>());
                 return true;
             }
             return false;
         });
-        if ( !b ) {
-            buyPriorityQueue.removeIf(bid -> {
-                if (bid.getBidId().equals(cancelBidId)) {
-                    bid.setBidStatus(BidStatus.CANCELLED);
-                    tunnel.updateBids(Collect.asList(bid));
-                    UnitCmd.IntraCancelled command = UnitCmd.IntraCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
-                    CommandBus.accept(command, new HashMap<>());
-                    return true;
-                }
-                return false;
-            });
-        }
+        BizEx.falseThrow(b, ErrorEnums.SYS_EX.message("无可撤报单" + cancelBidId));
     }
 
-    public void doProcessNewBid(Bid declareBid) {
+    public void doNewBid(Bid declareBid) {
         declareBid.setDeclareTimeStamp(Clock.currentTimeMillis());
         declareBid.setBidStatus(BidStatus.NEW_DECELERATED);
         tunnel.insertBid(declareBid);

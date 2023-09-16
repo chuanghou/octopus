@@ -7,7 +7,6 @@ import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
@@ -125,7 +124,7 @@ public class Unit extends AggregateRoot {
 
 
     @MethodHandler
-    public void handle(UnitCmd.IntraBid command, Context context) {
+    public void handle(UnitCmd.IntraBidDeclare command, Context context) {
 
         Bid bid = command.getBid();
         bid.setBidId(uniqueIdGetter.get());
@@ -155,16 +154,16 @@ public class Unit extends AggregateRoot {
     }
 
     @MethodHandler
-    public void handle(UnitCmd.IntraCancel command, Context context) {
+    public void handle(UnitCmd.IntraBidCancel command, Context context) {
         intraManager.cancel(command.getCancelBidId());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
     @MethodHandler
-    public void handle(UnitCmd.IntraCancelled command, Context context) {
+    public void handle(UnitCmd.IntraBidCancelled command, Context context) {
         Bid bid = tunnel.getByBidId(command.getCancelBidId());
         Double originalBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance - bid.getBalance());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance + bid.getBalance());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 

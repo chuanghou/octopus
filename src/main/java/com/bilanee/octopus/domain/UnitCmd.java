@@ -79,7 +79,7 @@ public class UnitCmd {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class IntraBid extends Command {
+    static public class IntraBidDeclare extends Command {
 
         StageId stageId;
         Bid bid;
@@ -98,7 +98,7 @@ public class UnitCmd {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    public static class IntraCancel extends Command{
+    public static class IntraBidCancel extends Command{
 
         Long unitId;
         Long cancelBidId;
@@ -115,7 +115,7 @@ public class UnitCmd {
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    public static class IntraCancelled extends Command{
+    public static class IntraBidCancelled extends Command{
 
         Long unitId;
         Long cancelBidId;

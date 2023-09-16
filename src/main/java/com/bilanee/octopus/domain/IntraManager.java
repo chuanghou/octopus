@@ -32,11 +32,11 @@ public class IntraManager implements ApplicationRunner {
         BidDO bidDO = bidDOMapper.selectById(bidId);
         IntraSymbol intraSymbol = new IntraSymbol(bidDO.getProvince(), bidDO.getTimeFrame());
         IntraProcessor intraProcessor = intraProcessors.get(intraSymbol);
-        intraProcessor.cancel(bidId);
+        intraProcessor.cancel(bidId, bidDO.getDirection());
     }
 
-    public void cancelAll() {
-        intraProcessors.values().forEach(IntraProcessor::cancelAll);
+    public void close() {
+        intraProcessors.values().forEach(IntraProcessor::close);
     }
 
     @Override
