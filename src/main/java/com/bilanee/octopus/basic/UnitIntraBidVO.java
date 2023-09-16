@@ -33,6 +33,12 @@ public class UnitIntraBidVO {
      */
     UnitType unitType;
 
+
+    /**
+     * 原始数据库里面的单元id
+     */
+    Integer sourceId;
+
     /**
      * 已持仓电力
      */

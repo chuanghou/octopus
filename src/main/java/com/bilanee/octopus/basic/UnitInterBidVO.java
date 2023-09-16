@@ -41,6 +41,13 @@ public class UnitInterBidVO {
     UnitType unitType;
 
 
+
+    /**
+     * 原始数据库里面的单元id
+     */
+    Integer sourceId;
+
+
     /**
      * 峰平谷三段报价报量
      */

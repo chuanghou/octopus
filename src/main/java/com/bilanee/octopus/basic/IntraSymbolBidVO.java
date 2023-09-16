@@ -42,17 +42,25 @@ public class IntraSymbolBidVO {
     List<Ask> sellAsks;
 
     /**
-     * 分时段交易盘, 不同价格区间交易量
+     * 分时段交易盘, 不同价格区间交易量，买单
      */
     List<Double> buySections;
 
     /**
-     * 分时段交易盘, 不同价格区间交易量
+     * 分时段交易盘, 不同价格区间交易量，卖单
      */
     List<Double> sellSections;
 
-
+    /**
+     * 报单区
+     */
     List<UnitIntraBidVO> unitIntraBidVOs;
+
+    /**
+     * 实时成交曲线
+     */
+    List<QuotationVO> quotationVOs;
+
 
 
 

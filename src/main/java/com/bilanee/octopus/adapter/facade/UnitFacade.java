@@ -127,7 +127,11 @@ public class UnitFacade {
             return UnitInterBidVO.builder().unitId(unit.getUnitId())
                     .unitType(unit.getMetaUnit().getUnitType())
                     .province(unit.getMetaUnit().getProvince())
-                    .unitName(unit.getMetaUnit().getName()).priceLimit(priceLimit).interBidVOS(interBidVOS).build();
+                    .unitName(unit.getMetaUnit().getName())
+                    .sourceId(unit.getMetaUnit().getSourceId())
+                    .priceLimit(priceLimit)
+                    .interBidVOS(interBidVOS)
+                    .build();
         }).collect(Collectors.toList());
 
         return Result.success(interBidsVOs);
