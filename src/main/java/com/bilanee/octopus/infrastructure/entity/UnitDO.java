@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
@@ -27,8 +29,8 @@ public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {
     Long compId;
     Integer roundId;
     String userId;
-    Long metaUnitId;
-    String unitName;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    MetaUnit metaUnit;
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> balance;
     Direction moIntraDirection;

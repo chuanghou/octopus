@@ -19,6 +19,7 @@ public class MetaUnit {
     String name;
     Province province;
     UnitType unitType;
+    GridLimit priceLimit;
     @Nullable
     GeneratorType generatorType;
     Integer sourceId;

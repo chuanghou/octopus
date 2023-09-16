@@ -4,7 +4,9 @@ package com.bilanee.octopus.adapter.tunnel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.UnitType;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
@@ -66,10 +68,11 @@ public class Tunnel {
         queryWrapper.eq(!Kit.isBlank(q.getUserId()), BidDO::getUserId, q.getUserId());
         queryWrapper.in(Collect.isNotEmpty(q.getUnitIds()), BidDO::getUnitId, q.getUnitIds());
         queryWrapper.eq(q.getRoundId() != null, BidDO::getRoundId, q.getRoundId());
-        queryWrapper.eq(q.getProvince() != null, BidDO::getProvince, Kit.op(q.getProvince()).map(Province::name).orElse(null));
-        queryWrapper.eq(q.getDirection() != null, BidDO::getDirection, Kit.op(q.getDirection()).map(Direction::name).orElse(null));
-        queryWrapper.eq(q.getTradeStage() != null, BidDO::getTradeStage, Kit.op(q.getTradeStage()).map(TradeStage::name).orElse(null));
-        queryWrapper.eq(q.getBidStatus() != null, BidDO::getBidStatus, Kit.op(q.getBidStatus()).map(BidStatus::name).orElse(null));
+        queryWrapper.eq(q.getProvince() != null, BidDO::getProvince, Kit.op(q.getProvince()).orElse(null));
+        queryWrapper.eq(q.getDirection() != null, BidDO::getDirection, Kit.op(q.getDirection()).orElse(null));
+        queryWrapper.eq(q.getTradeStage() != null, BidDO::getTradeStage, Kit.op(q.getTradeStage()).orElse(null));
+        queryWrapper.eq(q.getBidStatus() != null, BidDO::getBidStatus, Kit.op(q.getBidStatus()).orElse(null));
+        queryWrapper.eq(q.getTimeFrame() != null, BidDO::getTimeFrame, Kit.op(q.getTimeFrame()).orElse(null));
         List<BidDO> bidDOs = bidDOMapper.selectList(queryWrapper);
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
@@ -132,13 +135,20 @@ public class Tunnel {
 
     public GridLimit priceLimit(UnitType unitType) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        if (unitType == UnitType.GENERATOR) {
+        if (unitType == UnitType.LOAD) {
             return GridLimit.builder().low(marketSettingDO.getBidPriceFloor()).high(marketSettingDO.getBidPriceCap()).build();
-        } else if (unitType == UnitType.LOAD) {
+        } else if (unitType == UnitType.GENERATOR) {
             return GridLimit.builder().low(marketSettingDO.getOfferPriceFloor()).high(marketSettingDO.getOfferPriceCap()).build();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
+    }
+
+    public Map<UnitType, GridLimit> priceLimits() {
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        GridLimit loadPriceLimit = GridLimit.builder().low(marketSettingDO.getBidPriceFloor()).high(marketSettingDO.getBidPriceCap()).build();
+        GridLimit generatorPriceLimit = GridLimit.builder().low(marketSettingDO.getOfferPriceFloor()).high(marketSettingDO.getOfferPriceCap()).build();
+        return Collect.asMap(UnitType.LOAD, loadPriceLimit, UnitType.GENERATOR, generatorPriceLimit);
     }
 
     public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {

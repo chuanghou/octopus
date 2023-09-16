@@ -18,7 +18,7 @@ public class IntraBidVO {
     /**
      * 初始挂牌电力
      */
-    Double declare;
+    Double quantity;
 
 
     /**
@@ -34,7 +34,12 @@ public class IntraBidVO {
     /**
      * 挂牌时间
      */
-    Long timeStamp;
+    Long declareTimeStamp;
+
+    /**
+     * 撤单时间
+     */
+    Long cancelTimeStamp;
 
     /**
      * 挂牌状态

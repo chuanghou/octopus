@@ -203,8 +203,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         StageId stageId = tunnel.runningComp().getStageId();
 
         // 历史
-        Double buyTotalQuantity = buyPriorityQueue.stream().map(Bid::getBalance).reduce(0D, Double::sum);
-        Double sellTotalQuantity = buyPriorityQueue.stream().map(Bid::getBalance).reduce(0D, Double::sum);
+        Double buyTotalQuantity = buyPriorityQueue.stream().map(Bid::getTransit).reduce(0D, Double::sum);
+        Double sellTotalQuantity = sellPriorityQueue.stream().map(Bid::getTransit).reduce(0D, Double::sum);
         Triple<Double, Double, Double> market = Triple.of(buyTotalQuantity, sellTotalQuantity, latestPrice);
         IntraQuotationDO intraQuotationDO = IntraQuotationDO.builder()
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
@@ -229,12 +229,12 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     private List<Double> extractSections(Collection<Bid> bids) {
         return bids.stream().collect(Collect.select(
-                bid -> bid.getPrice() > 0D && bid.getBalance() <= 400D,
-                bid -> bid.getPrice() > 400D && bid.getBalance() <= 800D,
-                bid -> bid.getPrice() > 800D && bid.getBalance() <= 1200D,
-                bid -> bid.getPrice() > 1200D && bid.getBalance() <= 1600D,
-                bid -> bid.getPrice() > 1600D && bid.getBalance() <= 2000D
-        )).stream().map(bs -> bs.stream().map(Bid::getBalance).reduce(0D, Double::sum)).collect(Collectors.toList());
+                bid -> bid.getPrice() > 0D && bid.getTransit() <= 400D,
+                bid -> bid.getPrice() > 400D && bid.getTransit() <= 800D,
+                bid -> bid.getPrice() > 800D && bid.getTransit() <= 1200D,
+                bid -> bid.getPrice() > 1200D && bid.getTransit() <= 1600D,
+                bid -> bid.getPrice() > 1600D && bid.getTransit() <= 2000D
+        )).stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum)).collect(Collectors.toList());
     }
 
 

@@ -359,7 +359,7 @@ public class CompTest {
         unitBalance0 = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL);
         IntraCancelPO intraCancelPO = IntraCancelPO.builder().stageId(comp.getStageId().toString()).bidId(partDealBidId).build();
         bidResult = unitFacade.submitIntraCancelPO(intraCancelPO);
-        Thread.sleep(100);
+        Thread.sleep(1000);
         Assertions.assertTrue(bidResult.getSuccess());
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0 - generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL), -50D);
@@ -379,6 +379,9 @@ public class CompTest {
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0 - generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL), 100D);
 
+        Result<List<IntraSymbolBidVO>> intraSymbolBidVOsResult = unitFacade
+                .listIntraSymbolBidVOs(comp.getStageId().toString(), TokenUtils.sign(unit0.getUserId()));
+        Assertions.assertTrue(intraSymbolBidVOsResult.getSuccess());
 
         // 省间年度清算结束
         command = CompCmd.Step.builder()

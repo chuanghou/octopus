@@ -1,9 +1,6 @@
 package com.bilanee.octopus.adapter.tunnel;
 
-import com.bilanee.octopus.basic.enums.BidStatus;
-import com.bilanee.octopus.basic.enums.Direction;
-import com.bilanee.octopus.basic.enums.Province;
-import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -23,6 +20,7 @@ public class BidQuery {
     Province province;
     TradeStage tradeStage;
     Direction direction;
+    TimeFrame timeFrame;
     BidStatus bidStatus;
 
 }

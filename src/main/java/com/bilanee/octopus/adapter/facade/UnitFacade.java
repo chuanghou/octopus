@@ -11,15 +11,17 @@ import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.BidStatus;
-import com.bilanee.octopus.basic.enums.MarketStatus;
-import com.bilanee.octopus.basic.enums.TimeFrame;
-import com.bilanee.octopus.basic.enums.TradeType;
+import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
+import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
+import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.IntraInstantDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.IntraQuotationDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
@@ -28,12 +30,16 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
@@ -51,6 +57,9 @@ public class UnitFacade {
     final Tunnel tunnel;
     final UnitDOMapper unitDOMapper;
     final BidDOMapper bidDOMapper;
+    final IntraQuotationDOMapper intraQuotationDOMapper;
+    final IntraInstantDOMapper intraInstantDOMapper;
+    final Executor executor = Executors.newFixedThreadPool(100);
 
     /**
      * 本轮被分配的机组信息
@@ -108,7 +117,7 @@ public class UnitFacade {
             Unit unit = e.getValue();
             Collection<Bid> bs = groupedByUnitId.get(uId);
 
-            GridLimit priceLimit = tunnel.priceLimit(unit.getMetaUnit().getUnitType());
+            GridLimit priceLimit = unit.getMetaUnit().getPriceLimit();
 
             Map<TimeFrame, Collection<Bid>> map = bs.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap();
             Map<TimeFrame, Collection<Bid>> newMap = new HashMap<>(map);
@@ -142,12 +151,119 @@ public class UnitFacade {
      * 省内报价交易员报价页面，包含省间年度，省间月度
      * @param stageId 阶段id
      * @param token 前端携带的token
-     * @return 省间报价回填输入内容
+     * @return 省内报价交易员报价页面
      */
-    @GetMapping("listIntraBidsVOs")
-    public Result<List<UnitInterBidVO>> listIntraBidsVOs(String stageId, @RequestHeader String token) {
+    @SneakyThrows
+    @GetMapping("listIntraSymbolBidVOs")
+    public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(String stageId, @RequestHeader String token) {
 
-        return null;
+
+        CompletableFuture<Map<IntraSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
+            // prepare instant
+            LambdaQueryWrapper<IntraInstantDO> eq0 = new LambdaQueryWrapper<IntraInstantDO>().eq(IntraInstantDO::getStageId, stageId);
+            List<IntraInstantDO> intraInstantDOs = intraInstantDOMapper.selectList(eq0);
+            return Collect.toMap(intraInstantDOs, i -> new IntraSymbol(i.getProvince(), i.getTimeFrame()));
+        }, executor);
+
+        CompletableFuture<ListMultimap<IntraSymbol, IntraQuotationDO>> future1 = CompletableFuture.supplyAsync(() -> {
+            // prepare quotation
+            LambdaQueryWrapper<IntraQuotationDO> eq1 = new LambdaQueryWrapper<IntraQuotationDO>().eq(IntraQuotationDO::getStageId, stageId);
+            List<IntraQuotationDO> intraQuotationDOs = intraQuotationDOMapper.selectList(eq1);
+            return intraQuotationDOs.stream().collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
+        }, executor);
+
+        CompletableFuture<List<Unit>> future2 = CompletableFuture.supplyAsync(() -> {
+            StageId parsedStageId = StageId.parse(stageId);
+            return tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
+        });
+
+        Map<IntraSymbol, IntraInstantDO> instantDOMap = future0.get();
+        ListMultimap<IntraSymbol, IntraQuotationDO> quotationDOMap = future1.get();
+        List<Unit> units = future2.get();
+
+
+        List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
+            IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
+                    .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame());
+            IntraInstantDO intraInstantDO = instantDOMap.get(intraSymbol);
+
+            if (intraInstantDO != null) {
+                builder.latestPrice(intraInstantDO.getPrice());
+                builder.buyAsks(intraInstantDO.getBuyAsks());
+                builder.sellAsks(intraInstantDO.getSellAsks());
+                builder.buySections(intraInstantDO.getBuySections());
+                builder.sellSections(intraInstantDO.getSellSections());
+            }
+
+            builder.unitIntraBidVOs(to(units, StageId.parse(stageId), intraSymbol));
+
+            List<IntraQuotationDO> intraQuotationDOs = quotationDOMap.get(intraSymbol);
+            List<QuotationVO> quotationVOs = intraQuotationDOs.stream()
+                    .map(i -> new QuotationVO(i.getTimeStamp(), i.getLatestPrice(), i.getBuyQuantity(), i.getSellQuantity()))
+                    .sorted(Comparator.comparing(QuotationVO::getTimeStamp)).collect(Collectors.toList());
+            builder.quotationVOs(quotationVOs);
+            return builder.build();
+        }).collect(Collectors.toList());
+        return Result.success(intraSymbolBidVOs);
+    }
+
+    private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol) {
+        Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
+
+        BidQuery bidQuery = BidQuery.builder().unitIds(unitIds).tradeStage(stageId.getTradeStage())
+                .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
+        ListMultimap<Long, Bid> bidMap = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+        return units.stream().map(unit -> {
+            UnitIntraBidVO.UnitIntraBidVOBuilder builder = UnitIntraBidVO.builder().unitId(unit.getUnitId())
+                    .priceLimit(unit.getMetaUnit().getPriceLimit())
+                    .unitName(unit.getMetaUnit().getName())
+                    .unitType(unit.getMetaUnit().getUnitType())
+                    .sourceId(unit.getMetaUnit().getSourceId());
+            List<Bid> bids = bidMap.get(unit.getUnitId());
+            UnitType unitType = unit.getMetaUnit().getUnitType();
+            Double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            Double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            builder.position(general - opposite);
+            Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
+            builder.transit(transit);
+
+            // 持仓限制
+            if (stageId.getTradeStage() != TradeStage.MO_INTRA) {
+                Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
+                BalanceVO balanceVO = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance).build();
+                builder.balanceVOs(Collect.asList(balanceVO));
+            } else {
+                if (unit.getMoIntraDirection() == null) {
+                    Double balance0 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
+                    BalanceVO balanceVO0 = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance0).build();
+                    Double balance1 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection().opposite());
+                    BalanceVO balanceVO1 = BalanceVO.builder().direction(unitType.generalDirection().opposite()).balance(balance1).build();
+                    builder.balanceVOs(Collect.asList(balanceVO0, balanceVO1));
+                } else {
+                    Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unit.getMoIntraDirection());
+                    BalanceVO balanceVO = BalanceVO.builder().direction(unit.getMoIntraDirection()).balance(balance).build();
+                    builder.balanceVOs(Collect.asList(balanceVO));
+                }
+            }
+
+            // 报单内容
+            List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> {
+                return IntraBidVO.builder().quantity(bid.getQuantity())
+                        .transit(bid.getTransit())
+                        .bidStatus(bid.getBidStatus())
+                        .price(bid.getPrice())
+                        .declareTimeStamp(bid.getDeclareTimeStamp())
+                        .cancelTimeStamp(bid.getCancelledTimeStamp())
+                        .operations(bid.getBidStatus().operations())
+                        .intraDealVOs(Collect.transfer(bid.getDeals(), d -> new IntraDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
+                        .build();
+            }).collect(Collectors.toList());
+
+            return builder.intraBidVOs(intraBidVOs).build();
+        }).collect(Collectors.toList());
+
     }
 
     /**

@@ -149,9 +149,9 @@ public class Unit extends AggregateRoot {
         }
 
         Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        BizEx.trueThrow(unitBalance < bid.getBalance(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
+        BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getBalance());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getTransit());
 
         intraManager.declare(bid);
         context.publishPlaceHolderEvent(getAggregateId());
@@ -167,7 +167,7 @@ public class Unit extends AggregateRoot {
     public void handle(UnitCmd.IntraBidCancelled command, Context context) {
         Bid bid = tunnel.getByBidId(command.getCancelBidId());
         Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance + bid.getBalance());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance + bid.getTransit());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
