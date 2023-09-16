@@ -156,8 +156,6 @@ public class Comp extends AggregateRoot {
         List<Bid> bids = tunnel.listBids(bidQuery);
         bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().values().forEach(this::doClear);
         List<Long> unitIds = bids.stream().map(Bid::getUnitId).distinct().collect(Collectors.toList());
-        
-
 
     }
     @SuppressWarnings("UnstableApiUsage")

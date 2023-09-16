@@ -38,7 +38,8 @@ public class Tunnel {
     final IntraQuotationDOMapper intraQuotationDOMapper;
     final IntraInstantDOMapper intraInstantDOMapper;
     final UnitDOMapper unitDOMapper;
-
+    final TieLinePowerDOMapper tieLinePowerDOMapper;
+    final StackDiagramDOMapper stackDiagramDOMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -140,7 +141,6 @@ public class Tunnel {
         }
     }
 
-    //TODO minus already deal
     public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
         Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
         GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
@@ -202,6 +202,58 @@ public class Tunnel {
                 .clearance(Json.toJson(interClearance))
                 .build();
         clearanceDOMapper.insert(clearanceDO);
+
+
+        // 写回数据库给现货那边使用,
+        List<Integer> prds = interClearance.getTimeFrame().getPrds();
+        prds.forEach(prd -> {
+
+            // 回写tie_line_power表
+            LambdaQueryWrapper<TieLinePowerDO> eq0 = new LambdaQueryWrapper<TieLinePowerDO>()
+                    .eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1)
+                    .eq(TieLinePowerDO::getPrd, prd);
+            TieLinePowerDO tieLinePowerDO = tieLinePowerDOMapper.selectOne(eq0);
+            if (stageId.getTradeStage() == TradeStage.AN_INTER) {
+                tieLinePowerDO.setAnnualMarketTielinePower(interClearance.getMarketQuantity());
+                tieLinePowerDO.setAnnualNonmarketTielinePower(interClearance.getNonMarketQuantity());
+                tieLinePowerDO.setAnnualTielinePower(interClearance.getDealQuantity());
+            } else if (stageId.getTradeStage() == TradeStage.MO_INTER){
+                tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getMarketQuantity());
+                tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getNonMarketQuantity());
+                tieLinePowerDO.setMonthlyTielinePower(interClearance.getDealQuantity());
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+            tieLinePowerDOMapper.updateById(tieLinePowerDO);
+
+            LambdaQueryWrapper<StackDiagramDO> eq1 = new LambdaQueryWrapper<StackDiagramDO>()
+                    .eq(StackDiagramDO::getRoundId, stageId.getRoundId() + 1)
+                    .eq(StackDiagramDO::getPrd, prd);
+            List<StackDiagramDO> stackDiagramDOS = stackDiagramDOMapper.selectList(eq1);
+            if (stageId.getTradeStage() == TradeStage.AN_INTER) {
+                stackDiagramDOS.forEach(stackDiagramDO -> {
+                   stackDiagramDO.setIntraprovincialAnnualTielinePower(interClearance.getDealQuantity());
+                    Double maxMonthlyReceivingMw = stackDiagramDO.getMaxMonthlyReceivingMw();
+                    double max = Math.max(maxMonthlyReceivingMw, interClearance.getDealQuantity());
+                    stackDiagramDO.setMonthlyReceivingForecastMw(max);
+                });
+            } else if (stageId.getTradeStage() == TradeStage.MO_INTER){
+                for (StackDiagramDO stackDiagramDO : stackDiagramDOS) {
+                    double v = interClearance.getDealQuantity() + stackDiagramDO.getIntraprovincialAnnualTielinePower();
+                    stackDiagramDO.setIntraprovincialMonthlyTielinePower(v);
+                    Double daReceivingTarget = stackDiagramDO.getDaReceivingTarget();
+                    double max = Math.max(daReceivingTarget, v);
+                    stackDiagramDO.setDaReceivingForecastMw(max);
+                }
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+            stackDiagramDOS.forEach(stackDiagramDOMapper::updateById);
+        });
+
+
+
+
     }
 
     public void writeBackDbRoundId(Integer roundId) {
@@ -210,7 +262,6 @@ public class Tunnel {
         marketSettingDO.setRoundId(roundId + 1);
         marketSettingMapper.updateById(marketSettingDO);
     }
-
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

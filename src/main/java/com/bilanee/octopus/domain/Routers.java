@@ -71,6 +71,13 @@ public class Routers implements EventRouters {
             UnitCmd.InterDeduct interDeduct = UnitCmd.InterDeduct.builder().unitId(unit.getUnitId()).build();
             CommandBus.driveByEvent(interDeduct, stepped);
         } );
+
+        // 写回数据库
+    }
+
+
+    private void writeBack(StageId stageId) {
+
     }
 
     /**
