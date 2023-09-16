@@ -393,6 +393,58 @@ public class CompTest {
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0, generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL));
 
+        // 月度省间开始
+        command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.MO_INTER)
+                .marketStatus(MarketStatus.BID)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+
+        // 月度省间结束
+        command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.MO_INTER)
+                .marketStatus(MarketStatus.CLEAR)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+
+
+        // 月度省内开始
+        command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.MO_INTRA)
+                .marketStatus(MarketStatus.BID)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+
+        generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
+        Double sellBalance = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL);
+        Double buyBalance = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.BUY);
+        Assertions.assertEquals(sellBalance + buyBalance, generatorUnit.getMetaUnit().getCapacity().get(TimeFrame.PEAK).get(Direction.SELL));
+
+        comp = tunnel.runningComp();
+        bidPO = BidPO.builder().unitId(generatorUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.BUY).quantity(100D).build();
+        intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertTrue(bidResult.getSuccess());
+        bidPO = BidPO.builder().unitId(generatorUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.SELL).quantity(100D).build();
+        intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertFalse(bidResult.getSuccess());
+        Assertions.assertEquals(bidResult.getMessage(), "省内月度报单必须保持同一个方向");
+
 
 
     }

@@ -42,7 +42,7 @@ public class Unit extends AggregateRoot {
     String userId;
     MetaUnit metaUnit;
     Map<TimeFrame, Map<Direction, Double>> balance;
-    Direction stageFourDirection;
+    Direction moIntraDirection;
 
     @StaticWire
     static private UniqueIdGetter uniqueIdGetter;
@@ -140,10 +140,10 @@ public class Unit extends AggregateRoot {
 
         TradeStage tradeStage = tunnel.runningComp().getStageId().getTradeStage();
         if (tradeStage == TradeStage.MO_INTRA) {
-            if (stageFourDirection == null) {
-                stageFourDirection = bid.getDirection();
+            if (moIntraDirection == null) {
+                moIntraDirection = bid.getDirection();
             }
-            BizEx.trueThrow(bid.getDirection() != stageFourDirection, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
+            BizEx.trueThrow(bid.getDirection() != moIntraDirection, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
         } else {
             BizEx.trueThrow(bid.getDirection() != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("省内年度报单方向错误"));
         }
