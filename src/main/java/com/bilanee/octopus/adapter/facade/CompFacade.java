@@ -12,7 +12,7 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.TimeFrame;
-import com.bilanee.octopus.demo.Section;
+import com.bilanee.octopus.basic.Section;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.ClearanceDO;

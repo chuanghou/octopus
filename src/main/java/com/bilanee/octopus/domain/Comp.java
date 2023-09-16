@@ -6,7 +6,7 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;
-import com.bilanee.octopus.demo.Section;
+import com.bilanee.octopus.basic.Section;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.base.StaticWire;
