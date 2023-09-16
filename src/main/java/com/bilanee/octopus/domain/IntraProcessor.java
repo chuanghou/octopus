@@ -9,8 +9,8 @@ import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.Operation;
 import com.bilanee.octopus.infrastructure.entity.Ask;
-import com.bilanee.octopus.infrastructure.entity.IntraMarketHistoryDO;
-import com.bilanee.octopus.infrastructure.entity.IntraMarketRealtimeDO;
+import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
+import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
@@ -184,13 +184,14 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
         StageId stageId = tunnel.runningComp().getStageId();
 
-        // history
+        // 历史
         Double buyTotalQuantity = buyPriorityQueue.stream().map(Bid::getBalance).reduce(0D, Double::sum);
         Double sellTotalQuantity = buyPriorityQueue.stream().map(Bid::getBalance).reduce(0D, Double::sum);
         Triple<Double, Double, Double> market = Triple.of(buyTotalQuantity, sellTotalQuantity, latestPrice);
-        IntraMarketHistoryDO intraMarketHistoryDO = IntraMarketHistoryDO.builder()
+        IntraQuotationDO intraQuotationDO = IntraQuotationDO.builder()
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
                 .buyQuantity(buyTotalQuantity).sellQuantity(sellTotalQuantity).latestPrice(latestPrice)
+                .timeStamp(Clock.currentTimeMillis())
                 .build();
 
         // 实时
@@ -200,11 +201,11 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         List<Double> buySections = extractSections(buyPriorityQueue);
         List<Double> sellSections = extractSections(sellPriorityQueue);
 
-        IntraMarketRealtimeDO intraMarketRealtimeDO = IntraMarketRealtimeDO.builder()
+        IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
                 .buyAsks(buyAsks).sellAsks(sellAsks).buySections(buySections).sellSections(sellSections)
                 .build();
-        tunnel.record(intraMarketHistoryDO, intraMarketRealtimeDO);
+        tunnel.record(intraQuotationDO, intraInstantDO);
 
     }
 

@@ -26,6 +26,8 @@ import org.mapstruct.factory.Mappers;
 import java.util.List;
 import java.util.Map;
 
+import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
+
 @Data
 @CustomLog
 @NoArgsConstructor
@@ -74,7 +76,7 @@ public class Unit extends AggregateRoot {
         Direction direction = bids.get(0).getDirection();
 
         // 方向限制
-        BizEx.trueThrow(direction != metaUnit.getUnitType().generalDirection(), ErrorEnums.PARAM_FORMAT_WRONG.message("买卖方向错误"));
+        BizEx.trueThrow(direction != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("买卖方向错误"));
 
         // 价格限制
         GridLimit gridLimit = tunnel.priceLimit(metaUnit.getUnitType());
@@ -84,7 +86,7 @@ public class Unit extends AggregateRoot {
         bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((t, vs) -> {
             Double declareQuantity = vs.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
             Double tBalance = balance.get(t).get(direction);
-            BizEx.trueThrow(declareQuantity > tBalance, ErrorEnums.PARAM_FORMAT_WRONG.message("超过持仓限制"));
+            BizEx.trueThrow(declareQuantity > tBalance, PARAM_FORMAT_WRONG.message("超过持仓限制"));
         });
         Comp comp = tunnel.runningComp();
         // 填充委托其他参数
@@ -114,9 +116,9 @@ public class Unit extends AggregateRoot {
                 .unitIds(Collect.asSet(unitId)).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
         bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((timeFrame, bs) -> bs.forEach(bid -> {
-            Double originalBalance = balance.get(timeFrame).get(bid.getDirection());
+            Double unitBalance = balance.get(timeFrame).get(bid.getDirection());
             Double dealed = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-            balance.get(timeFrame).put(bid.getDirection(), originalBalance - dealed);
+            balance.get(timeFrame).put(bid.getDirection(), unitBalance - dealed);
         }));
         context.publishPlaceHolderEvent(getAggregateId());
     }
@@ -141,13 +143,15 @@ public class Unit extends AggregateRoot {
             if (stageFourDirection == null) {
                 stageFourDirection = bid.getDirection();
             }
-            BizEx.trueThrow(bid.getDirection() != stageFourDirection, ErrorEnums.PARAM_FORMAT_WRONG.message("第4阶段报单必须保持同一个方向"));
+            BizEx.trueThrow(bid.getDirection() != stageFourDirection, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
+        } else {
+            BizEx.trueThrow(bid.getDirection() != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("省内年度报单方向错误"));
         }
 
-        Double originalBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        BizEx.trueThrow(originalBalance < bid.getBalance(), ErrorEnums.PARAM_FORMAT_WRONG.message("报单超过持仓量"));
+        Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        BizEx.trueThrow(unitBalance < bid.getBalance(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance - bid.getBalance());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getBalance());
 
         intraManager.declare(bid);
         context.publishPlaceHolderEvent(getAggregateId());
@@ -162,8 +166,8 @@ public class Unit extends AggregateRoot {
     @MethodHandler
     public void handle(UnitCmd.IntraBidCancelled command, Context context) {
         Bid bid = tunnel.getByBidId(command.getCancelBidId());
-        Double originalBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), originalBalance + bid.getBalance());
+        Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance + bid.getBalance());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 

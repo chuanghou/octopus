@@ -7,16 +7,14 @@ import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
+import com.bilanee.octopus.adapter.facade.po.IntraBidPO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.Bid;
-import com.bilanee.octopus.basic.InterBidsVO;
-import com.bilanee.octopus.basic.StageId;
-import com.bilanee.octopus.basic.TokenUtils;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
@@ -28,6 +26,7 @@ import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.CustomLog;
 import org.junit.jupiter.api.Assertions;
@@ -62,6 +61,9 @@ public class CompTest {
 
     @Autowired
     Tunnel tunnel;
+
+    @Autowired
+    DomainTunnel domainTunnel;
 
     @Test
     public void testDelay() {
@@ -139,7 +141,7 @@ public class CompTest {
 
 
     @Test
-    public void testClearProcedure() {
+    public void testClearProcedure() throws InterruptedException {
 
         // 创建比赛
         List<UserVO> userVOs = manageFacade.listUserVOs();
@@ -196,7 +198,7 @@ public class CompTest {
         InterBidsVO interBidsVO1 = resultBidsVO0.getData().stream()
                 .filter(u -> u.getProvince().equals(Province.RECEIVER) && u.getUnitType().equals(UnitType.LOAD))
                 .findFirst().orElseThrow((SysEx::unreachable));
-
+        Long unitId1 = interBidsVO1.getUnitId();
 
         BidPO bidPO0 = BidPO.builder().unitId(unitId0).direction(Direction.SELL)
                 .timeFrame(TimeFrame.PEAK).price(100D).quantity(100D).build();
@@ -212,8 +214,6 @@ public class CompTest {
         Result<Void> result0 = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result0.getSuccess());
 
-
-        Long unitId1 = interBidsVO1.getUnitId();
 
         BidPO bidPO3 = BidPO.builder().unitId(unitId1).direction(Direction.BUY)
                 .timeFrame(TimeFrame.PEAK).price(100D).quantity(100D).build();
@@ -241,7 +241,7 @@ public class CompTest {
         interBidsVO1 = listResult1.getData().stream().filter(i -> i.getUnitId().equals(unitId1)).findFirst().orElseThrow(SysEx::unreachable);
         interBidsVO1.getInterBidVOS().forEach(interBidVO -> Assertions.assertEquals(3, interBidVO.getBidVOs().size()));
 
-        // 清算
+        // 省间年度清算
         command = CompCmd.Step.builder()
                 .compId(comp.getCompId())
                 .compStage(CompStage.TRADE)
@@ -264,6 +264,99 @@ public class CompTest {
 
         Assertions.assertTrue(clearance0.getSuccess());
         Assertions.assertTrue(clearance1.getSuccess());
+
+        Unit unit0 = domainTunnel.getByAggregateId(Unit.class, unitId0);
+        Unit unit1 = domainTunnel.getByAggregateId(Unit.class, unitId1);
+
+        unit0.getBalance().forEach(((timeFrame, balance) -> {
+            Double unitBalance = balance.get(Direction.SELL);
+            Double capacity = unit0.getMetaUnit().getCapacity().get(timeFrame).get(Direction.SELL);
+            Assertions.assertEquals(capacity - unitBalance, 300D);
+        }));
+
+        unit1.getBalance().forEach(((timeFrame, balance) -> {
+            Double unitBalance = balance.get(Direction.BUY);
+            Double capacity = unit1.getMetaUnit().getCapacity().get(timeFrame).get(Direction.BUY);
+            Assertions.assertEquals(capacity - unitBalance, 300D);
+        }));
+
+
+        // 省间年度清算结束
+        command = CompCmd.Step.builder()
+                .compId(comp.getCompId())
+                .compStage(CompStage.TRADE)
+                .roundId(0)
+                .tradeStage(TradeStage.AN_INTRA)
+                .marketStatus(MarketStatus.BID)
+                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+
+        comp = tunnel.runningComp();
+        Assertions.assertEquals(comp.getTradeStage(), TradeStage.AN_INTRA);
+
+        Long generatorUnitId = unitId0;
+        BidPO bidPO = BidPO.builder().unitId(generatorUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.SELL).quantity(2000D).build();
+        IntraBidPO intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        Result<Void> bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertFalse(bidResult.getSuccess());
+        Assertions.assertEquals(bidResult.getMessage(), "报单超过持仓量");
+
+        bidPO = BidPO.builder().unitId(generatorUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.BUY).quantity(100D).build();
+        intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertFalse(bidResult.getSuccess());
+        Assertions.assertEquals(bidResult.getMessage(), "省内年度报单方向错误");
+
+
+        Unit generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
+        Double unitBalance0 = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL);
+        bidPO = BidPO.builder().unitId(generatorUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.SELL).quantity(100D).build();
+        intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertTrue(bidResult.getSuccess());
+        generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
+        Assertions.assertEquals(unitBalance0 - generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL), 100D);
+
+
+        List<Unit> units = tunnel.listUnits(comp.getCompId(), 0, generatorUnit.getUserId()).stream().filter(u -> {
+            boolean b0 = u.getMetaUnit().getUnitType() == UnitType.LOAD;
+            boolean b1 = u.getMetaUnit().getProvince() == Province.TRANSFER;
+            return b0 && b1;
+        }).collect(Collectors.toList());
+        Assertions.assertEquals(units.size(), 1);
+        Unit loadUnit = units.get(0);
+        Long loadUnitId = loadUnit.getUnitId();
+        bidPO = BidPO.builder().unitId(loadUnitId)
+                .timeFrame(TimeFrame.PEAK).price(300D).direction(Direction.BUY).quantity(50D).build();
+        intraBidPO = IntraBidPO.builder().stageId(comp.getStageId().toString()).bidPO(bidPO).build();
+        bidResult = unitFacade.submitIntraBidPO(intraBidPO);
+        Assertions.assertTrue(bidResult.getSuccess());
+
+        Thread.sleep(100);
+        BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(generatorUnitId)).tradeStage(TradeStage.AN_INTRA).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        Assertions.assertEquals(bids.size(), 1);
+        Bid bid = bids.get(0);
+        Assertions.assertEquals(bid.getDeals().size(), 1);
+        Deal deal = bid.getDeals().get(0);
+        Assertions.assertEquals(deal.getQuantity(), 50D);
+        Assertions.assertEquals(bid.getBidStatus(), BidStatus.PART_DEAL);
+
+        bidQuery = BidQuery.builder().unitIds(Collect.asSet(loadUnitId)).tradeStage(TradeStage.AN_INTRA).build();
+        bids = tunnel.listBids(bidQuery);
+        Assertions.assertEquals(bids.size(), 1);
+        bid = bids.get(0);
+        Assertions.assertEquals(bid.getDeals().size(), 1);
+        deal = bid.getDeals().get(0);
+        Assertions.assertEquals(deal.getQuantity(), 50D);
+        Assertions.assertEquals(bid.getBidStatus(), BidStatus.COMPLETE_DEAL);
+
+
+
     }
 
 }

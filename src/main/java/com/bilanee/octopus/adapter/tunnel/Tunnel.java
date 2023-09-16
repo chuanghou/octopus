@@ -6,19 +6,16 @@ import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.stereotype.Component;
@@ -38,8 +35,8 @@ public class Tunnel {
     final MarketSettingMapper marketSettingMapper;
     final TransLimitDOMapper transLimitDOMapper;
     final ClearanceDOMapper clearanceDOMapper;
-    final HistoryMarketDOMapper historyMarketDOMapper;
-    final RealtimeMarketDOMapper realtimeMarketDOMapper;
+    final IntraQuotationDOMapper intraQuotationDOMapper;
+    final IntraInstantDOMapper intraInstantDOMapper;
     final UnitDOMapper unitDOMapper;
 
 
@@ -112,16 +109,16 @@ public class Tunnel {
         bidDOs.forEach(bidDOMapper::updateById);
     }
 
-    public void record(IntraMarketHistoryDO intraMarketHistoryDO, IntraMarketRealtimeDO intraMarketRealtimeDO) {
-        historyMarketDOMapper.insert(intraMarketHistoryDO);
-        LambdaQueryWrapper<IntraMarketRealtimeDO> eq = new LambdaQueryWrapper<IntraMarketRealtimeDO>()
-                .eq(IntraMarketRealtimeDO::getStageId, intraMarketRealtimeDO.getStageId())
-                .eq(IntraMarketRealtimeDO::getProvince, intraMarketRealtimeDO.getProvince())
-                .eq(IntraMarketRealtimeDO::getTimeFrame, intraMarketRealtimeDO.getTimeFrame());
-        if (realtimeMarketDOMapper.selectOne(eq) == null) {
-            realtimeMarketDOMapper.insert(intraMarketRealtimeDO);
+    public void record(IntraQuotationDO intraQuotationDO, IntraInstantDO intraInstantDO) {
+        intraQuotationDOMapper.insert(intraQuotationDO);
+        LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
+                .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
+                .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())
+                .eq(IntraInstantDO::getTimeFrame, intraInstantDO.getTimeFrame());
+        if (intraInstantDOMapper.selectOne(eq) == null) {
+            intraInstantDOMapper.insert(intraInstantDO);
         } else {
-            realtimeMarketDOMapper.update(intraMarketRealtimeDO, eq);
+            intraInstantDOMapper.update(intraInstantDO, eq);
         }
     }
 

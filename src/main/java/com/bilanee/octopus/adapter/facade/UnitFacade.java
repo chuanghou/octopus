@@ -13,6 +13,7 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.TradeType;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
@@ -33,6 +34,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
 /**
  * 单元信息
@@ -139,7 +142,8 @@ public class UnitFacade {
 
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTER, PARAM_FORMAT_WRONG.message("当前为中长期省间报价阶段"));
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
 
         List<BidPO> bidPOs = interBidsPO.getBidPOs();
         UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
@@ -158,7 +162,8 @@ public class UnitFacade {
     public Result<Void> submitIntraBidPO(IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA, PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
         UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder().bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
         CommandBus.accept(command, new HashMap<>());
         return Result.success();
@@ -173,11 +178,11 @@ public class UnitFacade {
     public Result<Void> submitIntraBidPO(IntraCancelPO intraCancelPO) {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.falseThrow(pStageId.equals(cStageId), ErrorEnums.PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
         BidDO bidDO = bidDOMapper.selectById(intraCancelPO.getBidId());
         boolean b0 = bidDO.getBidStatus() == BidStatus.NEW_DECELERATED;
         boolean b1 = bidDO.getBidStatus() == BidStatus.PART_DEAL;
-        BizEx.falseThrow(b0 || b1, ErrorEnums.PARAM_FORMAT_WRONG.message("当前报单处于处于不可撤状态"));
+        BizEx.falseThrow(b0 || b1, PARAM_FORMAT_WRONG.message("当前报单处于处于不可撤状态"));
         Long unitId = bidDO.getUnitId();
         UnitCmd.IntraBidCancel command = UnitCmd.IntraBidCancel.builder().unitId(unitId).cancelBidId(intraCancelPO.getBidId()).build();
         CommandBus.accept(command, new HashMap<>());

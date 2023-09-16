@@ -59,6 +59,11 @@ public class Routers implements EventRouters {
         }
         CompCmd.Clear command = CompCmd.Clear.builder().compId(now.getCompId()).build();
         CommandBus.driveByEvent(command, stepped);
+        List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
+        units.forEach(unit -> {
+            UnitCmd.InterDeduct interDeduct = UnitCmd.InterDeduct.builder().unitId(unit.getUnitId()).build();
+            CommandBus.driveByEvent(interDeduct, stepped);
+        } );
     }
 
     @EventRouter
