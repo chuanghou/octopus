@@ -3,8 +3,6 @@ package com.bilanee.octopus.adapter.facade.po;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.validation.constraints.NotBlank;
-
 @Data
 @Builder
 @NoArgsConstructor

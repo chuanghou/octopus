@@ -1,6 +1,9 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.adapter.ws.WsHandler;
+import com.bilanee.octopus.adapter.ws.WsMessage;
+import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.MarketStatus;
@@ -103,6 +106,11 @@ public class Routers implements EventRouters {
                 CommandBus.driveByEvent(command, stepped);
             });
         }
+    }
+
+    @EventRouter
+    public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
+        WsHandler.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 
 

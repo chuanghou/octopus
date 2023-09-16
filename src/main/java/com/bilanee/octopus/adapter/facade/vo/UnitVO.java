@@ -1,8 +1,6 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.basic.MetaUnit;
-import com.bilanee.octopus.basic.enums.GeneratorType;
-import com.bilanee.octopus.basic.enums.UnitType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

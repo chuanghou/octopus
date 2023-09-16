@@ -1,6 +1,9 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.adapter.ws.WsHandler;
+import com.bilanee.octopus.adapter.ws.WsMessage;
+import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.ErrorEnums;
@@ -8,13 +11,15 @@ import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.Operation;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.infrastructure.entity.Ask;
-import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
 import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
+import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.stellariver.milky.common.base.BizEx;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -93,6 +98,19 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         } else if (event.getOperation() == Operation.CLOSE) {
             doClose();
         }
+
+        // 推送消息
+        WsTopic wsTopic;
+        TradeStage tradeStage = tunnel.runningComp().getTradeStage();
+        if (tradeStage == TradeStage.AN_INTRA) {
+            wsTopic = WsTopic.AN_INTRA_BID;
+        } else if (tradeStage == TradeStage.MO_INTRA) {
+            wsTopic = WsTopic.MO_INTRA_BID;
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+        WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
+
     }
 
     private void doClose() {

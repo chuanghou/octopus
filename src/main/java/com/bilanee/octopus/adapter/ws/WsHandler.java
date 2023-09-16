@@ -37,11 +37,6 @@ public class WsHandler {
         sessions.put(userId, session);
     }
 
-    public static void main(String[] args) {
-        System.out.println(TokenUtils.sign("1000"));
-    }
-
-
     @OnClose
     public void onClose(Session session) {
         String userId = sessions.entrySet().stream()
@@ -54,19 +49,17 @@ public class WsHandler {
 
     @OnError
     public void onError(Session session, Throwable error) {
-        String userId = sessions.entrySet().stream()
-                .filter(e -> Kit.eq(e.getValue().getId(), session.getId()))
-                .map(Map.Entry::getKey).findFirst().orElse(null);
-        sessions.remove(userId);
+        log.error(session.toString(), error);
     }
 
     @SneakyThrows
-    static public void push(String userId, String message) {
+    static public void push(String userId, WsMessage wsMessage) {
         Session session = sessions.get(userId);
         if (session == null) {
+            log.warn("userId: {} not login, wsMessage: {}", userId, wsMessage.toString());
             return;
         }
-        session.getBasicRemote().sendText(message);
+        session.getBasicRemote().sendText(Json.toJson(wsMessage));
     }
 
 }
