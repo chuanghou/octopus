@@ -125,11 +125,11 @@ public class CompTest {
         bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 9);
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() > now));
-        Result<List<InterBidsVO>> listResult = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
+        Result<List<UnitInterBidVO>> listResult = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(unit.getUserId()));
         Assertions.assertTrue(listResult.getSuccess());
-        List<InterBidsVO> data = listResult.getData();
+        List<UnitInterBidVO> data = listResult.getData();
         Assertions.assertEquals(data.size(), 2);
-        InterBidsVO interBidsVO = data.get(0);
+        UnitInterBidVO interBidsVO = data.get(0);
         Assertions.assertEquals(interBidsVO.getUnitId(), unit.getUnitId());
         Assertions.assertEquals(interBidsVO.getUnitName(), unit.getMetaUnit().getName());
         Assertions.assertEquals(interBidsVO.getInterBidVOS().size(), 3);
@@ -184,17 +184,17 @@ public class CompTest {
                 .build();
         Assertions.assertEquals(rawStageId, stageId);
 
-        Result<List<InterBidsVO>> resultBidsVO0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Result<List<UnitInterBidVO>> resultBidsVO0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
         Assertions.assertTrue(resultBidsVO0.getSuccess() && resultBidsVO0.getData().size() == 2);
-        Result<List<InterBidsVO>> resultBidsVO1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
+        Result<List<UnitInterBidVO>> resultBidsVO1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
         Assertions.assertTrue(resultBidsVO1.getSuccess() && resultBidsVO1.getData().size() == 2);
 
-        InterBidsVO interBidsVO0 = resultBidsVO0.getData().stream()
+        UnitInterBidVO interBidsVO0 = resultBidsVO0.getData().stream()
                 .filter(u -> u.getProvince().equals(Province.TRANSFER) && u.getUnitType().equals(UnitType.GENERATOR))
                 .findFirst().orElseThrow((SysEx::unreachable));
         Long unitId0 = interBidsVO0.getUnitId();
 
-        InterBidsVO interBidsVO1 = resultBidsVO0.getData().stream()
+        UnitInterBidVO interBidsVO1 = resultBidsVO0.getData().stream()
                 .filter(u -> u.getProvince().equals(Province.RECEIVER) && u.getUnitType().equals(UnitType.LOAD))
                 .findFirst().orElseThrow((SysEx::unreachable));
         Long unitId1 = interBidsVO1.getUnitId();
@@ -229,12 +229,12 @@ public class CompTest {
         Result<Void> result1 = unitFacade.submitInterBidsPO(interBidsPO0);
         Assertions.assertTrue(result1.getSuccess());
 
-        Result<List<InterBidsVO>> listResult0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Result<List<UnitInterBidVO>> listResult0 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
         Assertions.assertTrue(listResult0.getSuccess());
         interBidsVO0 = listResult0.getData().stream().filter(i -> i.getUnitId().equals(unitId0)).findFirst().orElseThrow(SysEx::unreachable);
         Assertions.assertEquals(3, interBidsVO0.getInterBidVOS().size());
         interBidsVO0.getInterBidVOS().forEach(interBidVO -> Assertions.assertEquals(3, interBidVO.getBidVOs().size()));
-        Result<List<InterBidsVO>> listResult1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Result<List<UnitInterBidVO>> listResult1 = unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
         Assertions.assertTrue(listResult1.getSuccess());
         Assertions.assertEquals(3, interBidsVO1.getInterBidVOS().size());
         interBidsVO1 = listResult1.getData().stream().filter(i -> i.getUnitId().equals(unitId1)).findFirst().orElseThrow(SysEx::unreachable);

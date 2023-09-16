@@ -1,6 +1,5 @@
 package com.bilanee.octopus.basic;
 
-import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.UnitType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -12,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class InterBidsVO {
+public class UnitIntraBidVO {
 
     /**
      * 单元id
@@ -29,21 +28,29 @@ public class InterBidsVO {
      */
     String unitName;
 
-
-    /**
-     * 送电省/受电省
-     */
-    Province province;
-
     /**
      * 单元类型
      */
     UnitType unitType;
 
+    /**
+     * 已持仓电力
+     */
+    Double position;
 
     /**
-     * 峰平谷三段报价报量
+     * 在挂待成交电力
      */
-    List<InterBidVO> interBidVOS;
+    Double transit;
+
+    /**
+     * 持仓限制
+     */
+    List<BalanceVO> balanceVOs;
+
+    /**
+     * 报单及成交结果详情
+     */
+    List<IntraBidVO> intraBidVOs;
 
 }

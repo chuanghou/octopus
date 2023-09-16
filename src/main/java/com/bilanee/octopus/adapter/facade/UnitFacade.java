@@ -71,14 +71,14 @@ public class UnitFacade {
 
 
     /**
-     * 省间报价回填页面，包含省间年度，省间月度
+     * 省间交易员报价页面，包含省间年度，省间月度
      * @param stageId 阶段id
      * @param token 前端携带的token
      * @return 省间报价回填输入内容
      */
     @SuppressWarnings("unchecked")
     @GetMapping("listInterBidsVOs")
-    public Result<List<InterBidsVO>> listInterBidsVOs(String stageId, @RequestHeader String token) {
+    public Result<List<UnitInterBidVO>> listInterBidsVOs(String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
@@ -103,7 +103,7 @@ public class UnitFacade {
 
         ListMultimap<Long, Bid> groupedByUnitId = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
-        List<InterBidsVO> interBidsVOs = unitMap.entrySet().stream().map(e -> {
+        List<UnitInterBidVO> interBidsVOs = unitMap.entrySet().stream().map(e -> {
             Long uId = e.getKey();
             Unit unit = e.getValue();
             Collection<Bid> bs = groupedByUnitId.get(uId);
@@ -124,13 +124,26 @@ public class UnitFacade {
                         .balanceVOs(balanceVOs)
                         .build();
             }).collect(Collectors.toList());
-            return InterBidsVO.builder().unitId(unit.getUnitId())
+            return UnitInterBidVO.builder().unitId(unit.getUnitId())
                     .unitType(unit.getMetaUnit().getUnitType())
                     .province(unit.getMetaUnit().getProvince())
                     .unitName(unit.getMetaUnit().getName()).priceLimit(priceLimit).interBidVOS(interBidVOS).build();
         }).collect(Collectors.toList());
 
         return Result.success(interBidsVOs);
+    }
+
+
+    /**
+     * 省内报价交易员报价页面，包含省间年度，省间月度
+     * @param stageId 阶段id
+     * @param token 前端携带的token
+     * @return 省间报价回填输入内容
+     */
+    @GetMapping("listIntraBidsVOs")
+    public Result<List<UnitInterBidVO>> listIntraBidsVOs(String stageId, @RequestHeader String token) {
+
+        return null;
     }
 
     /**
