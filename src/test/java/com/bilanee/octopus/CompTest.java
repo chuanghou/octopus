@@ -63,7 +63,7 @@ public class CompTest {
     DomainTunnel domainTunnel;
 
     @Test
-    public void testDelay() {
+    public void testDelay() throws InterruptedException {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
@@ -119,6 +119,7 @@ public class CompTest {
         Assertions.assertEquals(bids.size(), 9);
         long now = Clock.currentTimeMillis();
         bids.forEach(bid -> Assertions.assertTrue(bid.getDeclareTimeStamp() < now));
+        Thread.sleep(10);
         result = unitFacade.submitInterBidsPO(interBidsPO);
         Assertions.assertTrue(result.getSuccess());
         bids = tunnel.listBids(bidQuery);
