@@ -19,6 +19,7 @@ import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -61,6 +62,103 @@ public class CompTest {
 
     @Autowired
     DomainTunnel domainTunnel;
+    
+    
+    @Test
+    public void testStep() throws InterruptedException {
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 2);
+            marketStageClearLengths.put(marketStage, 2);
+        }
+
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .compInitLength(2)
+                .quitCompeteLength(2)
+                .quitResultLength(2)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(2)
+                .userIds(Arrays.asList("0", "1"))
+                .enableQuiz(true)
+                .build();
+
+        manageFacade.createComp(compCreatePO);
+        Result<CompVO> compVOResult = compFacade.runningCompVO();
+        Assertions.assertTrue(compVOResult.getSuccess());
+        Comp comp = tunnel.runningComp();
+        StageId stageId = comp.getStageId();
+        Thread.sleep(2100);
+        StageId stageId1 = tunnel.runningComp().getStageId();
+        boolean equals = stageId1.equals(stageId.next(comp));
+        Assertions.assertTrue(equals);
+        Assertions.assertEquals(stageId1.getCompStage(), CompStage.QUIT_COMPETE);
+
+        Thread.sleep(2100);
+        StageId stageId2 = tunnel.runningComp().getStageId();
+        equals = stageId2.equals(stageId1.next(comp));
+        Assertions.assertTrue(equals);
+        Assertions.assertEquals(stageId2.getCompStage(), CompStage.QUIT_RESULT);
+
+        Thread.sleep(2100);
+        StageId stageId3 = tunnel.runningComp().getStageId();
+        equals = stageId3.equals(stageId2.next(comp));
+        Assertions.assertTrue(equals);
+        Assertions.assertEquals(stageId3.getCompStage(), CompStage.TRADE);
+        Assertions.assertEquals(stageId3.getRoundId(), 0);
+        Assertions.assertEquals(stageId3.getTradeStage(), TradeStage.AN_INTER);
+        Assertions.assertEquals(stageId3.getMarketStatus(), MarketStatus.BID);
+        for (int i = 0; i < 12; i++) {
+            manageFacade.step();
+        }
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
+        Assertions.assertEquals(stageId.getRoundId(), 0);
+        Assertions.assertEquals(stageId.getTradeStage(), TradeStage.END);
+        Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
+        Thread.sleep(2050);
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
+        Assertions.assertEquals(stageId.getRoundId(), 1);
+        Assertions.assertEquals(stageId.getTradeStage(), TradeStage.AN_INTER);
+        Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
+        for (int i = 0; i < 13; i++) {
+            manageFacade.step();
+        }
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
+        Assertions.assertEquals(stageId.getRoundId(), 2);
+        Assertions.assertEquals(stageId.getTradeStage(), TradeStage.AN_INTER);
+        Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
+
+        for (int i = 0; i < 12; i++) {
+            manageFacade.step();
+        }
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
+        Assertions.assertEquals(stageId.getRoundId(), 2);
+        Assertions.assertEquals(stageId.getTradeStage(), TradeStage.END);
+        Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
+        Thread.sleep(2050);
+        Comp comp1 = tunnel.runningComp();
+        Assertions.assertNull(comp1.getEndingTimeStamp());
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.RANKING);
+        Assertions.assertNull(stageId.getRoundId());
+        Assertions.assertNull(stageId.getTradeStage());
+        Assertions.assertNull(stageId.getMarketStatus());
+        Thread.sleep(3000);
+        stageId = tunnel.runningComp().getStageId();
+        Assertions.assertEquals(stageId.getCompStage(), CompStage.RANKING);
+        Assertions.assertNull(stageId.getRoundId());
+        Assertions.assertNull(stageId.getTradeStage());
+        Assertions.assertNull(stageId.getMarketStatus());
+        Throwable throwableBackUp = null;
+        Result<Void> step = manageFacade.step();
+        Assertions.assertFalse(step.getSuccess());
+        Assertions.assertEquals(step.getMessage(), "已经到了最后阶段");
+    }
 
     @Test
     public void testDelay() throws InterruptedException {

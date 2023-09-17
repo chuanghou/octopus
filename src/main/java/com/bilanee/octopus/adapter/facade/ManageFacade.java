@@ -6,6 +6,7 @@ import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.ErrorEnums;
+import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
 import com.bilanee.octopus.infrastructure.entity.UserDO;
@@ -72,6 +73,8 @@ public class ManageFacade {
         Comp comp = tunnel.runningComp();
         if (comp == null) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("没有运行中的竞赛"));
+        } else if (comp.getCompStage() == CompStage.RANKING) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
