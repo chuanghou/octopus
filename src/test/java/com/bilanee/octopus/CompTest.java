@@ -14,18 +14,15 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.CompCmd;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
-import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
-import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.CustomLog;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -340,8 +337,8 @@ public class CompTest {
                 .marketStatus(MarketStatus.CLEAR)
                 .build();
 
-        Result<List<InterClearanceVO>> clearance0 = compFacade.interClearVO(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
-        Result<List<InterClearanceVO>> clearance1 = compFacade.interClearVO(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
+        Result<List<InterClearanceVO>> clearance0 = compFacade.interClearanceVO(stageId.toString(), TokenUtils.sign(userVOs.get(0).getUserId()));
+        Result<List<InterClearanceVO>> clearance1 = compFacade.interClearanceVO(stageId.toString(), TokenUtils.sign(userVOs.get(1).getUserId()));
 
         Assertions.assertTrue(clearance0.getSuccess());
         Assertions.assertTrue(clearance1.getSuccess());

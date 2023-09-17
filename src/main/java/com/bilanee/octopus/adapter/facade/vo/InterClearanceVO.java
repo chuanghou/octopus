@@ -77,7 +77,7 @@ public class InterClearanceVO {
     /**
      * 分设备平均成交量价/分设备分笔成交成交量价
      */
-    List<InterDealVO> interDealVOs;
+    List<UnitDealVO> unitDealVOS;
 
 
 

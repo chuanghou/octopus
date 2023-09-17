@@ -6,7 +6,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.Null;
 import java.util.List;
 
 public class CompCmd {

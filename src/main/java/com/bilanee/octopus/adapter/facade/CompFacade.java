@@ -1,10 +1,7 @@
 package com.bilanee.octopus.adapter.facade;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.bilanee.octopus.adapter.facade.vo.CompVO;
-import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
-import com.bilanee.octopus.adapter.facade.vo.InterDealVO;
-import com.bilanee.octopus.adapter.facade.vo.UnitVO;
+import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.InterClearance;
@@ -33,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.constraints.NotBlank;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,10 +62,12 @@ public class CompFacade {
 
     /**
      * 省间出清结果
+     * @param stageId 阶段id
+     * @param token 访问者token
      * @return 省间出清结果
      */
-    @GetMapping("/interClearVO")
-    public Result<List<InterClearanceVO>> interClearVO(String stageId, @RequestHeader String token) {
+    @GetMapping("/interClearanceVO")
+    public Result<List<InterClearanceVO>> interClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
         StageId parsedStageId = StageId.parse(stageId);
 
         // 清算值
@@ -97,24 +97,38 @@ public class CompFacade {
                 .build();
 
         tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((timeFrame, bids) -> {
-            List<InterDealVO> interDealVOs = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(e -> {
+            List<UnitDealVO> unitDealVOS = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(e -> {
                 Long unitId = e.getKey();
                 Collection<Bid> unitBids = e.getValue();
                 List<Deal> deals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
                 Double totalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
                 Double totalVolume = deals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
-                return InterDealVO.builder()
+                return UnitDealVO.builder()
                         .unitId(unitId)
                         .averagePrice(totalVolume / totalQuantity)
                         .totalQuantity(totalQuantity)
                         .deals(deals)
                         .build();
             }).collect(Collectors.toList());
-            interClearVOs.get(timeFrame).setInterDealVOs(interDealVOs);
+            interClearVOs.get(timeFrame).setUnitDealVOS(unitDealVOS);
         });
 
         return Result.success(new ArrayList<>(interClearVOs.values()));
     }
+
+    /**
+     * 省内结算结果
+     * @param stageId 阶段id
+     * @param token 访问者token
+     * @return 省间出清结果
+     */
+    @GetMapping("/intraClearanceVO")
+    public Result<List<IntraClearanceVO>> IntraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+
+
+        return Result.success();
+    }
+
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
         List<Bid> sortedBids = bids.stream().sorted(comparator).collect(Collectors.toList());
