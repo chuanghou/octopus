@@ -36,6 +36,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotBlank;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -68,7 +69,7 @@ public class UnitFacade {
      * @return 本轮被分配的机组信息
      */
     @GetMapping("listAssignUnitVOs")
-    public Result<List<UnitVO>> listAssignUnitVOs(String stageId, @RequestHeader String token) {
+    public Result<List<UnitVO>> listAssignUnitVOs(@NotBlank String stageId, @RequestHeader String token) {
         StageId parsedStageId = StageId.parse(stageId);
         List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
         List<UnitVO> unitVOs = Collect.transfer(units, unit -> UnitVO.builder()
@@ -87,7 +88,7 @@ public class UnitFacade {
      */
     @SuppressWarnings("unchecked")
     @GetMapping("listInterBidsVOs")
-    public Result<List<UnitInterBidVO>> listInterBidsVOs(String stageId, @RequestHeader String token) {
+    public Result<List<UnitInterBidVO>> listInterBidsVOs(@NotBlank String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
@@ -155,7 +156,7 @@ public class UnitFacade {
      */
     @SneakyThrows
     @GetMapping("listIntraSymbolBidVOs")
-    public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(String stageId, @RequestHeader String token) {
+    public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
 
         CompletableFuture<Map<IntraSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
@@ -249,17 +250,15 @@ public class UnitFacade {
             }
 
             // 报单内容
-            List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> {
-                return IntraBidVO.builder().quantity(bid.getQuantity())
-                        .transit(bid.getTransit())
-                        .bidStatus(bid.getBidStatus())
-                        .price(bid.getPrice())
-                        .declareTimeStamp(bid.getDeclareTimeStamp())
-                        .cancelTimeStamp(bid.getCancelledTimeStamp())
-                        .operations(bid.getBidStatus().operations())
-                        .intraDealVOs(Collect.transfer(bid.getDeals(), d -> new IntraDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
-                        .build();
-            }).collect(Collectors.toList());
+            List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> IntraBidVO.builder().quantity(bid.getQuantity())
+                    .transit(bid.getTransit())
+                    .bidStatus(bid.getBidStatus())
+                    .price(bid.getPrice())
+                    .declareTimeStamp(bid.getDeclareTimeStamp())
+                    .cancelTimeStamp(bid.getCancelledTimeStamp())
+                    .operations(bid.getBidStatus().operations())
+                    .intraDealVOs(Collect.transfer(bid.getDeals(), d -> new IntraDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
+                    .build()).collect(Collectors.toList());
 
             return builder.intraBidVOs(intraBidVOs).build();
         }).collect(Collectors.toList());
