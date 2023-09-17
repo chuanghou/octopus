@@ -1,4 +1,4 @@
-package com.bilanee.octopus.basic;
+package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Operation;

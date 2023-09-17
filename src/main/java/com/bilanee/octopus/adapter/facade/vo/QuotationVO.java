@@ -1,4 +1,4 @@
-package com.bilanee.octopus.basic;
+package com.bilanee.octopus.adapter.facade.vo;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -9,12 +9,12 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntraDealVO {
+public class QuotationVO {
 
     /**
-     * 成交量
+     * 时间
      */
-    Double quantity;
+    Long timeStamp;
 
     /**
      * 成交价格
@@ -22,8 +22,14 @@ public class IntraDealVO {
     Double price;
 
     /**
-     * 成交时间
+     * 买单总量
      */
-    Long timeStamp;
+    Double buyQuantity;
+
+
+    /**
+     * 卖单总量
+     */
+    Double sellQuantity;
 
 }
