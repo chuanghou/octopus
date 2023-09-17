@@ -49,7 +49,7 @@ public class CompCreatePO {
     Map<TradeStage, Integer> marketStageClearLengths;
 
     /**
-     * 各个市场的查看结果时长，单位分钟
+     * 第7阶段的查看结果时长，单位分钟
      */
     @NotNull @Positive
     Integer tradeResultLength;
@@ -59,6 +59,12 @@ public class CompCreatePO {
      */
     @NotNull @NotEmpty
     List<String> userIds;
+
+    /**
+     * 是否进行知识竞赛
+     */
+    @NotNull
+    Boolean enableQuiz;
 
 
 

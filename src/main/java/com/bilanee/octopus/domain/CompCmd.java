@@ -1,14 +1,13 @@
 package com.bilanee.octopus.domain;
 
-import com.bilanee.octopus.basic.enums.CompStage;
-import com.bilanee.octopus.basic.enums.MarketStatus;
-import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.StageId;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.Null;
 import java.util.List;
-import java.util.Map;
 
 public class CompCmd {
 
@@ -21,14 +20,9 @@ public class CompCmd {
     static public class Create extends Command {
 
         Long compId;
-
-        Integer compInitLength;
-        Integer quitCompeteLength;
-        Integer quitResultLength;
-        Map<TradeStage, Integer> marketStageBidLengths;
-        Map<TradeStage, Integer> marketStageClearLengths;
-        Integer tradeResultLength;
+        DelayConfig delayConfig;
         List<String> userIds;
+        Boolean enableQuiz;
 
 
         @Override
@@ -47,18 +41,13 @@ public class CompCmd {
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class Step extends Command {
 
-        Long compId;
-
-        CompStage compStage;
-        Integer roundId;
-        TradeStage tradeStage;
-        MarketStatus marketStatus;
-
-        Long endingTimeStamp;
+        StageId stageId;
+        @Nullable
+        Long duration;
 
         @Override
         public String getAggregateId() {
-            return compId.toString();
+            return stageId.getCompId().toString();
         }
 
     }

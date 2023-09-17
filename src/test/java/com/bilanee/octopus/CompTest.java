@@ -73,12 +73,13 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .compInitLength(1000)
-                .quitCompeteLength(1)
-                .quitResultLength(1)
+                .quitCompeteLength(1000)
+                .quitResultLength(1000)
                 .marketStageBidLengths(marketStageBidLengths)
                 .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(1)
+                .tradeResultLength(1000)
                 .userIds(Arrays.asList("0", "1"))
+                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);
@@ -88,16 +89,7 @@ public class CompTest {
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, compId);
         List<UnitDO> unitDOS = unitDOMapper.selectList(queryWrapper);
         Assertions.assertEquals(unitDOS.size(), 2 * 3 * 4);
-
-        CompCmd.Step command = CompCmd.Step.builder()
-                .compId(compId)
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.AN_INTER)
-                .marketStatus(MarketStatus.BID)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
         StageId stageId = tunnel.runningComp().getStageId();
         Unit unit = UnitAdapter.Convertor.INST.to(unitDOS.get(0));
 
@@ -141,40 +133,31 @@ public class CompTest {
     @Test
     public void testClearProcedure() throws InterruptedException {
 
-        Thread.sleep(3000);
         // 创建比赛
         List<UserVO> userVOs = manageFacade.listUserVOs();
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
-            marketStageBidLengths.put(marketStage, 1);
-            marketStageClearLengths.put(marketStage, 1);
+            marketStageBidLengths.put(marketStage, 1000);
+            marketStageClearLengths.put(marketStage, 1000);
         }
 
         // 比赛参数
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .compInitLength(1000)
-                .quitCompeteLength(1)
-                .quitResultLength(1)
+                .quitCompeteLength(1000)
+                .quitResultLength(1000)
                 .marketStageBidLengths(marketStageBidLengths)
                 .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(1)
+                .tradeResultLength(1000)
                 .userIds(Collect.transfer(userVOs, UserVO::getUserId))
+                .enableQuiz(false)
                 .build();
         Result<Void> result = manageFacade.createComp(compCreatePO);
         Assertions.assertTrue(result.getSuccess());
 
         Comp comp = tunnel.runningComp();
-
-        CompCmd.Step command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.AN_INTER)
-                .marketStatus(MarketStatus.BID)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
         StageId rawStageId = tunnel.runningComp().getStageId();
         StageId stageId = StageId.builder().compId(comp.getCompId())
                 .compStage(CompStage.TRADE)
@@ -240,16 +223,7 @@ public class CompTest {
         interBidsVO1 = listResult1.getData().stream().filter(i -> i.getUnitId().equals(unitId1)).findFirst().orElseThrow(SysEx::unreachable);
         interBidsVO1.getInterBidVOS().forEach(interBidVO -> Assertions.assertEquals(3, interBidVO.getBidVOs().size()));
 
-        // 省间年度清算
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.AN_INTER)
-                .marketStatus(MarketStatus.CLEAR)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
 
         stageId = StageId.builder().compId(comp.getCompId())
                 .compStage(CompStage.TRADE)
@@ -279,17 +253,7 @@ public class CompTest {
             Assertions.assertEquals(capacity - unitBalance, 300D);
         }));
 
-
-        // 省间年度清算结束
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.AN_INTRA)
-                .marketStatus(MarketStatus.BID)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
 
         comp = tunnel.runningComp();
         Assertions.assertEquals(comp.getTradeStage(), TradeStage.AN_INTRA);
@@ -383,54 +347,15 @@ public class CompTest {
                 .listIntraSymbolBidVOs(comp.getStageId().toString(), TokenUtils.sign(unit0.getUserId()));
         Assertions.assertTrue(intraSymbolBidVOsResult.getSuccess());
 
-        // 省间年度清算结束
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.AN_INTRA)
-                .marketStatus(MarketStatus.CLEAR)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
 
         Thread.sleep(100);
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0, generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL));
 
-        // 月度省间开始
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.MO_INTER)
-                .marketStatus(MarketStatus.BID)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
-
-        // 月度省间结束
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.MO_INTER)
-                .marketStatus(MarketStatus.CLEAR)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
-
-
-        // 月度省内开始
-        command = CompCmd.Step.builder()
-                .compId(comp.getCompId())
-                .compStage(CompStage.TRADE)
-                .roundId(0)
-                .tradeStage(TradeStage.MO_INTRA)
-                .marketStatus(MarketStatus.BID)
-                .endingTimeStamp(Clock.currentTimeMillis() + 1000_000)
-                .build();
-        CommandBus.accept(command, new HashMap<>());
+        manageFacade.step();
+        manageFacade.step();
+        manageFacade.step();
 
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Double sellBalance = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL);
