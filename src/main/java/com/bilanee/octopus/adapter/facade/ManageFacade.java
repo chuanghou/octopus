@@ -5,11 +5,13 @@ import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
+import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
 import com.bilanee.octopus.infrastructure.entity.UserDO;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -68,6 +70,9 @@ public class ManageFacade {
     @PostMapping("/step")
     public Result<Void> step() {
         Comp comp = tunnel.runningComp();
+        if (comp == null) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("没有运行中的竞赛"));
+        }
         delayExecutor.removeStepCommand();
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.accept(command, new HashMap<>());
