@@ -27,6 +27,7 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.CustomLog;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,6 +63,14 @@ public class CompTest {
 
     @Autowired
     DomainTunnel domainTunnel;
+
+    @Autowired
+    Comp.DelayExecutor delayExecutor;
+
+    @AfterEach
+    public void clear() {
+        delayExecutor.removeStepCommand();
+    }
     
     
     @Test
@@ -158,6 +167,7 @@ public class CompTest {
         Result<Void> step = manageFacade.step();
         Assertions.assertFalse(step.getSuccess());
         Assertions.assertEquals(step.getMessage(), "已经到了最后阶段");
+
     }
 
     @Test
@@ -219,7 +229,7 @@ public class CompTest {
         Assertions.assertTrue(listResult.getSuccess());
         List<UnitInterBidVO> data = listResult.getData();
         Assertions.assertEquals(data.size(), 2);
-        UnitInterBidVO interBidsVO = data.get(0);
+        UnitInterBidVO interBidsVO = data.stream().filter(i -> i.getUnitId().equals(unit.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
         Assertions.assertEquals(interBidsVO.getUnitId(), unit.getUnitId());
         Assertions.assertEquals(interBidsVO.getUnitName(), unit.getMetaUnit().getName());
         Assertions.assertEquals(interBidsVO.getInterBidVOS().size(), 3);
