@@ -192,8 +192,8 @@ public class UnitFacade {
                 builder.latestPrice(intraInstantDO.getPrice());
                 builder.buyAsks(intraInstantDO.getBuyAsks());
                 builder.sellAsks(intraInstantDO.getSellAsks());
-                builder.buySections(intraInstantDO.getBuySections());
-                builder.sellSections(intraInstantDO.getSellSections());
+                builder.buyVolumes(intraInstantDO.getBuyVolumes());
+                builder.sellVolumes(intraInstantDO.getSellVolumes());
             }
 
             builder.unitIntraBidVOs(to(units, StageId.parse(stageId), intraSymbol));

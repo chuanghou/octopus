@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.bilanee.octopus.basic.Volume;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.stellariver.milky.infrastructure.base.database.ListJsonHandler;
@@ -34,11 +35,12 @@ public class IntraInstantDO {
     @TableField(typeHandler = ListAskJsonHandler.class)
     List<Ask> sellAsks;
     @TableField(typeHandler = JacksonTypeHandler.class)
-    List<Double> buySections;
+    List<Volume> buyVolumes;
     @TableField(typeHandler = JacksonTypeHandler.class)
-    List<Double> sellSections;
+    List<Volume> sellVolumes;
 
     static public class ListAskJsonHandler extends ListJsonHandler<Ask> {}
+    static public class ListVolumeJsonHandler extends ListJsonHandler<Volume> {}
 
 
 }

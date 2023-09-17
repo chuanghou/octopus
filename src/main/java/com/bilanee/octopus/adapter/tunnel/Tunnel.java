@@ -114,7 +114,9 @@ public class Tunnel {
     }
 
     public void record(IntraQuotationDO intraQuotationDO, IntraInstantDO intraInstantDO) {
-        intraQuotationDOMapper.insert(intraQuotationDO);
+        if (intraQuotationDO != null) {
+            intraQuotationDOMapper.insert(intraQuotationDO);
+        }
         LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
                 .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
                 .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())

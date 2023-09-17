@@ -4,10 +4,7 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.ws.WsHandler;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
-import com.bilanee.octopus.basic.Bid;
-import com.bilanee.octopus.basic.Deal;
-import com.bilanee.octopus.basic.ErrorEnums;
-import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.Operation;
@@ -25,10 +22,15 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
+import java.sql.Array;
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IntraProcessor implements EventHandler<IntraBidContainer> {
@@ -159,6 +161,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         } else {
             throw new RuntimeException();
         }
+        Deal deal = null;
         while (true) {
             Bid buyBid = buyPriorityQueue.peek();
             Bid sellBid = sellPriorityQueue.peek();
@@ -176,7 +179,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
              */
             Double dealPrice = buyBid.getDeclareTimeStamp() > sellBid.getDeclareTimeStamp() ? sellBid.getPrice() : buyBid.getPrice();
             double dealQuantity = Math.min(buyBid.getQuantity(), sellBid.getQuantity());
-            Deal deal = Deal.builder().quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            deal = Deal.builder().quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
             double buyBalance = buyBid.getQuantity() - dealQuantity;
@@ -202,39 +205,41 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
         StageId stageId = tunnel.runningComp().getStageId();
 
-        // 历史
-        Double buyTotalQuantity = buyPriorityQueue.stream().map(Bid::getTransit).reduce(0D, Double::sum);
-        Double sellTotalQuantity = sellPriorityQueue.stream().map(Bid::getTransit).reduce(0D, Double::sum);
-        Triple<Double, Double, Double> market = Triple.of(buyTotalQuantity, sellTotalQuantity, latestPrice);
-        IntraQuotationDO intraQuotationDO = IntraQuotationDO.builder()
-                .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                .buyQuantity(buyTotalQuantity).sellQuantity(sellTotalQuantity).latestPrice(latestPrice)
-                .timeStamp(Clock.currentTimeMillis())
-                .build();
+        IntraQuotationDO intraQuotationDO = null;
+        if (deal != null) {
+            // TODO 更新主动身份
+            intraQuotationDO = IntraQuotationDO.builder()
+                    .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
+                    .buyQuantity(deal.getQuantity()).sellQuantity(deal.getQuantity()).latestPrice(latestPrice)
+                    .timeStamp(Clock.currentTimeMillis())
+                    .build();
+        }
 
         // 实时
         List<Ask> buyAsks = extractAsks(buyPriorityQueue);
         List<Ask> sellAsks = extractAsks(sellPriorityQueue);
 
-        List<Double> buySections = extractSections(buyPriorityQueue);
-        List<Double> sellSections = extractSections(sellPriorityQueue);
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue);
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue);
 
         IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                .buyAsks(buyAsks).sellAsks(sellAsks).buySections(buySections).sellSections(sellSections)
+                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
                 .build();
         tunnel.record(intraQuotationDO, intraInstantDO);
 
     }
 
-    private List<Double> extractSections(Collection<Bid> bids) {
-        return bids.stream().collect(Collect.select(
-                bid -> bid.getPrice() > 0D && bid.getTransit() <= 400D,
-                bid -> bid.getPrice() > 400D && bid.getTransit() <= 800D,
-                bid -> bid.getPrice() > 800D && bid.getTransit() <= 1200D,
-                bid -> bid.getPrice() > 1200D && bid.getTransit() <= 1600D,
-                bid -> bid.getPrice() > 1600D && bid.getTransit() <= 2000D
-        )).stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum)).collect(Collectors.toList());
+    private List<Volume> extractVolumes(Collection<Bid> bids) {
+        List<Predicate<Bid>> predicates = IntStream.range(0, 10).mapToObj(i -> Pair.of(i * 200, (i + 1) * 200))
+                .map(p -> (Predicate<Bid>) bid -> bid.getPrice() > p.getLeft() && bid.getPrice() <= p.getRight())
+                .collect(Collectors.toList());
+        List<Double> volumeQuantity = bids.stream().collect(Collect.select(predicates))
+                .stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum))
+                .collect(Collectors.toList());
+        return IntStream.range(0, 10)
+                .mapToObj(i -> new Volume(String.format("%s-%s", i * 200, (i + 1) * 200), volumeQuantity.get(i)))
+                .collect(Collectors.toList());
     }
 
 

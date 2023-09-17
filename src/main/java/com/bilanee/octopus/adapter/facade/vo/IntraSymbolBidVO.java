@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.basic.Volume;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.infrastructure.entity.Ask;
@@ -44,12 +45,12 @@ public class IntraSymbolBidVO {
     /**
      * 分时段交易盘, 不同价格区间交易量，买单
      */
-    List<Double> buySections;
+    List<Volume> buyVolumes;
 
     /**
      * 分时段交易盘, 不同价格区间交易量，卖单
      */
-    List<Double> sellSections;
+    List<Volume> sellVolumes;
 
     /**
      * 报单区
