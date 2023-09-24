@@ -6,6 +6,7 @@ import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.ErrorEnums;
+import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
@@ -103,6 +104,12 @@ public class ManageFacade {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);
+
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        default String toString(StageId stageId) {
+            return stageId.toString();
+        }
 
     }
 

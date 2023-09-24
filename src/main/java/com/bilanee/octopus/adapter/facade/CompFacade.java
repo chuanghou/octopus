@@ -220,6 +220,12 @@ public class CompFacade {
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);
 
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        default String toString(StageId stageId) {
+            return stageId.toString();
+        }
+
         @AfterMapping
         default void after(Comp comp, @MappingTarget CompVO compVO) {
             StageId stageId = StageId.builder().compId(compVO.getCompId())
@@ -228,7 +234,7 @@ public class CompFacade {
                     .tradeStage(comp.getTradeStage())
                     .marketStatus(comp.getMarketStatus())
                     .build();
-            compVO.setStageId(stageId);
+            compVO.setStageId(stageId.toString());
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))

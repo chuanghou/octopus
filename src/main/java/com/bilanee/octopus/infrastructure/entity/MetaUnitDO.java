@@ -32,5 +32,5 @@ public class MetaUnitDO {
     Integer sourceId;
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> capacity;
-
+    Double minCapacity;
 }

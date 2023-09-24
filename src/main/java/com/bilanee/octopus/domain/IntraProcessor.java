@@ -151,6 +151,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
     }
 
     public void doNewBid(Bid declareBid) {
+        Direction direction = declareBid.getDirection();
         declareBid.setDeclareTimeStamp(Clock.currentTimeMillis());
         declareBid.setBidStatus(BidStatus.NEW_DECELERATED);
         tunnel.insertBid(declareBid);
@@ -207,12 +208,16 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
         IntraQuotationDO intraQuotationDO = null;
         if (deal != null) {
-            // TODO 更新主动身份
-            intraQuotationDO = IntraQuotationDO.builder()
+            IntraQuotationDO.IntraQuotationDOBuilder builder = IntraQuotationDO.builder()
                     .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                    .buyQuantity(deal.getQuantity()).sellQuantity(deal.getQuantity()).latestPrice(latestPrice)
-                    .timeStamp(Clock.currentTimeMillis())
-                    .build();
+                    .latestPrice(latestPrice)
+                    .timeStamp(Clock.currentTimeMillis());
+            if (declareBid.getDirection() == Direction.BUY) {
+                builder.sellQuantity(deal.getQuantity());
+            } else {
+                builder.buyQuantity(deal.getQuantity());
+            }
+            intraQuotationDO = builder.build();
         }
 
         // 实时

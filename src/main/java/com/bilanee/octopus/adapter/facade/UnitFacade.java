@@ -2,10 +2,7 @@ package com.bilanee.octopus.adapter.facade;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.bilanee.octopus.adapter.facade.po.BidPO;
-import com.bilanee.octopus.adapter.facade.po.InterBidsPO;
-import com.bilanee.octopus.adapter.facade.po.IntraBidPO;
-import com.bilanee.octopus.adapter.facade.po.IntraCancelPO;
+import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
@@ -336,6 +333,22 @@ public class UnitFacade {
         CommandBus.accept(command, new HashMap<>());
         return Result.success();
     }
+
+
+    @GetMapping("listDaBidVOs")
+    public Result<List<IntraDaBidVO>> listDaBidVOs(String stageId, @RequestHeader String token) {
+
+
+        return null;
+    }
+
+    @PostMapping("submitDaBidVO")
+    public Result<List<IntraDaBidVO>> submitDaBidVO(String stageId, IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
+
+
+        return null;
+    }
+
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

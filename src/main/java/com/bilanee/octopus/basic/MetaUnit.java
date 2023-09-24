@@ -24,5 +24,5 @@ public class MetaUnit {
     GeneratorType generatorType;
     Integer sourceId;
     Map<TimeFrame, Map<Direction, Double>> capacity;
-
+    Double minCapacity;
 }

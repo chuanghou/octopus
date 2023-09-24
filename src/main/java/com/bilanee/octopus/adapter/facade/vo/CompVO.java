@@ -22,6 +22,11 @@ public class CompVO {
     Long compId;
 
     /**
+     * 是否知识竞赛
+     */
+    Boolean enableQuiz;
+
+    /**
      * 竞赛阶段
      */
     CompStage compStage;
@@ -44,7 +49,7 @@ public class CompVO {
     /**
      * 阶段id
      */
-    StageId  stageId;
+    String stageId;
 
     /**
      * 当前阶段的截止时间
