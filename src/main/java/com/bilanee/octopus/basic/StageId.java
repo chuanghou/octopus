@@ -48,7 +48,7 @@ public class StageId {
 
     public StageId next(Comp comp) {
         StageId stageId = Convertor.INST.to(this);
-        if (compStage == CompStage.INT) {
+        if (compStage == CompStage.INIT) {
             if (comp.getEnableQuiz()) {
                 stageId.setCompStage(CompStage.QUIT_COMPETE);
             } else {
@@ -91,7 +91,7 @@ public class StageId {
 
     public Integer duration(Comp comp) {
         DelayConfig delayConfig = comp.getDelayConfig();
-        if (compStage == CompStage.INT) {
+        if (compStage == CompStage.INIT) {
             return delayConfig.getCompInitLength();
         } else if (compStage == CompStage.QUIT_COMPETE) {
             return delayConfig.getQuitCompeteLength();

@@ -77,7 +77,7 @@ public class Comp extends AggregateRoot {
         Comp comp = new Comp();
         comp.setCompId(command.getCompId());
         comp.setUserIds(command.getUserIds());
-        comp.setCompStage(CompStage.INT);
+        comp.setCompStage(CompStage.INIT);
         comp.setDelayConfig(command.getDelayConfig());
         int delayLength = command.getDelayConfig().getCompInitLength() * octopusProperties.getDelayUnits();
         long endingTimeStamp = Clock.currentTimeMillis() + delayLength;
