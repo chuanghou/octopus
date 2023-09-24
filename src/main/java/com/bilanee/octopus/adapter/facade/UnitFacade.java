@@ -144,6 +144,28 @@ public class UnitFacade {
         return Result.success(interBidsVOs);
     }
 
+    /**
+     * 省间报价接口
+     * @param interBidsPO 省间报价请求结构体
+     * @return 报单结果
+     */
+    @PostMapping("submitInterBidsPO")
+    public Result<Void> submitInterBidsPO(InterBidsPO interBidsPO) {
+
+        StageId pStageId = StageId.parse(interBidsPO.getStageId());
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTER,
+                PARAM_FORMAT_WRONG.message("当前为中长期省省间报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+        List<BidPO> bidPOs = interBidsPO.getBidPOs();
+        UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
+                .bids(Collect.transfer(bidPOs, Convertor.INST::to))
+                .build();
+        CommandBus.accept(command, new HashMap<>());
+        return Result.success();
+    }
 
     /**
      * 省内报价交易员报价页面，包含省间年度，省间月度
@@ -262,28 +284,6 @@ public class UnitFacade {
 
     }
 
-    /**
-     * 省间报价接口
-     * @param interBidsPO 省间报价请求结构体
-     * @return 报单结果
-     */
-    @PostMapping("submitInterBidsPO")
-    public Result<Void> submitInterBidsPO(InterBidsPO interBidsPO) {
-
-        StageId pStageId = StageId.parse(interBidsPO.getStageId());
-        StageId cStageId = tunnel.runningComp().getStageId();
-        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTER,
-                PARAM_FORMAT_WRONG.message("当前为中长期省省间报价阶段"));
-        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
-                PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
-        List<BidPO> bidPOs = interBidsPO.getBidPOs();
-        UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
-                .bids(Collect.transfer(bidPOs, Convertor.INST::to))
-                .build();
-        CommandBus.accept(command, new HashMap<>());
-        return Result.success();
-    }
 
     /**
      * 省内报价接口
