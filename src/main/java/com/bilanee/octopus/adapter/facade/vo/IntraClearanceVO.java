@@ -40,6 +40,24 @@ public class IntraClearanceVO {
     Double minDealPrice;
 
 
+
+    /**
+     *  总成交电力
+     */
+    Double totalDealQuantity;
+
+
+    /**
+     *  卖方剩余未成交电力
+     */
+    Double sellTotalTransit;
+
+
+    /**
+     *  买方剩余未成交电力
+     */
+    Double buyTotalTransit;
+
     /**
      *  成交直方图
      */

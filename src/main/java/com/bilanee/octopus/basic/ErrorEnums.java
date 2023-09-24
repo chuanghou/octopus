@@ -22,6 +22,9 @@ public class ErrorEnums extends ErrorEnumsBase {
     @Message("用户不存在")
     public static ErrorEnum ACCOUNT_NOT_EXISTED;
 
+    @Message("当前无你可参与的竞赛")
+    public static ErrorEnum COMP_NOT_EXISTED;
+
     static {
         for (Field field : ErrorEnums.class.getDeclaredFields()) {
             try {

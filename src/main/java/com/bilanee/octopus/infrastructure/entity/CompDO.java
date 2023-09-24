@@ -11,6 +11,8 @@ import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,6 +24,8 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
 
     @TableId(type = IdType.INPUT)
     Long compId;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    List<String> userIds;
     CompStage compStage;
     @TableField(updateStrategy = FieldStrategy.IGNORED)
     Integer roundId;

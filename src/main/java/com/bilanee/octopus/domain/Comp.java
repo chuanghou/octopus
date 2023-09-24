@@ -43,6 +43,7 @@ public class Comp extends AggregateRoot {
     Long compId;
 
     Integer roundTotal = 3;
+    List<String> userIds;
 
     CompStage compStage;
     Integer roundId;
@@ -75,6 +76,7 @@ public class Comp extends AggregateRoot {
         // init comp status
         Comp comp = new Comp();
         comp.setCompId(command.getCompId());
+        comp.setUserIds(command.getUserIds());
         comp.setCompStage(CompStage.INT);
         comp.setDelayConfig(command.getDelayConfig());
         int delayLength = command.getDelayConfig().getCompInitLength() * octopusProperties.getDelayUnits();

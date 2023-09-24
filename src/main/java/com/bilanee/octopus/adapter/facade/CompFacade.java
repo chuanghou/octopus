@@ -8,14 +8,18 @@ import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.CompStage;
+import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.domain.Comp;
+import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.ClearanceDO;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
 import com.bilanee.octopus.infrastructure.mapper.ClearanceDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
+import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
@@ -51,11 +55,16 @@ public class CompFacade {
 
     /**
      * 当前运行竞赛查看
+     * 返回result
      * @return 当前运行竞赛概况
      */
     @GetMapping("/runningCompVO")
-    public Result<CompVO> runningCompVO() {
+    public Result<CompVO> runningCompVO(@RequestHeader String token) {
+        String userId = TokenUtils.getUserId(token);
         Comp comp = tunnel.runningComp();
+        if (comp == null || !comp.getUserIds().contains(userId)) {
+            return Result.error(ErrorEnums.COMP_NOT_EXISTED, ExceptionType.BIZ);
+        }
         return Result.success(Convertor.INST.to(comp));
     }
 
@@ -123,10 +132,66 @@ public class CompFacade {
      * @return 省间出清结果
      */
     @GetMapping("/intraClearanceVO")
-    public Result<List<IntraClearanceVO>> IntraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+    public Result<List<IntraClearanceVO>> intraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+
+        Comp comp = tunnel.runningComp();
+        StageId parsed = StageId.parse(stageId);
+        BidQuery bidQuery = BidQuery.builder().compId(parsed.getCompId())
+                .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
+                .build();
+
+        boolean equals = parsed.getCompStage().equals(CompStage.RANKING);
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsed.getCompId())
+                .eq(UnitDO::getRoundId, parsed.getRoundId())
+                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+
+        ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
+        List<IntraClearanceVO> intraClearanceVOs = groupedBids.asMap().entrySet().stream().map(e -> {
+            IntraSymbol intraSymbol = e.getKey();
+            Collection<Bid> bids = e.getValue();
+            List<Deal> deals = bids.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
+            Double maxPrice = deals.stream().max(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
+            Double minPrice = deals.stream().min(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
+            Double totalVolume = deals.stream().map(d -> d.getPrice() * d.getQuantity()).reduce(0D, Double::sum);
+            Double totalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            Double averagePrice = totalQuantity.equals(0D) ? null : (totalVolume / totalQuantity);
+            Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).map(Bid::getTransit).reduce(0D, Double::sum);
+            Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).map(Bid::getTransit).reduce(0D, Double::sum);
+
+            Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
+            List<UnitDealVO> unitDealVOs = bidMap.entrySet().stream().map(ee -> {
+                Long unitId = ee.getKey();
+                Collection<Bid> unitBids = ee.getValue();
+                Double unitTotalVolume = deals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
+                Double unitTotalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                return UnitDealVO.builder()
+                        .unitId(unitId)
+                        .averagePrice(totalVolume / unitTotalQuantity)
+                        .totalQuantity(unitTotalQuantity)
+                        .deals(deals)
+                        .build();
+            }).collect(Collectors.toList());
 
 
-        return Result.success();
+            return IntraClearanceVO.builder()
+                    .province(intraSymbol.getProvince())
+                    .timeFrame(intraSymbol.getTimeFrame())
+                    .averageDealPrice(averagePrice)
+                    .maxDealPrice(maxPrice)
+                    .minDealPrice(minPrice)
+                    .buyTotalTransit(buyTransit)
+                    .sellTotalTransit(sellTransit)
+                    .totalDealQuantity(totalQuantity)
+                    .unitVOs(unitVOs)
+                    .unitDealVOS(unitDealVOs)
+                    .build();
+        }).collect(Collectors.toList());
+        return Result.success(intraClearanceVOs);
     }
 
 

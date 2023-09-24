@@ -89,7 +89,7 @@ public class CompTest {
                 .build();
 
         manageFacade.createComp(compCreatePO);
-        Result<CompVO> compVOResult = compFacade.runningCompVO();
+        Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("0"));
         Assertions.assertTrue(compVOResult.getSuccess());
         Comp comp = tunnel.runningComp();
         StageId stageId = comp.getStageId();
@@ -186,7 +186,7 @@ public class CompTest {
                 .build();
 
         manageFacade.createComp(compCreatePO);
-        Result<CompVO> compVOResult = compFacade.runningCompVO();
+        Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("0"));
         Assertions.assertTrue(compVOResult.getSuccess());
         Long compId = compVOResult.getData().getCompId();
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, compId);
