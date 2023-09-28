@@ -37,19 +37,15 @@ public class CompCreatePO {
     Integer quitResultLength;
 
     /**
-     * 各个市场的竞价时长，单位分钟, 前6阶段
+     * 各个市场的竞价时长
+     * @see TradeStage
      */
     @NotNull @NotEmpty
     Map<TradeStage, Integer> marketStageBidLengths;
 
     /**
-     * 各个市场的查看结果时长，单位分钟，前6阶段, KEY
-     * AN_INTER
-     * AN_INTRA
-     * MO_INTER
-     * MO_INTRA
-     * DA_INTRA
-     * DA_INTER
+     * 各个市场的查看结果时长
+     * @see TradeStage
      */
     @NotNull @NotEmpty
     Map<TradeStage, Integer> marketStageClearLengths;

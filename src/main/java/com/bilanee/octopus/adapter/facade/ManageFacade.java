@@ -55,7 +55,7 @@ public class ManageFacade {
 
 
     /**
-     * 竞赛创建接口
+     * 竞赛新建接口
      * @param compCreatePO 创建竞赛参数
      */
     @PostMapping("/createComp")
