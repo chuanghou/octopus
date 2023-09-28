@@ -18,34 +18,38 @@ import java.util.Map;
 public class CompCreatePO {
 
     /**
-     * 竞赛初始化时长，单位分钟
+     * 竞赛开始时间戳
      */
     @NotNull @Positive
-    Integer compInitLength;
+    Long startTimeStamp;
 
     /**
      * 知识问答环节时长，单位分钟
      */
-    @NotNull @Positive
+    @Positive
     Integer quitCompeteLength;
 
 
     /**
      * 知识问答查看结果时长，单位分钟
      */
-    @NotNull @Positive
+    @Positive
     Integer quitResultLength;
 
     /**
-     * 各个市场的竞价时长，单位分钟, 前6阶段，key 取值
-     * @see TradeStage
+     * 各个市场的竞价时长，单位分钟, 前6阶段
      */
     @NotNull @NotEmpty
     Map<TradeStage, Integer> marketStageBidLengths;
 
     /**
-     * 各个市场的查看结果时长，单位分钟，前6阶段，key 取值
-     * @see TradeStage
+     * 各个市场的查看结果时长，单位分钟，前6阶段, KEY
+     * AN_INTER
+     * AN_INTRA
+     * MO_INTER
+     * MO_INTRA
+     * DA_INTRA
+     * DA_INTER
      */
     @NotNull @NotEmpty
     Map<TradeStage, Integer> marketStageClearLengths;

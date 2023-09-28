@@ -94,7 +94,6 @@ public class ManageFacade {
         Convertor INST = Mappers.getMapper(Convertor.class);
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
-        @Mapping(source = "compInitLength", target = "delayConfig.compInitLength")
         @Mapping(source = "quitCompeteLength", target = "delayConfig.quitCompeteLength")
         @Mapping(source = "quitResultLength", target = "delayConfig.quitResultLength")
         @Mapping(source = "marketStageBidLengths", target = "delayConfig.marketStageBidLengths")

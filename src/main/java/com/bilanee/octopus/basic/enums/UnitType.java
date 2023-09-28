@@ -7,18 +7,19 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UnitType {
 
-    GENERATOR("机组") {
+    GENERATOR(1,"机组") {
         @Override
         public Direction generalDirection() {
             return Direction.SELL;
         }
-    }, LOAD("负荷") {
+    }, LOAD(2, "负荷") {
         @Override
         public Direction generalDirection() {
             return Direction.BUY;
         }
     };
 
+    final Integer dbCode;
     final String desc;
 
     abstract public Direction generalDirection();

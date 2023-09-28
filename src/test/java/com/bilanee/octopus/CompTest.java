@@ -78,7 +78,7 @@ public class CompTest {
         }
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
-                .compInitLength(2)
+                .startTimeStamp(Clock.currentTimeMillis() + 2_000)
                 .quitCompeteLength(2)
                 .quitResultLength(2)
                 .marketStageBidLengths(marketStageBidLengths)
@@ -175,7 +175,7 @@ public class CompTest {
         }
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
-                .compInitLength(1000)
+                .startTimeStamp(Clock.currentTimeMillis() + 1000)
                 .quitCompeteLength(1000)
                 .quitResultLength(1000)
                 .marketStageBidLengths(marketStageBidLengths)
@@ -247,7 +247,7 @@ public class CompTest {
 
         // 比赛参数
         CompCreatePO compCreatePO = CompCreatePO.builder()
-                .compInitLength(1000)
+                .startTimeStamp(Clock.currentTimeMillis() + 1000)
                 .quitCompeteLength(1000)
                 .quitResultLength(1000)
                 .marketStageBidLengths(marketStageBidLengths)
@@ -426,8 +426,8 @@ public class CompTest {
         unitBalance0 = generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL);
         IntraCancelPO intraCancelPO = IntraCancelPO.builder().stageId(comp.getStageId().toString()).bidId(partDealBidId).build();
         bidResult = unitFacade.submitIntraCancelPO(intraCancelPO);
-        Thread.sleep(1000);
         Assertions.assertTrue(bidResult.getSuccess());
+        Thread.sleep(2000);
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0 - generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL), -50D);
         bidQuery = BidQuery.builder().unitIds(Collect.asSet(generatorUnitId)).tradeStage(TradeStage.AN_INTRA).build();

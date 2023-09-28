@@ -75,11 +75,6 @@ public class Routers implements EventRouters {
         // 写回数据库
     }
 
-
-    private void writeBack(StageId stageId) {
-
-    }
-
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
      */

@@ -14,14 +14,15 @@ import java.util.stream.Collectors;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum TradeStage {
 
-    AN_INTER("年度省间", true, TradeType.INTER),
-    AN_INTRA("年度省内", true, TradeType.INTRA),
-    MO_INTER("月度省间", true, TradeType.INTER),
-    MO_INTRA("月度省内", true, TradeType.INTRA),
-    DA_INTRA("现货省内", true, TradeType.SPOT),
-    DA_INTER("现货省间", true, TradeType.SPOT),
-    END("交易结算", false, null);
+    AN_INTER(1, "省间年度", true, TradeType.INTER),
+    AN_INTRA(2, "省内年度", true, TradeType.INTRA),
+    MO_INTER(3, "省间月度", true, TradeType.INTER),
+    MO_INTRA(4, "省内月度", true, TradeType.INTRA),
+    DA_INTRA(5, "省内现货", true, TradeType.SPOT),
+    DA_INTER(6, "省间现货", true, TradeType.SPOT),
+    END(7, "交易结算", false, null);
 
+    final Integer dbCode;
     final String desc;
     final Boolean tradeable;
     final TradeType tradeType;

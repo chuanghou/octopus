@@ -213,9 +213,9 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                     .latestPrice(latestPrice)
                     .timeStamp(Clock.currentTimeMillis());
             if (declareBid.getDirection() == Direction.BUY) {
-                builder.sellQuantity(deal.getQuantity());
+                builder.sellQuantity(deal.getQuantity()).buyQuantity(0D);
             } else {
-                builder.buyQuantity(deal.getQuantity());
+                builder.buyQuantity(deal.getQuantity()).sellQuantity(0D);
             }
             intraQuotationDO = builder.build();
         }

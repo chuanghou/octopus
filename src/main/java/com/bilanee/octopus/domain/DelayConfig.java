@@ -13,7 +13,6 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DelayConfig {
 
-    Integer compInitLength;
     Integer quitCompeteLength;
     Integer quitResultLength;
     Map<TradeStage, Integer> marketStageBidLengths;

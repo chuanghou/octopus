@@ -91,9 +91,7 @@ public class StageId {
 
     public Integer duration(Comp comp) {
         DelayConfig delayConfig = comp.getDelayConfig();
-        if (compStage == CompStage.INIT) {
-            return delayConfig.getCompInitLength();
-        } else if (compStage == CompStage.QUIT_COMPETE) {
+        if (compStage == CompStage.QUIT_COMPETE) {
             return delayConfig.getQuitCompeteLength();
         } else if (compStage == CompStage.QUIT_RESULT) {
             return delayConfig.getQuitResultLength();

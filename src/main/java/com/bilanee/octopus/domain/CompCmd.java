@@ -19,6 +19,7 @@ public class CompCmd {
     static public class Create extends Command {
 
         Long compId;
+        Long startTimeStamp;
         DelayConfig delayConfig;
         List<String> userIds;
         Boolean enableQuiz;
