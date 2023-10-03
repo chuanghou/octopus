@@ -21,15 +21,16 @@ import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
+import org.mapstruct.Builder;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -59,6 +60,7 @@ public class UnitFacade {
     final GeneratorDaForecastBidMapper generatorDaForecastBidMapper;
     final LoadForecastValueMapper loadForecastValueMapper;
     final LoadDaForecastBidMapper loadDaForecastBidMapper;
+    final ThermalCostDOMapper thermalCostDOMapper;
     final DomainTunnel domainTunnel;
 
     final Executor executor = Executors.newFixedThreadPool(100);
@@ -154,7 +156,7 @@ public class UnitFacade {
      * @return 报单结果
      */
     @PostMapping("submitInterBidsPO")
-    public Result<Void> submitInterBidsPO(InterBidsPO interBidsPO) {
+    public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
 
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
@@ -295,7 +297,7 @@ public class UnitFacade {
      * @return 报单结果
      */
     @PostMapping("submitIntraBidPO")
-    public Result<Void> submitIntraBidPO(IntraBidPO intraBidPO) {
+    public Result<Void> submitIntraBidPO(@RequestBody IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
 
@@ -442,7 +444,8 @@ public class UnitFacade {
      * @param intraDaBidPO 省内现货报单结构体
      */
     @PostMapping("submitDaBidVO")
-    public Result<List<IntraDaBidVO>> submitDaBidVO(@NotBlank String stageId, IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
+    public Result<List<IntraDaBidVO>> submitDaBidVO(@NotBlank String stageId,
+                                                    @RequestBody IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
         StageId parsed = StageId.parse(stageId);
         boolean equals = tunnel.runningComp().getStageId().equals(parsed);
         BizEx.falseThrow(equals, PARAM_FORMAT_WRONG.message("已经进入下一阶段"));
@@ -493,6 +496,71 @@ public class UnitFacade {
 
         return null;
     }
+
+
+    /**
+     * 现货阶段成本计算接口
+     * @param unitId 待计算报价单元id
+     * @param start 待计算报价段起点
+     * @param end 待计算报价段终点
+     */
+    @GetMapping("calculateDaCost")
+    public double calculateDaCost(@NotNull @Positive Long unitId,
+                                  @NotNull @Positive Double start,
+                                  @NotNull @Positive Double end) {
+        BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
+            // TODO system parameter release 里面有多条数据了，需要问一下，怎么出力
+            return 400;
+        }
+        Double minCapacity = unit.getMetaUnit().getMinCapacity();
+        start = start - minCapacity;
+        end = end - minCapacity;
+        LambdaQueryWrapper<ThermalCostDO> eq = new LambdaQueryWrapper<ThermalCostDO>().eq(ThermalCostDO::getUnitId, unit.getMetaUnit().getSourceId());
+        List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
+                .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
+
+        List<Section> sections = buildSections(thermalCostDOs);
+
+        double accumulate = 0D;
+        for (Section section : sections) {
+            if (start >= section.getLeft() && start < section.getRight())
+                accumulate += (section.getRight() - start) * section.getPrice();
+            else if (end > section.getLeft() && end <= section.getRight()) {
+                accumulate += (end - section.getLeft()) * section.getPrice();
+            } else if (start < section.getLeft() || end > section.getRight()){
+                accumulate += (section.getRight() - section.getLeft()) * section.getPrice();
+            }
+        }
+        return accumulate/(end - start);
+    }
+
+    private List<Section> buildSections(List<ThermalCostDO> thermalCostDOs) {
+        Double start = 0D;
+        List<Section> sections = new ArrayList<>();
+        for (ThermalCostDO thermalCostDO : thermalCostDOs) {
+            Section section = Section.builder().left(start)
+                    .right(start + thermalCostDO.getSpotCostMw()).price(thermalCostDO.getSpotCostMarginalCost()).build();
+            sections.add(section);
+            start += thermalCostDO.getSpotCostMw();
+        }
+        return sections;
+    }
+
+
+    @Data
+    @lombok.Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static private class Section {
+        Double left;
+        Double right;
+        Double price;
+    }
+
+
 
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
