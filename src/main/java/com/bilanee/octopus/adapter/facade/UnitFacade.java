@@ -361,6 +361,13 @@ public class UnitFacade {
                 .unitType(unitType).generatorType(generatorType)
                 .priceLimit(priceLimit);
         if (unitType == UnitType.GENERATOR) {
+
+            if (generatorType == GeneratorType.CLASSIC) {
+                Segment segment = Segment.builder().start(0D).end(metaUnit.getMinCapacity())
+                        .price(metaUnit.getMinCost() / metaUnit.getMinCapacity()).build();
+                builder.minSegment(segment);
+            }
+
             double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinCost() / metaUnit.getMinCapacity(): 0D;
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
@@ -409,6 +416,7 @@ public class UnitFacade {
                         .collect(Collectors.toList());
                 builder.forecasts(forecasts);
             }
+
         } else if (unitType == UnitType.LOAD){
             LambdaQueryWrapper<LoadForecastValueDO> eq0 = new LambdaQueryWrapper<LoadForecastValueDO>()
                     .eq(LoadForecastValueDO::getLoadId, unit.getMetaUnit().getSourceId());

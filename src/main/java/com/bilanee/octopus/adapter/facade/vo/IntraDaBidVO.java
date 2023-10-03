@@ -3,6 +3,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.GridLimit;
+import com.bilanee.octopus.basic.Section;
 import com.bilanee.octopus.basic.enums.GeneratorType;
 import com.bilanee.octopus.basic.enums.UnitType;
 import com.stellariver.milky.common.base.AfterValidation;
@@ -11,6 +12,7 @@ import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -47,6 +49,12 @@ public class IntraDaBidVO {
     @Size(min = 5, max = 5) @Valids
     List<Segment> segments;
 
+
+    /**
+     * 火电机组的最小起始段
+     */
+    @Nullable
+    Segment minSegment;
 
     /**
      * 价格限制
