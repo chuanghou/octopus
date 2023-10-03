@@ -1,13 +1,22 @@
 package com.bilanee.octopus.domain;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.ws.WsHandler;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
+import com.bilanee.octopus.basic.Bid;
+import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.MarketStatus;
+import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.infrastructure.entity.TransactionDO;
+import com.bilanee.octopus.infrastructure.mapper.TransactionDOMapper;
+import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
@@ -18,8 +27,11 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -29,6 +41,8 @@ public class Routers implements EventRouters {
     final UniqueIdGetter uniqueIdGetter;
     final Tunnel tunnel;
     final IntraManager intraManager;
+    final DomainTunnel domainTunnel;
+    final TransactionDOMapper transactionDOMapper;
 
     @EventRouter
     public void route(CompEvent.Created created, Context context) {
@@ -72,7 +86,8 @@ public class Routers implements EventRouters {
             CommandBus.driveByEvent(interDeduct, stepped);
         } );
 
-        // 写回数据库
+
+        storeDb(now);
     }
 
     /**
@@ -86,7 +101,31 @@ public class Routers implements EventRouters {
         if (!(b0 || b1)) {
             return;
         }
+        storeDb(now);
         intraManager.close();
+
+    }
+
+    private void storeDb(StageId now) {
+        BidQuery bidQuery = BidQuery.builder().compId(now.getCompId()).roundId(now.getRoundId()).tradeStage(now.getTradeStage()).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().forEach((unitId, unitBids) -> {
+            Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+            Arrays.stream(TimeFrame.values()).forEach(tf -> {
+                List<Bid> tBids = unitBids.stream().filter(bid -> bid.getTimeFrame() == tf).collect(Collectors.toList());
+                LambdaQueryWrapper<TransactionDO> eq = new LambdaQueryWrapper<TransactionDO>()
+                        .in(TransactionDO::getPrd, tf.getPrds())
+                        .eq(TransactionDO::getRoundId, now.getRoundId() - 1)
+                        .eq(TransactionDO::getResourceId, unit.getMetaUnit().getSourceId())
+                        .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
+                        .eq(TransactionDO::getMarketType, now.getTradeStage().getDbCode());
+                Double quantity = tBids.stream()
+                        .flatMap(uBid -> uBid.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+                List<TransactionDO> transactionDOS = transactionDOMapper.selectList(eq);
+                transactionDOS.forEach(t -> t.setClearedMw(quantity));
+                transactionDOS.forEach(transactionDOMapper::updateById);
+            });
+        });
     }
 
     @EventRouter

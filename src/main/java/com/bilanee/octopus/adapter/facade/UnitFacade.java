@@ -336,14 +336,14 @@ public class UnitFacade {
 
 
     @GetMapping("listDaBidVOs")
-    public Result<List<IntraDaBidVO>> listDaBidVOs(String stageId, @RequestHeader String token) {
+    public Result<List<IntraDaBidVO>> listDaBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
 
         return null;
     }
 
     @PostMapping("submitDaBidVO")
-    public Result<List<IntraDaBidVO>> submitDaBidVO(String stageId, IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
+    public Result<List<IntraDaBidVO>> submitDaBidVO(@NotBlank String stageId, IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
 
 
         return null;
