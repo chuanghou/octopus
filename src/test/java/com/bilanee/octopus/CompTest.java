@@ -9,7 +9,10 @@ import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.Bid;
+import com.bilanee.octopus.basic.Deal;
+import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.TokenUtils;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
@@ -477,6 +480,14 @@ public class CompTest {
         bidResult = unitFacade.submitIntraBidPO(intraBidPO);
         Assertions.assertFalse(bidResult.getSuccess());
         Assertions.assertEquals(bidResult.getMessage(), "省内月度报单必须保持同一个方向");
+
+        manageFacade.step();
+        manageFacade.step();
+        comp = tunnel.runningComp();
+        String userId = userVOs.get(0).getUserId();
+        String token = TokenUtils.sign(userId);
+        Result<List<IntraDaBidVO>> listResult = unitFacade.listDaBidVOs(comp.getStageId().toString(), token);
+        Assertions.assertTrue(listResult.getSuccess());
 
 
 

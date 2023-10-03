@@ -12,18 +12,14 @@ import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
-import com.bilanee.octopus.infrastructure.entity.BidDO;
-import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
-import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
-import com.bilanee.octopus.infrastructure.entity.UnitDO;
-import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.IntraInstantDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.IntraQuotationDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
+import com.bilanee.octopus.infrastructure.entity.*;
+import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.util.Collect;
+import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -57,6 +54,13 @@ public class UnitFacade {
     final BidDOMapper bidDOMapper;
     final IntraQuotationDOMapper intraQuotationDOMapper;
     final IntraInstantDOMapper intraInstantDOMapper;
+    final GeneratorDaSegmentMapper generatorDaSegmentMapper;
+    final GeneratorForecastValueMapper generatorForecastValueMapper;
+    final GeneratorDaForecastBidMapper generatorDaForecastBidMapper;
+    final LoadForecastValueMapper loadForecastValueMapper;
+    final LoadDaForecastBidMapper loadDaForecastBidMapper;
+    final DomainTunnel domainTunnel;
+
     final Executor executor = Executors.newFixedThreadPool(100);
 
     /**
@@ -334,17 +338,150 @@ public class UnitFacade {
         return Result.success();
     }
 
-
+    /**
+     * 省内现货报单页面回填接口
+     * @param stageId 当前阶段id
+     */
     @GetMapping("listDaBidVOs")
     public Result<List<IntraDaBidVO>> listDaBidVOs(@NotBlank String stageId, @RequestHeader String token) {
-
-
-        return null;
+        String userId = TokenUtils.getUserId(token);
+        StageId parsed = StageId.parse(stageId);
+        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId);
+        List<IntraDaBidVO> intraDaBidVOs = Collect.transfer(units,u -> this.build(u, parsed));
+        return Result.success(intraDaBidVOs);
     }
 
+    private IntraDaBidVO build(Unit unit, StageId stageId) {
+        UnitType unitType = unit.getMetaUnit().getUnitType();
+        GeneratorType generatorType = unit.getMetaUnit().getGeneratorType();
+        MetaUnit metaUnit = unit.getMetaUnit();
+        GridLimit priceLimit = metaUnit.getPriceLimit();
+        IntraDaBidVO.IntraDaBidVOBuilder builder = IntraDaBidVO.builder()
+                .unitId(unit.getUnitId()).unitName(unit.getMetaUnit().getName())
+                .unitType(unitType).generatorType(generatorType)
+                .priceLimit(priceLimit);
+        if (unitType == UnitType.GENERATOR) {
+            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinCost() / metaUnit.getMinCapacity(): 0D;
+            LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                    .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
+                    .eq(GeneratorDaSegmentBidDO::getUnitId, metaUnit.getSourceId());
+            List<GeneratorDaSegmentBidDO> gDOs = generatorDaSegmentMapper.selectList(eq0).stream()
+                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+            List<Segment> segments = new ArrayList<>();
+
+            for (GeneratorDaSegmentBidDO gDO : gDOs) {
+                Double price = gDO.getOfferPrice().equals(0D) ? null : gDO.getOfferPrice();
+                Segment segment = Segment.builder().start(start).end(start + gDO.getOfferMw()).price(price).build();
+                segments.add(segment);
+                start = start + gDO.getOfferMw();
+            }
+            segments.get(segments.size() - 1).setEnd(metaUnit.getMaxCapacity());
+
+            for (int i = 1; i < segments.size(); i++) {
+                if (segments.get(i).getStart().equals(start)) {
+                    segments.get(i).setStart(null);
+                }
+            }
+
+            for (int i = 0; i < segments.size() - 1; i++) {
+                if (segments.get(i).getEnd().equals(start)) {
+                    segments.get(i).setEnd(null);
+                }
+            }
+
+            builder.segments(segments);
+            if (generatorType == GeneratorType.RENEWABLE) {
+
+                LambdaQueryWrapper<GeneratorForecastValueDO> eq1 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
+                        .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId());
+                List<Double> declares = generatorForecastValueMapper.selectList(eq1).stream()
+                        .sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
+                        .map(GeneratorForecastValueDO::getDaPForecast)
+                        .collect(Collectors.toList());
+
+                builder.declares(declares);
+                LambdaQueryWrapper<GeneratorDaForecastBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
+                        .eq(GeneratorDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
+                        .eq(GeneratorDaForecastBidDO::getUnitId, unit.getMetaUnit().getSourceId());
+                List<Double> forecasts = generatorDaForecastBidMapper.selectList(eq2)
+                        .stream().sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd))
+                        .map(GeneratorDaForecastBidDO::getForecastMw)
+                        .collect(Collectors.toList());
+                builder.forecasts(forecasts);
+            }
+        } else if (unitType == UnitType.LOAD){
+            LambdaQueryWrapper<LoadForecastValueDO> eq0 = new LambdaQueryWrapper<LoadForecastValueDO>()
+                    .eq(LoadForecastValueDO::getLoadId, unit.getMetaUnit().getSourceId());
+            List<Double> forecasts = loadForecastValueMapper.selectList(eq0).stream()
+                    .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getDaPForecast).collect(Collectors.toList());
+            builder.forecasts(forecasts);
+            LambdaQueryWrapper<LoadDaForecastBidDO> eq1 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
+                    .eq(LoadDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
+                    .eq(LoadDaForecastBidDO::getLoadId, unit.getMetaUnit().getSourceId());
+            List<Double> declares = loadDaForecastBidMapper.selectList(eq1).stream().sorted(Comparator.comparing(LoadDaForecastBidDO::getPrd))
+                    .map(LoadDaForecastBidDO::getBidMw).collect(Collectors.toList());
+            builder.declares(declares);
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * 省内现货报单页面报单接口
+     * @param stageId 当前阶段id
+     * @param intraDaBidPO 省内现货报单结构体
+     */
     @PostMapping("submitDaBidVO")
     public Result<List<IntraDaBidVO>> submitDaBidVO(@NotBlank String stageId, IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
+        StageId parsed = StageId.parse(stageId);
+        boolean equals = tunnel.runningComp().getStageId().equals(parsed);
+        BizEx.falseThrow(equals, PARAM_FORMAT_WRONG.message("已经进入下一阶段"));
+        Long unitId = intraDaBidPO.getUnitId();
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        UnitType unitType = unit.getMetaUnit().getUnitType();
+        GeneratorType generatorType = unit.getMetaUnit().getGeneratorType();
+        if (unitType == UnitType.GENERATOR) {
+            LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                    .eq(GeneratorDaSegmentBidDO::getRoundId, parsed.getRoundId() + 1)
+                    .eq(GeneratorDaSegmentBidDO::getUnitId, unit.getMetaUnit().getSourceId());
+            List<GeneratorDaSegmentBidDO> gSegmentBidDOs = generatorDaSegmentMapper.selectList(eq0);
+            List<Segment> segments = intraDaBidPO.getSegments();
+            IntStream.range(0, gSegmentBidDOs.size()).forEach(i -> {
+                Segment segment = intraDaBidPO.getSegments().get(i);
+                GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i);
+                double v = segments.get(i).getEnd() - segments.get(i).getStart();
+                generatorDaSegmentBidDO.setOfferMw(v);
+                generatorDaSegmentBidDO.setOfferPrice(segment.getPrice());
+            });
+            gSegmentBidDOs.forEach(generatorDaSegmentMapper::updateById);
 
+            if (generatorType == GeneratorType.RENEWABLE) {
+                LambdaQueryWrapper<GeneratorDaForecastBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
+                        .eq(GeneratorDaForecastBidDO::getRoundId, parsed.getRoundId() + 1)
+                        .eq(GeneratorDaForecastBidDO::getUnitId, unit.getMetaUnit().getSourceId());
+                List<GeneratorDaForecastBidDO> gForecastDOs = generatorDaForecastBidMapper.selectList(eq2).stream()
+                        .sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd)).collect(Collectors.toList());
+                List<Double> declares = intraDaBidPO.getDeclares();
+                IntStream.range(0, gForecastDOs.size()).forEach(i -> {
+                    gForecastDOs.get(i).setForecastMw(declares.get(i));
+                });
+                gForecastDOs.forEach(generatorDaForecastBidMapper::updateById);
+            }
+        } else if (unitType == UnitType.LOAD) {
+            LambdaQueryWrapper<LoadDaForecastBidDO> eq1 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
+                    .eq(LoadDaForecastBidDO::getRoundId, parsed.getRoundId() + 1)
+                    .eq(LoadDaForecastBidDO::getLoadId, unit.getMetaUnit().getSourceId());
+            List<LoadDaForecastBidDO> lForecastBidDOs = loadDaForecastBidMapper.selectList(eq1).stream()
+                    .sorted(Comparator.comparing(LoadDaForecastBidDO::getPrd)).collect(Collectors.toList());
+            IntStream.range(0, lForecastBidDOs.size()).forEach(i -> {
+                lForecastBidDOs.get(i).setBidMw(intraDaBidPO.getDeclares().get(i));
+            });
+            lForecastBidDOs.forEach(loadDaForecastBidMapper::updateById);
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
 
         return null;
     }

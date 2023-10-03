@@ -1,7 +1,5 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.adapter.facade.vo.BalanceVO;
-import com.bilanee.octopus.adapter.facade.vo.IntraBidVO;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.enums.UnitType;
 import lombok.*;

@@ -1,7 +1,5 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.adapter.facade.vo.BalanceVO;
-import com.bilanee.octopus.adapter.facade.vo.BidVO;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

@@ -1,6 +1,5 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.adapter.facade.vo.InterBidVO;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.UnitType;

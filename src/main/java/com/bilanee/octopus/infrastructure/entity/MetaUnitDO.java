@@ -33,4 +33,7 @@ public class MetaUnitDO {
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> capacity;
     Double minCapacity;
+    Double maxCapacity;
+    Double minCost;
+    String nameType;
 }

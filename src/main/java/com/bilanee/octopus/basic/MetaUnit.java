@@ -25,4 +25,7 @@ public class MetaUnit {
     Integer sourceId;
     Map<TimeFrame, Map<Direction, Double>> capacity;
     Double minCapacity;
+    Double maxCapacity;
+    Double minCost;
+    String nameType;
 }
