@@ -80,8 +80,8 @@ public class StageId {
                 }
             } else if (marketStatus == MarketStatus.BID){
                 // 省内现货的查看阶段直接略过
-                if (tradeStage == TradeStage.DA_INTER) {
-                    stageId.setTradeStage(TradeStage.DA_INTRA);
+                if (tradeStage == TradeStage.DA_INTRA) {
+                    stageId.setTradeStage(TradeStage.DA_INTER);
                 } else {
                     stageId.setMarketStatus(MarketStatus.CLEAR);
                 }

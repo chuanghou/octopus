@@ -30,7 +30,7 @@ public class MetaUnit {
     String nameType;
 
 
-    public Double getMinOutputPrice() {
+    public Double minOutputPrice() {
         return minCost/minCapacity;
     }
 

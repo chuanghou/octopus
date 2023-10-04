@@ -614,7 +614,7 @@ public class UnitFacade {
 
         // 1. 火电机组的最小输出量
         List<Qp> minOutputQps = classicUnitDOs.stream().filter(m -> Kit.eq(GeneratorType.CLASSIC, m.getMetaUnit().getGeneratorType()))
-                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()))
+                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().minOutputPrice()))
                 .collect(Collectors.toList());
 
         // 2. 火电机组5段量价

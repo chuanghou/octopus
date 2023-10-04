@@ -116,8 +116,9 @@ public class CompTest {
         Assertions.assertEquals(stageId3.getRoundId(), 0);
         Assertions.assertEquals(stageId3.getTradeStage(), TradeStage.AN_INTER);
         Assertions.assertEquals(stageId3.getMarketStatus(), MarketStatus.BID);
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 11; i++) {
             manageFacade.step();
+            System.out.println(tunnel.runningComp().getStageId());
         }
         stageId = tunnel.runningComp().getStageId();
         Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
@@ -130,7 +131,7 @@ public class CompTest {
         Assertions.assertEquals(stageId.getRoundId(), 1);
         Assertions.assertEquals(stageId.getTradeStage(), TradeStage.AN_INTER);
         Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
-        for (int i = 0; i < 13; i++) {
+        for (int i = 0; i < 12; i++) {
             manageFacade.step();
         }
         stageId = tunnel.runningComp().getStageId();
@@ -139,7 +140,7 @@ public class CompTest {
         Assertions.assertEquals(stageId.getTradeStage(), TradeStage.AN_INTER);
         Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
 
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 11; i++) {
             manageFacade.step();
         }
         stageId = tunnel.runningComp().getStageId();
