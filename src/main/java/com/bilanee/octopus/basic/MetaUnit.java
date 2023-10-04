@@ -28,4 +28,10 @@ public class MetaUnit {
     Double maxCapacity;
     Double minCost;
     String nameType;
+
+
+    public Double getMinOutputPrice() {
+        return minCost/minCapacity;
+    }
+
 }

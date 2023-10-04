@@ -9,6 +9,7 @@ import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
@@ -18,9 +19,11 @@ import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
+import javafx.util.Pair;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
@@ -35,8 +38,10 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -62,6 +67,8 @@ public class UnitFacade {
     final LoadDaForecastBidMapper loadDaForecastBidMapper;
     final ThermalCostDOMapper thermalCostDOMapper;
     final DomainTunnel domainTunnel;
+    final TieLinePowerDOMapper tieLinePowerDOMapper;
+    final MarketSettingMapper marketSettingMapper;
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
@@ -560,6 +567,156 @@ public class UnitFacade {
         Double price;
     }
 
+
+    /**
+     * 供需曲线
+     * @param stageId 当前页面所处stageId
+     * @param province 查看省份
+     * @return 现货供需曲线
+     */
+    @GetMapping("getSpotMarketVO")
+    public Result<SpotMarketVO> getSpotMarketVO(String stageId, String province, @RequestHeader String token) {
+        StageId parsed = StageId.parse(stageId);
+        Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
+        Comp comp = tunnel.runningComp();
+        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsed.getCompId())
+                .eq(UnitDO::getRoundId, parsed.getRoundId())
+                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+
+        Qps supply = supply(parsed, parsedProvince);
+
+        return null;
+    }
+
+    @Data
+    @lombok.Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static class Qps {
+        List<List<Qp>> da;
+        List<List<Qp>> rt;
+    }
+
+    private Qps supply(StageId stageId, Province province) {
+
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, stageId.getCompId()).eq(UnitDO::getRoundId, stageId.getRoundId());
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream().filter(unitDO -> unitDO.getMetaUnit().getProvince().equals(province)).collect(Collectors.toList());
+        List<UnitDO> classicUnitDOs = unitDOs.stream().filter(unitDO -> GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
+        List<UnitDO> renewableUnitDOs = unitDOs.stream().filter(unitDO -> GeneratorType.RENEWABLE.equals(unitDO.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
+        List<UnitDO> loadUnitDOs = unitDOs.stream().filter(unitDO -> UnitType.LOAD.equals(unitDO.getMetaUnit().getUnitType())).collect(Collectors.toList());
+
+        // 1. 火电机组的最小输出量
+        List<Qp> minOutputQps = classicUnitDOs.stream().filter(m -> Kit.eq(GeneratorType.CLASSIC, m.getMetaUnit().getGeneratorType()))
+                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()))
+                .collect(Collectors.toList());
+
+        // 2. 火电机组5段量价
+        Map<Integer, Long> classicUnitIds = classicUnitDOs.stream().collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
+        LambdaQueryWrapper<GeneratorDaSegmentBidDO> in0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() - 1)
+                .in(GeneratorDaSegmentBidDO::getUnitId, classicUnitIds.keySet());
+
+        List<Qp> classicQps = generatorDaSegmentMapper.selectList(in0).stream()
+                .map(gDO -> new Qp(null, classicUnitIds.get(gDO.getUnitId()), gDO.getOfferMw(), gDO.getOfferPrice())).collect(Collectors.toList());
+
+        // 3. 新能源机组的根据预测调整量价段
+        Map<Integer, Long> renewableUnitIds = renewableUnitDOs.stream()
+                .collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
+        LambdaQueryWrapper<GeneratorDaSegmentBidDO> in1 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() - 1)
+                .in(GeneratorDaSegmentBidDO::getUnitId, renewableUnitIds.keySet());
+        Map<Long, List<GeneratorDaSegmentBidDO>> groupSegments = generatorDaSegmentMapper.selectList(in0).stream()
+                .collect(Collectors.groupingBy(gDO -> renewableUnitIds.get(gDO.getUnitId())));
+
+        // da qps;
+        LambdaQueryWrapper<GeneratorDaForecastBidDO> in2 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
+                .eq(GeneratorDaForecastBidDO::getRoundId, stageId.getRoundId() - 1)
+                .in(GeneratorDaForecastBidDO::getUnitId, renewableUnitIds.keySet());
+        Collector<GeneratorDaForecastBidDO, List<GeneratorDaForecastBidDO>, List<Double>> collector0 = Collector.of(
+                ArrayList::new, List::add, (ls0, ls1) -> { ls0.addAll(ls1); return ls0; },
+                ls -> ls.stream().sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd)).map(GeneratorDaForecastBidDO::getForecastMw).collect(Collectors.toList()));
+
+        Map<Long, List<Double>> daCutOffs = generatorDaForecastBidMapper.selectList(in2)
+                .stream().collect(Collectors.groupingBy(gBid -> renewableUnitIds.get(gBid.getUnitId()), HashMap::new, collector0));
+        List<Qp> daRenewableQps = renewableUnitIds.values().stream()
+                .map(unitId -> instantQps(groupSegments, daCutOffs, unitId)).flatMap(Collection::stream).collect(Collectors.toList());
+
+        // rt qps
+        LambdaQueryWrapper<GeneratorForecastValueDO> in3 = new LambdaQueryWrapper<GeneratorForecastValueDO>().in(GeneratorForecastValueDO::getUnitId, renewableUnitIds.keySet());
+        Collector<GeneratorForecastValueDO, List<GeneratorForecastValueDO>, List<Double>> collector1 = Collector.of(
+                ArrayList::new, List::add, (ls0, ls1) -> { ls0.addAll(ls1); return ls0; },
+                ls -> ls.stream().sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd)).map(GeneratorForecastValueDO::getRtP).collect(Collectors.toList()));
+        Map<Long, List<Double>> rtCutOffs = generatorForecastValueMapper.selectList(in3)
+                .stream().collect(Collectors.groupingBy(gValue -> renewableUnitIds.get(gValue.getUnitId()), HashMap::new, collector1));
+        List<Qp> rtRenewableQps = renewableUnitIds.values().stream()
+                .map(unitId -> instantQps(groupSegments, rtCutOffs, unitId)).flatMap(Collection::stream).collect(Collectors.toList());
+
+
+        List<Qp> tielineQps = new ArrayList<>();
+        if (province == Province.RECEIVER) {
+            MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+            LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId());
+            tielineQps = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
+                double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor());
+            }).collect(Collectors.toList());
+        }
+
+        List<Qp> nonInstantQps = Stream.of(minOutputQps, classicQps).flatMap(Collection::stream).collect(Collectors.toList());
+
+        List<List<Qp>> daInstantQps = Stream.of(daRenewableQps, tielineQps)
+                .flatMap(Collection::stream).collect(Collect.listMultiMap(Qp::getInstant)).asMap()
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).map(ArrayList::new).collect(Collectors.toList());
+        daInstantQps.forEach(qps -> qps.addAll(nonInstantQps));
+
+        List<List<Qp>> rtInstantQps = Stream.of(rtRenewableQps, tielineQps)
+                .flatMap(Collection::stream).collect(Collect.listMultiMap(Qp::getInstant)).asMap()
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).map(ArrayList::new).collect(Collectors.toList());
+        rtInstantQps.forEach(qps -> qps.addAll(nonInstantQps));
+        return Qps.builder().rt(rtInstantQps).da(daInstantQps).build();
+    }
+
+    private static List<Qp> instantQps(Map<Long, List<GeneratorDaSegmentBidDO>> groupSegments, Map<Long, List<Double>> cutoffGroups, Long unitId) {
+        List<GeneratorDaSegmentBidDO> segmentBidDOs = groupSegments.get(unitId).stream()
+                .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+        List<Qp> qps = new ArrayList<>();
+        List<Double> cutoffs = cutoffGroups.get(unitId);
+        for (int i = 0; i < cutoffs.size(); i++) {
+            Double cutoff = cutoffs.get(i);
+            if (cutoff.equals(0D)) {
+                continue;
+            }
+            double accumulate = 0D;
+            for (GeneratorDaSegmentBidDO segmentBidDO : segmentBidDOs) {
+                accumulate += segmentBidDO.getOfferMw();
+                double lastQuantity = cutoff - (accumulate - segmentBidDO.getOfferMw());
+                if (accumulate >= cutoff) {
+                    break;
+                } else {
+                    qps.add(new Qp(i, unitId, segmentBidDO.getOfferMw(), segmentBidDO.getOfferPrice()));
+                }
+            }
+        }
+        return qps;
+    }
+
+
+    @Data
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static private class Qp{
+        Integer instant;
+        Long unitId;
+        Double quantity;
+        Double price;
+    }
 
 
 

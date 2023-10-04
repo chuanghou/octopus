@@ -140,7 +140,7 @@ public class CompFacade {
                 .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
                 .build();
 
-        boolean equals = parsed.getCompStage().equals(CompStage.RANKING);
+        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
                 .eq(UnitDO::getRoundId, parsed.getRoundId())
