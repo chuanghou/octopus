@@ -15,28 +15,25 @@ import java.util.List;
 public class SpotMarketEntityVO {
 
     /**
-     * 时刻，0~23
-     */
-    Integer instant;
-
-    /**
-     * 市场供需曲线：需求曲线
-     */
-    List<Section> buySections;
-
-    /**
-     * 市场供需曲线：需求曲线终点
-     */
-    Point<Double> buyTerminus;
-
-    /**
      * 市场供需曲线：供给曲线
      */
-    List<Section> sellSections;
+    List<Section> supplySections;
 
     /**
      * 市场供需曲线：供给曲线终点
      */
-    Point<Double> sellTerminus;
+    Point<Double> supplyTerminus;
+
+    /**
+     * 市场供需曲线：需求曲线
+     */
+    List<Section> demandSections;
+
+    /**
+     * 市场供需曲线：需求曲线终点
+     */
+    Point<Double> demandTerminus;
+
+
 
 }

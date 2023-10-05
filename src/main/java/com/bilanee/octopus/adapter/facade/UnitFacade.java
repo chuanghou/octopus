@@ -23,7 +23,6 @@ import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
-import javafx.util.Pair;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.mapstruct.*;
@@ -69,6 +68,7 @@ public class UnitFacade {
     final DomainTunnel domainTunnel;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final MarketSettingMapper marketSettingMapper;
+    final SprDOMapper sprDOMapper;
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
@@ -518,8 +518,7 @@ public class UnitFacade {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
-            // TODO system parameter release 里面有多条数据了，需要问一下，怎么出力
-            return 400;
+            return -400;
         }
         Double minCapacity = unit.getMetaUnit().getMinCapacity();
         start = start - minCapacity;
@@ -528,10 +527,10 @@ public class UnitFacade {
         List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
                 .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
 
-        List<Section> sections = buildSections(thermalCostDOs);
+        List<CostSection> sections = buildCostSections(thermalCostDOs);
 
         double accumulate = 0D;
-        for (Section section : sections) {
+        for (CostSection section : sections) {
             if (start >= section.getLeft() && start < section.getRight())
                 accumulate += (section.getRight() - start) * section.getPrice();
             else if (end > section.getLeft() && end <= section.getRight()) {
@@ -543,11 +542,11 @@ public class UnitFacade {
         return accumulate/(end - start);
     }
 
-    private List<Section> buildSections(List<ThermalCostDO> thermalCostDOs) {
+    private List<CostSection> buildCostSections(List<ThermalCostDO> thermalCostDOs) {
         Double start = 0D;
-        List<Section> sections = new ArrayList<>();
+        List<CostSection> sections = new ArrayList<>();
         for (ThermalCostDO thermalCostDO : thermalCostDOs) {
-            Section section = Section.builder().left(start)
+            CostSection section = CostSection.builder().left(start)
                     .right(start + thermalCostDO.getSpotCostMw()).price(thermalCostDO.getSpotCostMarginalCost()).build();
             sections.add(section);
             start += thermalCostDO.getSpotCostMw();
@@ -561,7 +560,7 @@ public class UnitFacade {
     @NoArgsConstructor
     @AllArgsConstructor
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static private class Section {
+    static private class CostSection {
         Double left;
         Double right;
         Double price;
@@ -589,9 +588,66 @@ public class UnitFacade {
                 .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
-        Qps supply = supply(parsed, parsedProvince);
+        SpotMarketVO.SpotMarketVOBuilder builder = SpotMarketVO.builder().unitVOs(unitVOs);
 
-        return null;
+
+
+        Qps supply = supply(parsed, parsedProvince);
+        Qps demand = demand(parsed, parsedProvince);
+        List<List<Qp>> supplyDa = supply.getDa();
+        List<List<Qp>> supplyRt = supply.getRt();
+        List<List<Qp>> demandDa = demand.getDa();
+        List<List<Qp>> demandRt = demand.getRt();
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        Double offerPriceCap = marketSettingDO.getOfferPriceCap();
+        List<SpotMarketEntityVO> daEntityVOs = IntStream.range(0, 24).mapToObj(i -> {
+            List<Qp> supplyQps = supplyDa.get(i);
+            List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
+            Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+            List<Qp> demandQps = demandDa.get(i);
+            List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
+            Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
+            return SpotMarketEntityVO.builder()
+                    .supplySections(supplySections)
+                    .supplyTerminus(supplyTerminus)
+                    .demandSections(demandSections)
+                    .demandTerminus(demandTerminus)
+                    .build();
+        }).collect(Collectors.toList());
+
+        builder.daEntityVOs(daEntityVOs);
+
+
+        List<SpotMarketEntityVO> rtEntityVOs = IntStream.range(0, 24).mapToObj(i -> {
+            List<Qp> supplyQps = supplyRt.get(i);
+            List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
+            Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+            List<Qp> demandQps = demandRt.get(i);
+            List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
+            Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
+            return SpotMarketEntityVO.builder()
+                    .supplySections(supplySections)
+                    .supplyTerminus(supplyTerminus)
+                    .demandSections(demandSections)
+                    .demandTerminus(demandTerminus)
+                    .build();
+        }).collect(Collectors.toList());
+
+        SpotMarketVO spotMarketVO = builder.rtEntityVOs(rtEntityVOs).build();
+        return Result.success(spotMarketVO);
+    }
+
+    List<Section> toSections(List<Qp> qps, Comparator<Qp> comparator) {
+        qps = qps.stream().sorted(comparator).collect(Collectors.toList());
+        Double accumulate = 0D;
+        List<Section> sections = new ArrayList<>();
+        for (Qp qp : qps) {
+            Section section = Section.builder()
+                    .unitId(qp.getUnitId()).lx(accumulate).rx(accumulate + qp.getQuantity()).y(qp.getPrice()).build();
+            sections.add(section);
+            accumulate += qp.getQuantity();
+        }
+        return sections;
     }
 
     @Data
@@ -681,6 +737,52 @@ public class UnitFacade {
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).map(ArrayList::new).collect(Collectors.toList());
         rtInstantQps.forEach(qps -> qps.addAll(nonInstantQps));
         return Qps.builder().rt(rtInstantQps).da(daInstantQps).build();
+    }
+
+    private Qps demand(StageId stageId, Province province) {
+
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, stageId.getCompId()).eq(UnitDO::getRoundId, stageId.getRoundId());
+        Map<Integer, Long> loadIds = unitDOMapper.selectList(queryWrapper).stream()
+                .filter(unitDO -> unitDO.getMetaUnit().getUnitType().equals(UnitType.LOAD))
+                .filter(unitDO -> unitDO.getMetaUnit().getProvince().equals(province))
+                .collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
+        List<Integer> loadSourceIds = unitDOMapper.selectList(queryWrapper).stream()
+                .filter(unitDO -> unitDO.getMetaUnit().getUnitType().equals(UnitType.LOAD))
+                .map(unitDO -> unitDO.getMetaUnit().getSourceId()).collect(Collectors.toList());
+        LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>()
+                .eq(LoadDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
+                .in(LoadDaForecastBidDO::getLoadId, loadSourceIds);
+        List<LoadDaForecastBidDO> loadDaForecastBidDOS = loadDaForecastBidMapper.selectList(in);
+        List<Qp> daInstantQps = loadDaForecastBidDOS.stream()
+                .collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
+                .entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(e -> e.getValue().stream().map(b -> new Qp(e.getKey(), loadIds.get(b.getLoadId()), b.getBidMw(), b.getBidPrice())).collect(Collectors.toList()))
+                .flatMap(Collection::stream).collect(Collectors.toList());
+
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        LambdaQueryWrapper<SprDO> eq0 = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, province.getDbCode());
+        List<Qp> rtInstantQps = sprDOMapper.selectList(eq0).stream()
+                .sorted(Comparator.comparing(SprDO::getPrd))
+                .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getBidPriceCap())).collect(Collectors.toList());
+
+        List<Qp> tielineQps = new ArrayList<>();
+        if (province == Province.TRANSFER) {
+            LambdaQueryWrapper<TieLinePowerDO> eq1 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId());
+            tielineQps = tieLinePowerDOMapper.selectList(eq1).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
+                double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor());
+            }).collect(Collectors.toList());
+        }
+
+        List<List<Qp>> daQps = Stream.of(daInstantQps, tielineQps)
+                .flatMap(Collection::stream).collect(Collectors.groupingBy(Qp::getInstant)).entrySet()
+                .stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+
+        List<List<Qp>> rtQps = Stream.of(rtInstantQps, tielineQps)
+                .flatMap(Collection::stream).collect(Collectors.groupingBy(Qp::getInstant)).entrySet()
+                .stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+
+        return Qps.builder().rt(rtQps).da(daQps).build();
     }
 
     private static List<Qp> instantQps(Map<Long, List<GeneratorDaSegmentBidDO>> groupSegments, Map<Long, List<Double>> cutoffGroups, Long unitId) {
