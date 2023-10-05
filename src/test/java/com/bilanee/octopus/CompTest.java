@@ -494,4 +494,43 @@ public class CompTest {
 
     }
 
+
+    @Test
+    public void testSpot() {
+        // 创建比赛
+        List<UserVO> userVOs = manageFacade.listUserVOs();
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 1000);
+            marketStageClearLengths.put(marketStage, 1000);
+        }
+
+        // 比赛参数
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .startTimeStamp(Clock.currentTimeMillis() + 1000)
+                .quitCompeteLength(1000)
+                .quitResultLength(1000)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(1000)
+                .userIds(Collect.transfer(userVOs, UserVO::getUserId))
+                .enableQuiz(false)
+                .build();
+        Result<Void> result = manageFacade.createComp(compCreatePO);
+        Assertions.assertTrue(result.getSuccess());
+        Long compId = tunnel.runningComp().getCompId();
+        StageId stageId = StageId.builder().compId(compId).compStage(CompStage.TRADE).tradeStage(TradeStage.DA_INTER).roundId(0).marketStatus(MarketStatus.CLEAR).build();
+        Result<SpotMarketVO> spotMarketVO0 = unitFacade.getSpotMarketVO(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(spotMarketVO0.getSuccess());
+        Result<SpotMarketVO> spotMarketVO1 = unitFacade.getSpotMarketVO(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(spotMarketVO1.getSuccess());
+
+        Result<SpotMarketVO> spotMarketVO2 = unitFacade.getSpotMarketVO(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1001"));
+        Assertions.assertTrue(spotMarketVO2.getSuccess());
+        Result<SpotMarketVO> spotMarketVO3 = unitFacade.getSpotMarketVO(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1001"));
+        Assertions.assertTrue(spotMarketVO3.getSuccess());
+
+    }
+
 }
