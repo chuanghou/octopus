@@ -521,14 +521,14 @@ public class CompTest {
         Assertions.assertTrue(result.getSuccess());
         Long compId = tunnel.runningComp().getCompId();
         StageId stageId = StageId.builder().compId(compId).compStage(CompStage.TRADE).tradeStage(TradeStage.DA_INTER).roundId(0).marketStatus(MarketStatus.CLEAR).build();
-        Result<SpotMarketVO> spotMarketVO0 = unitFacade.getSpotMarketVO(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1000"));
+        Result<SpotMarketVO> spotMarketVO0 = compFacade.listSpotMarketVOs(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1000"));
         Assertions.assertTrue(spotMarketVO0.getSuccess());
-        Result<SpotMarketVO> spotMarketVO1 = unitFacade.getSpotMarketVO(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1000"));
+        Result<SpotMarketVO> spotMarketVO1 = compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1000"));
         Assertions.assertTrue(spotMarketVO1.getSuccess());
 
-        Result<SpotMarketVO> spotMarketVO2 = unitFacade.getSpotMarketVO(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1001"));
+        Result<SpotMarketVO> spotMarketVO2 = compFacade.listSpotMarketVOs(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("1001"));
         Assertions.assertTrue(spotMarketVO2.getSuccess());
-        Result<SpotMarketVO> spotMarketVO3 = unitFacade.getSpotMarketVO(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1001"));
+        Result<SpotMarketVO> spotMarketVO3 = compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1001"));
         Assertions.assertTrue(spotMarketVO3.getSuccess());
 
     }
