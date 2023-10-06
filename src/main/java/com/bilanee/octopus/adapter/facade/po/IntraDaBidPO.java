@@ -37,11 +37,16 @@ public class IntraDaBidPO {
 
     @AfterValidation
     public void afterValidation() {
+        if (segments == null) {
+            return;
+        }
         segments.forEach(s -> BizEx.trueThrow(s.getStart() >= s.getEnd(),
                 ErrorEnums.PARAM_FORMAT_WRONG.message("报价段起点必须小于终点")));
         for (int i = 0; i < segments.size() - 1; i++) {
             boolean equals = segments.get(i).getEnd().equals(segments.get(i + 1).getStart());
             BizEx.falseThrow(equals, ErrorEnums.PARAM_FORMAT_WRONG.message("报价段必须连续"));
+            boolean b = segments.get(i).getPrice() <= segments.get(i + 1).getPrice();
+            BizEx.falseThrow(b, ErrorEnums.PARAM_FORMAT_WRONG.message("报价必须为不递减序列"));
         }
     }
 

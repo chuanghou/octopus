@@ -23,6 +23,7 @@ import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.*;
 import org.mapstruct.Builder;
 import org.mapstruct.factory.Mappers;
@@ -565,9 +566,32 @@ public class CompFacade {
         builder.renewableNotBidden(renewableBidden.stream().map(c -> renewableTotal - c).collect(Collectors.toList()));
 
 
+        List<Pair<Double, Double>> classicMinPutBids = unitDOs.stream().map(UnitDO::getMetaUnit)
+                .filter(metaUnit -> GeneratorType.CLASSIC.equals(metaUnit.getGeneratorType()))
+                .map(metaUnit -> Pair.of(metaUnit.getMinCapacity(), metaUnit.minOutputPrice())).collect(Collectors.toList());
+
+        Map<Integer, Double> maxPs = unitBasics.stream().collect(Collectors.toMap(UnitBasic::getUnitId, UnitBasic::getMaxP));
+
+        LambdaQueryWrapper<GeneratorDaSegmentBidDO> in = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                .eq(GeneratorDaSegmentBidDO::getRoundId, parsedStageId.getRoundId() + 1)
+                .in(GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
+        List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = generatorDaSegmentMapper.selectList(in);
+
+        List<List<GeneratorDaSegmentBidDO>> segmentBids = generatorDaSegmentBidDOs.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getPrd))
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+
+        List<List<SpotUnitCleared>> indexedSpotUnitCleared = spotUnitCleareds.stream().collect(Collectors.groupingBy(SpotUnitCleared::getPrd))
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
 
 
         return null;
+    }
+
+    private void process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears) {
+        Map<Integer, List<GeneratorDaSegmentBidDO>> groupedByUnitIds = segments.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getUnitId));
+        Map<Integer, List<SpotUnitCleared>> collect = clears.stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
+        
+
     }
 
 
