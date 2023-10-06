@@ -24,8 +24,8 @@ import com.stellariver.milky.domain.support.base.DomainTunnel;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
-import org.mapstruct.*;
 import org.mapstruct.Builder;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotBlank;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -65,6 +64,8 @@ public class CompFacade {
     final SprDOMapper sprDOMapper;
     final UnitBasicMapper unitBasicMapper;
     final SpotUnitClearedMapper spotUnitClearedMapper;
+    final MinOutputCostMapper minOutputCostMapper;
+
     /**
      * 当前运行竞赛查看
      * 返回result
@@ -323,7 +324,7 @@ public class CompFacade {
 
         // 1. 火电机组的最小输出量
         List<Qp> minOutputQps = classicUnitDOs.stream().filter(m -> Kit.eq(GeneratorType.CLASSIC, m.getMetaUnit().getGeneratorType()))
-                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().minOutputPrice()))
+                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()))
                 .collect(Collectors.toList());
 
         // 2. 火电机组5段量价
@@ -486,12 +487,19 @@ public class CompFacade {
         Integer roundId = parsedStageId.getRoundId();
         Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
-                .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId)
-                ;
+                .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId);
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
                 .filter(unitDO -> unitDO.getMetaUnit().getProvince().equals(parsedProvince))
                 .filter(unitDO -> unitDO.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
                 .collect(Collectors.toList());
+
+        SpotBiddenEntityVO daSpotBiddenEntityVO = buildSpotBiddenEntity(parsedStageId, roundId, parsedProvince, unitDOs, true);
+        SpotBiddenEntityVO rtSpotBiddenEntityVO = buildSpotBiddenEntity(parsedStageId, roundId, parsedProvince, unitDOs, false);
+        SpotBiddenVO spotBiddenVO = SpotBiddenVO.builder().daSpotBiddenEntityVO(daSpotBiddenEntityVO).rtSpotBiddenEntityVO(rtSpotBiddenEntityVO).build();
+        return Result.success(spotBiddenVO);
+    }
+
+    private SpotBiddenEntityVO buildSpotBiddenEntity(StageId parsedStageId, Integer roundId, Province parsedProvince, List<UnitDO> unitDOs, boolean da) {
         Map<Integer, Long> unitIds = unitDOs.stream().collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
 
         Map<Integer, Long> classicUnitIds = unitDOs.stream()
@@ -505,14 +513,21 @@ public class CompFacade {
 
         SpotBiddenEntityVO.SpotBiddenEntityVOBuilder builder = SpotBiddenEntityVO.builder();
 
+        List<Double> intraLoads;
         // 日前
-        LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
-                .eq(LoadDaForecastBidDO::getRoundId, roundId).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
-        List<LoadDaForecastBidDO> loadDaForecastBidDOs = loadDaForecastBidMapper.selectList(wrapper0);
-        List<Double> intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
-                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                .map(bs -> bs.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum())
-                .collect(Collectors.toList());
+        if (da) {
+            LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
+                    .eq(LoadDaForecastBidDO::getRoundId, roundId).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
+            List<LoadDaForecastBidDO> loadDaForecastBidDOs = loadDaForecastBidMapper.selectList(wrapper0);
+            intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
+                    .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                    .map(bs -> bs.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum())
+                    .collect(Collectors.toList());
+        } else {
+            LambdaQueryWrapper<SprDO> eq = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
+            intraLoads = sprDOMapper.selectList(eq).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtLoad).collect(Collectors.toList());
+        }
+
 
         LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId - 1);
         List<Double> tielinePowers = tieLinePowerDOMapper.selectList(eq).stream().collect(Collectors.groupingBy(TieLinePowerDO::getPrd))
@@ -540,9 +555,18 @@ public class CompFacade {
         double classicTotal = unitBasics.stream().filter(unitBasic -> classicUnitIds.containsKey(unitBasic.getUnitId()))
                 .collect(Collectors.summarizingDouble(UnitBasic::getMaxP)).getSum();
 
-        double renewableTotal = unitBasics.stream().filter(unitBasic -> renewableUnitIds.containsKey(unitBasic.getUnitId()))
-                .collect(Collectors.summarizingDouble(UnitBasic::getMaxP)).getSum();
-
+        List<Double> renewableTotals;
+        if (da) {
+            LambdaQueryWrapper<GeneratorDaForecastBidDO> in = new LambdaQueryWrapper<GeneratorDaForecastBidDO>().eq(GeneratorDaForecastBidDO::getRoundId, roundId + 1)
+                    .in(GeneratorDaForecastBidDO::getUnitId, unitIds.keySet());
+            renewableTotals = generatorDaForecastBidMapper.selectList(in).stream()
+                    .collect(Collectors.groupingBy(GeneratorDaForecastBidDO::getPrd))
+                    .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                    .map(ls -> ls.stream().collect(Collectors.summarizingDouble(GeneratorDaForecastBidDO::getForecastMw)).getSum()).collect(Collectors.toList());
+        } else {
+            LambdaQueryWrapper<SprDO> eqx = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
+            renewableTotals = sprDOMapper.selectList(eqx).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtRenewable).collect(Collectors.toList());
+        }
 
         LambdaQueryWrapper<SpotUnitCleared> in1 = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, parsedStageId.getRoundId() + 1)
@@ -563,12 +587,12 @@ public class CompFacade {
                 .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
                 .collect(Collectors.toList());
         builder.renewableBidden(renewableBidden);
-        builder.renewableNotBidden(renewableBidden.stream().map(c -> renewableTotal - c).collect(Collectors.toList()));
+        builder.renewableNotBidden(IntStream.range(0, 24).mapToObj(i -> renewableTotals.get(i) - renewableBidden.get(i)).collect(Collectors.toList()));
 
 
         List<Pair<Double, Double>> classicMinPutBids = unitDOs.stream().map(UnitDO::getMetaUnit)
                 .filter(metaUnit -> GeneratorType.CLASSIC.equals(metaUnit.getGeneratorType()))
-                .map(metaUnit -> Pair.of(metaUnit.getMinCapacity(), metaUnit.minOutputPrice())).collect(Collectors.toList());
+                .map(metaUnit -> Pair.of(metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice())).collect(Collectors.toList());
 
         Map<Integer, Double> maxPs = unitBasics.stream().collect(Collectors.toMap(UnitBasic::getUnitId, UnitBasic::getMaxP));
 
@@ -583,14 +607,52 @@ public class CompFacade {
         List<List<SpotUnitCleared>> indexedSpotUnitCleared = spotUnitCleareds.stream().collect(Collectors.groupingBy(SpotUnitCleared::getPrd))
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
 
+        List<List<Double>> priceStatistics = IntStream.range(0, 24)
+                .mapToObj(i -> process(segmentBids.get(i), indexedSpotUnitCleared.get(i), unitDOs)).collect(Collectors.toList());
+        builder.priceStatistics(priceStatistics);
 
-        return null;
+        return builder.build();
     }
 
-    private void process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears) {
+    private List<Double> process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears, List<UnitDO> unitDOs) {
         Map<Integer, List<GeneratorDaSegmentBidDO>> groupedByUnitIds = segments.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getUnitId));
-        Map<Integer, List<SpotUnitCleared>> collect = clears.stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
-        
+        Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMapMightEx(clears, SpotUnitCleared::getUnitId);
+        List<Pair<Double, Double>> collectQps = unitDOs.stream().map(unitDO -> {
+            Integer sourceId = unitDO.getMetaUnit().getSourceId();
+            List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = groupedByUnitIds.get(sourceId).stream()
+                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+            SpotUnitCleared spotUnitCleared = unitClearedMap.get(sourceId);
+            List<Pair<Double, Double>> qps = new ArrayList<>();
+            if (GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())) {
+                qps.add(Pair.of(unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()));
+            }
+            generatorDaSegmentBidDOs.forEach(gDO -> qps.add(Pair.of(gDO.getOfferMw(), gDO.getOfferPrice())));
+            List<Pair<Double, Double>> clearedQps = new ArrayList<>();
+            if (spotUnitCleared.getDaClearedMw().equals(0D)) {
+                return clearedQps;
+            }
+            double accumulate = 0D;
+            for (GeneratorDaSegmentBidDO generatorDaSegmentBidDO : generatorDaSegmentBidDOs) {
+                Double q = generatorDaSegmentBidDO.getOfferMw();
+                Double p = generatorDaSegmentBidDO.getOfferPrice();
+                if (accumulate + q >= spotUnitCleared.getDaClearedMw()) {
+                    double v = accumulate + q - spotUnitCleared.getDaClearedMw();
+                    Pair<Double, Double> qp = Pair.of(v, p);
+                    qps.add(qp);
+                    return qps;
+                }
+                qps.add(Pair.of(p, q));
+            }
+            return qps;
+        }).flatMap(Collection::stream).collect(Collectors.toList());
+
+        return collectQps.stream().collect(Collect.select(
+                qp -> qp.getRight() <= 200D,
+                qp -> qp.getRight() > 200D && qp.getRight() <= 400,
+                qp -> qp.getRight() > 400D && qp.getRight() <= 600,
+                qp -> qp.getRight() > 600D && qp.getRight() <= 800,
+                qp -> qp.getRight() > 800D
+        )).stream().map(ls -> ls.stream().collect(Collectors.summarizingDouble(Pair::getLeft)).getSum()).collect(Collectors.toList());
 
     }
 

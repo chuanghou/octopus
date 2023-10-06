@@ -9,7 +9,6 @@ import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
-import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
@@ -19,14 +18,13 @@ import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.mapstruct.*;
 import org.mapstruct.Builder;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,10 +35,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -373,11 +369,11 @@ public class UnitFacade {
 
             if (generatorType == GeneratorType.CLASSIC) {
                 Segment segment = Segment.builder().start(0D).end(metaUnit.getMinCapacity())
-                        .price(metaUnit.getMinCost() / metaUnit.getMinCapacity()).build();
+                        .price(metaUnit.getMinOutputPrice()).build();
                 builder.minSegment(segment);
             }
 
-            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinCost() / metaUnit.getMinCapacity(): 0D;
+            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinOutputPrice(): 0D;
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
                     .eq(GeneratorDaSegmentBidDO::getUnitId, metaUnit.getSourceId());

@@ -3,7 +3,6 @@ package com.bilanee.octopus.adapter.facade.vo;
 import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.GridLimit;
-import com.bilanee.octopus.basic.Section;
 import com.bilanee.octopus.basic.enums.GeneratorType;
 import com.bilanee.octopus.basic.enums.UnitType;
 import com.stellariver.milky.common.base.AfterValidation;

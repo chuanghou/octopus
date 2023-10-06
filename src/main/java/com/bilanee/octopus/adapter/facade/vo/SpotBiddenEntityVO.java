@@ -1,9 +1,9 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import java.util.List;
-
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Data
 @Builder
@@ -43,28 +43,7 @@ public class SpotBiddenEntityVO {
     List<Double> renewableBidden;
 
     /**
-     * 0-200元/Mwh
+     * 0-200元/Mwh 200-400元/Mwh 400-600元/Mwh 600-800元/Mwh 800元/Mwh以上
      */
-    List<Double> price0;
-
-    /**
-     * 200-400元/Mwh
-     */
-    List<Double> price1;
-
-
-    /**
-     * 400-600元/Mwh
-     */
-    List<Double> price2;
-
-    /**
-     * 600-800元/Mwh
-     */
-    List<Double> price3;
-
-    /**
-     * 800元/Mwh以上
-     */
-    List<Double> price4;
+    List<List<Double>> priceStatistics;
 }
