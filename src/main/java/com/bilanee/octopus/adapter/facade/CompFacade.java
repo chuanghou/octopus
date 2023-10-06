@@ -14,6 +14,7 @@ import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
@@ -481,11 +482,13 @@ public class CompFacade {
      * @param stageId 界面阶段id
      * @param province 查看省份
      */
-    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(String stageId, String province, @RequestHeader String token)  {
+    @GetMapping ("listSpotBiddenEntityVOs")
+    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token)  {
         StageId parsedStageId = StageId.parse(stageId);
         Long compId = parsedStageId.getCompId();
         Integer roundId = parsedStageId.getRoundId();
-        Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
+        Province parsedProvince = Kit.enumOf(Province::name, province).orElse(null);
+        BizEx.nullThrow(parsedProvince, ErrorEnums.PARAM_FORMAT_WRONG.message("应该传递正确的省份信息"));
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId);
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
