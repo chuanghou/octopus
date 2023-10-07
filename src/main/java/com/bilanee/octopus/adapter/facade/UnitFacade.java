@@ -39,7 +39,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -721,6 +720,92 @@ public class UnitFacade {
 
         return Result.success(loadClearVO);
     }
+
+    final UnmetDemandMapper unmetDemandMapper;
+
+
+    /**
+     *  省间现货回填接口
+     * @param stageId 阶段id
+     */
+    @GetMapping("listSpotInterBidVO")
+    public Result<List<SpotInterBidVO>> listSpotInterBidVO(@NotBlank String stageId, @RequestHeader String token) {
+        StageId parsedStageId = StageId.parse(stageId);
+        Long compId = parsedStageId.getCompId();
+        Integer roundId = parsedStageId.getRoundId();
+        LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
+        List<TieLinePowerDO> tieLinePowerDOS = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
+        List<UnmetDemand> unmetDemands = unmetDemandMapper.selectList(null);
+        List<Double> availablePrds = IntStream.range(0, 24).mapToObj(i -> {
+            TieLinePowerDO tieLinePowerDO = tieLinePowerDOS.get(i);
+            double v = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
+            return unmetDemands.get(i).getDaReceivingMw() - v;
+        }).collect(Collectors.toList());
+
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId).eq(UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> generatorUnitDOs = unitDOMapper.selectList(queryWrapper).stream()
+                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR)).collect(Collectors.toList());
+        Map<Integer, List<Double>> maxCapacities = generatorUnitDOs.stream().collect(Collectors.toMap(u -> u.getMetaUnit().getSourceId(), this::highLimit));
+        List<Integer> sourceIds = Collect.transfer(generatorUnitDOs, u -> u.getMetaUnit().getSourceId());
+        LambdaQueryWrapper<SpotUnitCleared> in = new LambdaQueryWrapper<SpotUnitCleared>()
+                .eq(SpotUnitCleared::getRoundId, roundId + 1).in(SpotUnitCleared::getUnitId, sourceIds);
+        Map<Integer, List<SpotUnitCleared>> clearResult = spotUnitClearedMapper.selectList(in).stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
+
+        GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
+        List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
+            Integer sourceId = unitDO.getMetaUnit().getSourceId();
+            SpotInterBidVO.SpotInterBidVOBuilder builder = SpotInterBidVO.builder()
+                    .unitId(unitDO.getUnitId()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
+            Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMap(clearResult.get(sourceId), SpotUnitCleared::getPrd);
+            List<Double> capacities = maxCapacities.get(sourceId);
+            List<InstantSpotBidVO> instantSpotBidVOs = IntStream.range(0, 24).mapToObj(i -> {
+                Double available = availablePrds.get(i);
+                SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
+                if (available > 0 && capacities.get(i) - spotUnitCleared.getPreclearClearedMw() > 0) {
+                    return InstantSpotBidVO.builder().instant(i)
+                            .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
+                            //TODO add spotBidVOs
+                            .spotBidVOs(new ArrayList<>())
+                            .build();
+                } else {
+                    return null;
+                }
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+            return builder.instantSpotBidVOs(instantSpotBidVOs).build();
+        }).collect(Collectors.toList());
+        return Result.success(spotInterBidVOs);
+
+    }
+
+    private List<Double> highLimit(UnitDO unitDO) {
+        if (UnitType.GENERATOR.equals(unitDO.getMetaUnit().getUnitType())) {
+            return IntStream.range(0, 24).mapToObj(i -> unitDO.getMetaUnit().getMaxCapacity()).collect(Collectors.toList());
+        } else {
+            LambdaQueryWrapper<LoadForecastValueDO> eq = new LambdaQueryWrapper<LoadForecastValueDO>()
+                    .eq(LoadForecastValueDO::getLoadId, unitDO.getMetaUnit().getSourceId());
+            return loadForecastValueMapper.selectList(eq).stream().sorted(Comparator.comparing(LoadForecastValueDO::getPrd))
+                    .map(LoadForecastValueDO::getDaPForecast).collect(Collectors.toList());
+        }
+    }
+
+
+    /**
+     * 省间现货报价
+     * @param spotBidPO
+     * @return
+     */
+    @PostMapping("submitInterSpotBid")
+    public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO) {
+        return null;
+    }
+
+
+
+
+
+
+    
 
 
 }
