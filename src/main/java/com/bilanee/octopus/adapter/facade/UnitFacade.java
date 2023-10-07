@@ -18,11 +18,13 @@ import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mapstruct.Builder;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
@@ -37,6 +39,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -65,6 +68,9 @@ public class UnitFacade {
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final MarketSettingMapper marketSettingMapper;
     final SprDOMapper sprDOMapper;
+    final UnitBasicMapper unitBasicMapper;
+    final SpotUnitClearedMapper spotUnitClearedMapper;
+    final SpotLoadClearedMapper spotLoadClearedMapper;
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
@@ -572,5 +578,149 @@ public class UnitFacade {
         BidVO to(Bid bid);
 
     }
+
+
+    /**
+     * 现货中标量价曲线，机组列表，负荷列表
+     * @param stageId 阶段id
+     * @param unitType 机组列表，或者负荷列表
+     */
+
+    public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
+        UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
+        BizEx.nullThrow(uType, PARAM_FORMAT_WRONG.message("单元类型不正确"));
+        boolean equals = tunnel.runningComp().getCompStage().equals(CompStage.TRADE);
+        StageId parsed = StageId.parse(stageId);
+        Long compId = parsed.getCompId();
+        Integer roundId = parsed.getRoundId();
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, compId)
+                .eq(UnitDO::getRoundId, roundId)
+                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
+                .filter(u -> u.getMetaUnit().getUnitType().equals(uType)).collect(Collectors.toList());
+        List<UnitVO> unitVOs = Collect.transfer(unitDOs,
+                unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getMetaUnit().getName(), unitDO.getMetaUnit()));
+        return Result.success(unitVOs);
+    }
+
+    final NodalPriceVoltageMapper nodalPriceVoltageMapper;
+
+    /**
+     * 现货中标量量价曲线-分机组
+     * @param stageId 阶段id
+     * @param unitId 待查看的机组unitId
+     */
+    public Result<GeneratorClearVO> listGeneratorClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        Integer sourceId = unit.getMetaUnit().getSourceId();
+        LambdaQueryWrapper<UnitBasic> eq = new LambdaQueryWrapper<UnitBasic>().eq(UnitBasic::getUnitId, sourceId);
+        Integer nodeId = unitBasicMapper.selectOne(eq).getNodeId();
+        LambdaQueryWrapper<NodalPriceVoltage> eq1 = new LambdaQueryWrapper<NodalPriceVoltage>().eq(NodalPriceVoltage::getRoundId, roundId + 1)
+                .eq(NodalPriceVoltage::getNodeId, nodeId);
+        List<NodalPriceVoltage> nodalPriceVoltages = nodalPriceVoltageMapper.selectList(eq1).stream()
+                .sorted(Comparator.comparing(NodalPriceVoltage::getPrd)).collect(Collectors.toList());
+        List<Double> daPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp);
+        List<Double> rtPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp);
+
+        GeneratorClearVO.GeneratorClearVOBuilder builder = GeneratorClearVO.builder().daPrice(daPrices).rtPrice(rtPrices);
+
+        Double minCapacity = unit.getMetaUnit().getMinCapacity();
+        Double minOutputPrice = unit.getMetaUnit().getMinOutputPrice();
+
+        LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
+                .eq(GeneratorDaSegmentBidDO::getRoundId, roundId + 1)
+                .eq(GeneratorDaSegmentBidDO::getUnitId, sourceId);
+        List<List<GeneratorDaSegmentBidDO>> daSegmentBids = generatorDaSegmentMapper.selectList(eq2)
+                .stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getPrd))
+                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                .map(ls -> ls.stream().sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList()))
+                .collect(Collectors.toList());
+
+        LambdaQueryWrapper<SpotUnitCleared> eq3 = new LambdaQueryWrapper<SpotUnitCleared>()
+                .eq(SpotUnitCleared::getRoundId, roundId + 1)
+                .eq(SpotUnitCleared::getUnitId, sourceId);
+        List<SpotUnitCleared> spotUnitCleareds = spotUnitClearedMapper.selectList(eq3)
+                .stream().sorted(Comparator.comparing(SpotUnitCleared::getPrd)).collect(Collectors.toList());
+
+        List<Double> daCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getDaClearedMw);
+
+        List<Double> rtCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getDaClearedMw);
+
+        List<Pair<List<Double>, List<Double>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
+            List<Double> bids = new ArrayList<>();
+            List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOS = daSegmentBids.get(i);
+            if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
+                bids.add(unit.getMetaUnit().getMinCapacity());
+            }
+            generatorDaSegmentBidDOS.forEach(gDO -> bids.add(gDO.getOfferMw()));
+            Double daTotal = daCleared.get(i);
+            Double rtTotal = rtCleared.get(i);
+            Double daAccumulate = 0D, rtAccumulate = 0D;
+            List<Double> das = new ArrayList<>();
+            if (!daTotal.equals(0D)) {
+                for (Double bid : bids) {
+                    if (daAccumulate + bid >= daTotal) {
+                        double v = (daAccumulate + bid) - daTotal;
+                        das.add(v);
+                        break;
+                    }
+                    das.add(bid);
+                }
+            }
+            List<Double> rts = new ArrayList<>();
+            if (!rtTotal.equals(0D)) {
+                for (Double bid : bids) {
+                    if (rtAccumulate + bid >= rtTotal) {
+                        double v = (rtAccumulate + bid) - rtTotal;
+                        rts.add(v);
+                        break;
+                    }
+                    rts.add(bid);
+                }
+            }
+            return Pair.of(das, rts);
+        }).collect(Collectors.toList());
+
+
+        builder.daClearedSections(clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList()));
+        builder.rtClearedSections(clearedSections.stream().map(Pair::getRight).collect(Collectors.toList()));
+        GeneratorClearVO generatorClearVO = builder.build();
+        return Result.success(generatorClearVO);
+    }
+
+
+    /**
+     * 现货中标量量价曲线-分负荷
+     * @param stageId 阶段id
+     * @param unitId 待查看的负荷unitId
+     */
+    public Result<LoadClearVO> listLoadClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        Integer sourceId = unit.getMetaUnit().getSourceId();
+        LambdaQueryWrapper<SpotLoadCleared> eq = new LambdaQueryWrapper<SpotLoadCleared>()
+                .eq(SpotLoadCleared::getRoundId, sourceId + 1)
+                .eq(SpotLoadCleared::getLoadId, sourceId);
+        List<Double> daCleared = spotLoadClearedMapper.selectList(eq).stream()
+                .sorted(Comparator.comparing(SpotLoadCleared::getPrd)).map(SpotLoadCleared::getDaClearedMw).collect(Collectors.toList());
+        LoadClearVO.LoadClearVOBuilder builder = LoadClearVO.builder().daCleared(daCleared);
+        LambdaQueryWrapper<LoadForecastValueDO> eq1 = new LambdaQueryWrapper<LoadForecastValueDO>()
+                .eq(LoadForecastValueDO::getLoadId, sourceId);
+
+        List<Double> rtCleared = loadForecastValueMapper.selectList(eq1).stream()
+                .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getRtP).collect(Collectors.toList());
+        builder.rtCleared(rtCleared);
+
+        //TODO update
+        builder.daPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
+        builder.rtPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
+
+        LoadClearVO loadClearVO = builder.build();
+
+        return Result.success(loadClearVO);
+    }
+
 
 }

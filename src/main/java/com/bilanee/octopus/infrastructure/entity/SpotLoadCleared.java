@@ -8,25 +8,15 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("intraprovincial_spot_unit_cleared")
+@TableName("intraprovincial_spot_load_cleared")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SpotUnitCleared {
+public class SpotLoadCleared {
 
   Long id;
   Integer roundId;
   String dt;
   Integer prd;
-  Double preclearClearedMw;
   Double daClearedMw;
-  Double rucClearedMw;
-  Double rtClearedMw;
-  Double rtVariableCost;
-  Boolean onoffStatus;
-  Boolean isStartup;
-  Boolean isColdStartup;
-  Boolean isWarmStartup;
-  Boolean isHotStartup;
-  Boolean isShutdown;
-  Integer unitId;
+  Integer loadId;
 
 }
