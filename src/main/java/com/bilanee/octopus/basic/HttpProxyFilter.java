@@ -41,6 +41,7 @@ public class HttpProxyFilter implements Filter {
         String requestURI = req.getRequestURI();
         if (!requestURI.contains("/transfer")) {
             chain.doFilter(request, response);
+            return;
         }
         log.info("[ {} ] 接收到请求...URI:{}", this.getClass().getSimpleName(), requestURI);
         requestURI = requestURI.substring("/transfer".length());
