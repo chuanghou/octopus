@@ -805,8 +805,7 @@ public class UnitFacade {
 
     /**
      * 省间现货报价
-     * @param spotBidPO
-     * @return
+     * @param spotBidPO 省间现货报价结构体
      */
     @PostMapping("submitInterSpotBid")
     public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO) {
