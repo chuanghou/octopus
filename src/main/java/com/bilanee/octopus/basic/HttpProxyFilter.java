@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-@WebFilter(urlPatterns = "/proxy118/*", filterName = "httpProxyFilter")
+@WebFilter(urlPatterns = "/transfer/*", filterName = "httpProxyFilter")
 public class HttpProxyFilter implements Filter {
  
     private String host = "http://118.184.179.116:8002";
@@ -39,7 +39,7 @@ public class HttpProxyFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
         log.info("[ {} ] 接收到请求...URI:{}", this.getClass().getSimpleName(), requestURI);
-        requestURI = requestURI.substring("/proxy118".length());
+        requestURI = requestURI.substring("/transfer".length());
         if (!Kit.isBlank(requestURI)) {
             requestURI += "?";
             requestURI += req.getQueryString();
