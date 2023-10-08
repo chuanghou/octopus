@@ -22,10 +22,9 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
- 
-@Component
-@WebFilter(urlPatterns = "/transfer/*", filterName = "httpProxyFilter")
+
 @Slf4j
+@WebFilter(urlPatterns = "/proxy118/*", filterName = "httpProxyFilter")
 public class HttpProxyFilter implements Filter {
  
     private String host = "http://118.184.179.116:8002";
@@ -39,12 +38,8 @@ public class HttpProxyFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
-        if (!requestURI.contains("/transfer")) {
-            chain.doFilter(request, response);
-            return;
-        }
         log.info("[ {} ] 接收到请求...URI:{}", this.getClass().getSimpleName(), requestURI);
-        requestURI = requestURI.substring("/transfer".length());
+        requestURI = requestURI.substring("/proxy118".length());
         if (!Kit.isBlank(requestURI)) {
             requestURI += "?";
             requestURI += req.getQueryString();
