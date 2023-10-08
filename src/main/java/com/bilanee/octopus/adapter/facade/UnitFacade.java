@@ -722,7 +722,7 @@ public class UnitFacade {
     }
 
     final UnmetDemandMapper unmetDemandMapper;
-
+    final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
 
     /**
      *  省间现货回填接口
@@ -752,6 +752,11 @@ public class UnitFacade {
                 .eq(SpotUnitCleared::getRoundId, roundId + 1).in(SpotUnitCleared::getUnitId, sourceIds);
         Map<Integer, List<SpotUnitCleared>> clearResult = spotUnitClearedMapper.selectList(in).stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
 
+        LambdaQueryWrapper<InterSpotUnitOfferDO> in1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
+                .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1)
+                .in(InterSpotUnitOfferDO::getUnitId, sourceIds);
+        Map<Integer, List<InterSpotUnitOfferDO>> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collectors.groupingBy(InterSpotUnitOfferDO::getUnitId));
+
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
         List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
             Integer sourceId = unitDO.getMetaUnit().getSourceId();
@@ -759,14 +764,22 @@ public class UnitFacade {
                     .unitId(unitDO.getUnitId()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
             Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMap(clearResult.get(sourceId), SpotUnitCleared::getPrd);
             List<Double> capacities = maxCapacities.get(sourceId);
+            List<InterSpotUnitOfferDO> interSpotUnitOfferDOS = spotOfferMap.get(sourceId).stream()
+                    .sorted(Comparator.comparing(InterSpotUnitOfferDO::getPrd)).collect(Collectors.toList());
             List<InstantSpotBidVO> instantSpotBidVOs = IntStream.range(0, 24).mapToObj(i -> {
                 Double available = availablePrds.get(i);
                 SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
                 if (available > 0 && capacities.get(i) - spotUnitCleared.getPreclearClearedMw() > 0) {
+                    InterSpotUnitOfferDO interSpotUnitOfferDO = interSpotUnitOfferDOS.get(i);
+                    InterSpotBid interSpotBid1 = InterSpotBid.builder().instant(i)
+                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
+                    InterSpotBid interSpotBid2 = InterSpotBid.builder().instant(i)
+                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
+                    InterSpotBid interSpotBid3 = InterSpotBid.builder().instant(i)
+                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
                     return InstantSpotBidVO.builder().instant(i)
                             .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
-                            //TODO add spotBidVOs
-                            .spotBidVOs(new ArrayList<>())
+                            .interSpotBids(Collect.asList(interSpotBid1, interSpotBid2, interSpotBid3))
                             .build();
                 } else {
                     return null;
@@ -797,7 +810,28 @@ public class UnitFacade {
      */
     @PostMapping("submitInterSpotBid")
     public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO) {
-        return null;
+        Long unitId = spotBidPO.getUnitId();
+        Integer sourceId = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getSourceId();
+        StageId stageId = StageId.parse(spotBidPO.getStageId());
+        Long compId = stageId.getCompId();
+        Integer roundId = stageId.getRoundId();
+        for (InstantSpotBidPO instantSpotBidPO : spotBidPO.getInstantSpotBidPOs()) {
+            Integer instant = instantSpotBidPO.getInstant();
+            LambdaQueryWrapper<InterSpotUnitOfferDO> eq = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
+                    .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1)
+                    .eq(InterSpotUnitOfferDO::getUnitId, sourceId)
+                    .eq(InterSpotUnitOfferDO::getPrd, instant);
+            InterSpotUnitOfferDO interSpotUnitOfferDO = interSpotUnitOfferDOMapper.selectOne(eq);
+            List<InterSpotBid> bids = instantSpotBidPO.getInterSpotBids();
+            interSpotUnitOfferDO.setSpotOfferMw1(bids.get(0).getQuantity());
+            interSpotUnitOfferDO.setSpotOfferPrice1(bids.get(0).getPrice());
+            interSpotUnitOfferDO.setSpotOfferMw2(bids.get(1).getQuantity());
+            interSpotUnitOfferDO.setSpotOfferPrice2(bids.get(1).getPrice());
+            interSpotUnitOfferDO.setSpotOfferMw3(bids.get(2).getQuantity());
+            interSpotUnitOfferDO.setSpotOfferPrice3(bids.get(2).getPrice());
+            interSpotUnitOfferDOMapper.updateById(interSpotUnitOfferDO);
+        }
+        return Result.success();
     }
 
 

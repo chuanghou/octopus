@@ -4,7 +4,6 @@ import com.bilanee.octopus.adapter.facade.vo.InterSpotBid;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.validation.constraints.*;
 import java.util.List;
 
 @Data
@@ -12,24 +11,17 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class SpotBidPO {
+public class InstantSpotBidPO {
 
     /**
-     * 阶段id
+     * 时刻
      */
-    @NotBlank
-    String stageId;
-
-    /**
-     * 单元id
-     */
-    @NotBlank
-    Long unitId;
+    Integer instant;
 
     /**
      * 分段量价
      */
-    @NotEmpty
-    List<InstantSpotBidPO> instantSpotBidPOs;
+    List<InterSpotBid> interSpotBids;
+
 
 }

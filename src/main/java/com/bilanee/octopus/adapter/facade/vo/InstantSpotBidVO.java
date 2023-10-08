@@ -30,7 +30,7 @@ public class InstantSpotBidVO {
     /**
      * 分段量价
      */
-    List<SpotBidVO> spotBidVOs;
+    List<InterSpotBid> interSpotBids;
 
 
 }
