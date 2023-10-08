@@ -39,6 +39,9 @@ public class HttpProxyFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
+        if (!requestURI.contains("/transfer")) {
+            chain.doFilter(request, response);
+        }
         log.info("[ {} ] 接收到请求...URI:{}", this.getClass().getSimpleName(), requestURI);
         requestURI = requestURI.substring("/transfer".length());
         if (!Kit.isBlank(requestURI)) {
