@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotBlank;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -177,17 +178,24 @@ public class CompFacade {
             Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).map(Bid::getTransit).reduce(0D, Double::sum);
             Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).map(Bid::getTransit).reduce(0D, Double::sum);
 
+            List<Predicate<Deal>> selectors = IntStream.range(0, 10)
+                    .mapToObj(i -> (Predicate<Deal>) d -> d.getPrice() > i * 200D && d.getPrice() <= (i + 1) * 200).collect(Collectors.toList());
+
+            List<Double> dealHistogram = deals.stream().collect(Collect.select(selectors))
+                    .stream().map(ds -> ds.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum()).collect(Collectors.toList());
+
             Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
             List<UnitDealVO> unitDealVOs = bidMap.entrySet().stream().map(ee -> {
                 Long unitId = ee.getKey();
                 Collection<Bid> unitBids = ee.getValue();
-                Double unitTotalVolume = deals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
-                Double unitTotalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                List<Deal> unitDeals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+                Double unitTotalVolume = unitDeals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
+                Double unitTotalQuantity = unitDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
                 return UnitDealVO.builder()
                         .unitId(unitId)
-                        .averagePrice(totalVolume / unitTotalQuantity)
+                        .averagePrice(unitTotalVolume / unitTotalQuantity)
                         .totalQuantity(unitTotalQuantity)
-                        .deals(deals)
+                        .deals(unitDeals)
                         .build();
             }).collect(Collectors.toList());
 
@@ -203,7 +211,7 @@ public class CompFacade {
                     .totalDealQuantity(totalQuantity)
                     .unitVOs(unitVOs)
                     .unitDealVOS(unitDealVOs)
-                    .dealHistogram(new ArrayList<>()) // TODO
+                    .dealHistogram(dealHistogram)
                     .build();
         }).collect(Collectors.toList());
         return Result.success(intraClearanceVOs);
