@@ -49,6 +49,7 @@ public class HttpProxyFilter implements Filter {
         String method = req.getMethod();
         if (HttpMethod.OPTIONS.matches(method)) {
             chain.doFilter(request, response);
+            return;
         }
         HttpMethod httpMethod = HttpMethod.resolve(method);//method
         // 请求头
