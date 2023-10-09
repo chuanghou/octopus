@@ -53,7 +53,7 @@ public class HttpProxyFilter implements Filter {
         // 请求体
         byte[] body = parseRequestBody(req);
         // 封装发singhttp请求
-        RequestEntity<?> requestEntity = new RequestEntity<>(body, headers, httpMethod, URI.create(host + requestURI));
+        RequestEntity<?> requestEntity = new RequestEntity<>(body, headers, HttpMethod.GET, URI.create(host + requestURI));
         RestTemplate restTemplate = new RestTemplate();
         // 编码格式转换
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
