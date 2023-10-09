@@ -47,13 +47,16 @@ public class HttpProxyFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
         // 请求类型
         String method = req.getMethod();
+        if (HttpMethod.OPTIONS.matches(method)) {
+            chain.doFilter(request, response);
+        }
         HttpMethod httpMethod = HttpMethod.resolve(method);//method
         // 请求头
         MultiValueMap<String, String> headers = parseRequestHeader(req);//header
         // 请求体
         byte[] body = parseRequestBody(req);
         // 封装发singhttp请求
-        RequestEntity<?> requestEntity = new RequestEntity<>(body, headers, HttpMethod.GET, URI.create(host + requestURI));
+        RequestEntity<?> requestEntity = new RequestEntity<>(body, headers, httpMethod, URI.create(host + requestURI));
         RestTemplate restTemplate = new RestTemplate();
         // 编码格式转换
         restTemplate.getMessageConverters().set(1, new StringHttpMessageConverter(StandardCharsets.UTF_8));
