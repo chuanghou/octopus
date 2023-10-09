@@ -203,6 +203,7 @@ public class CompFacade {
                     .totalDealQuantity(totalQuantity)
                     .unitVOs(unitVOs)
                     .unitDealVOS(unitDealVOs)
+                    .dealHistogram(new ArrayList<>()) // TODO
                     .build();
         }).collect(Collectors.toList());
         return Result.success(intraClearanceVOs);

@@ -69,6 +69,9 @@ public class HttpProxyFilter implements Filter {
         if (contentType != null) {
             resp.setContentType(contentType.toString());
         }
+        resp.setHeader("Access-Control-Allow-Credentials", "true");
+        resp.setHeader("Access-Control-Allow-Origin", " https://etsim.pages.dev");
+        resp.setHeader("Access-Control-Expose-Headers", "*");
         resp.setCharacterEncoding("UTF-8");// 在getWriterz之前执行，否则不生效
         PrintWriter writer = resp.getWriter();
         writer.write(resultBody);
