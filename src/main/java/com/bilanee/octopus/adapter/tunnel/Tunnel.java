@@ -130,7 +130,7 @@ public class Tunnel {
 
 
     public Comp runningComp() {
-        LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getCompId).last("LIMIT 1");
+        LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getGmtCreate).last("LIMIT 1");
         CompDO compDO = compDOMapper.selectOne(queryWrapper);
         return domainTunnel.getByAggregateIdOptional(Comp.class, compDO.getCompId()).orElse(null);
     }
