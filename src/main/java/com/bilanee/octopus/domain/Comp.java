@@ -292,6 +292,7 @@ public class Comp extends AggregateRoot {
                     throw new SysEx(e);
                 }
                 Command command = delayCommandWrapper.getCommand();
+                log.arg0(command).info("DELAY_WORK");
                 CommandBus.accept(command, new HashMap<>());
             }
 

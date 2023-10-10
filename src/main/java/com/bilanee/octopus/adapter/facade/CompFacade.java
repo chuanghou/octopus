@@ -134,7 +134,7 @@ public class CompFacade {
                         .deals(deals)
                         .build();
             }).collect(Collectors.toList());
-            interClearVOs.get(timeFrame).setUnitDealVOS(unitDealVOS);
+            Optional.ofNullable(interClearVOs.get(timeFrame)).ifPresent(interClearanceVO -> interClearanceVO.setUnitDealVOS(unitDealVOS));
         });
 
         return Result.success(new ArrayList<>(interClearVOs.values()));

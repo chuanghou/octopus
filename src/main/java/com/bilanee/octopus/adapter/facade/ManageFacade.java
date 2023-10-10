@@ -15,6 +15,7 @@ import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -61,6 +62,9 @@ public class ManageFacade {
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
         CompCmd.Create command = Convertor.INST.to(compCreatePO);
+        if (command.getStartTimeStamp() == null) {
+            command.setStartTimeStamp(Clock.currentTimeMillis() + 5 * 60 * 1000L);
+        }
         command.setCompId(uniqueIdGetter.get());
         CommandBus.accept(command, new HashMap<>());
         return Result.success();

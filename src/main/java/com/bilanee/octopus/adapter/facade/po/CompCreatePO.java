@@ -18,9 +18,9 @@ import java.util.Map;
 public class CompCreatePO {
 
     /**
-     * 竞赛开始时间戳
+     * 竞赛开始时间戳，可以为空，为空的时候，默认5分钟之后开始
      */
-    @NotNull @Positive
+    @Positive
     Long startTimeStamp;
 
     /**

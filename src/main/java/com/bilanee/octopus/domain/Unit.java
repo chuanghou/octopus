@@ -23,6 +23,7 @@ import org.mapstruct.Builder;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -191,5 +192,9 @@ public class Unit extends AggregateRoot {
         Unit to(UnitCmd.Create command);
 
 
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new Date(1696947778906L));
     }
 }
