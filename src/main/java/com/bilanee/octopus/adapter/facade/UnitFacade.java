@@ -138,7 +138,7 @@ public class UnitFacade {
                 TimeFrame timeFrame = ee.getKey();
                 Double capacity = unit.getMetaUnit().getCapacity().get(timeFrame).get(unit.getMetaUnit().getUnitType().generalDirection());
                 List<BalanceVO> balanceVOs = unit.getBalance().get(timeFrame).entrySet().stream()
-                        .map(eee -> new BalanceVO(eee.getKey(), eee.getValue())).collect(Collectors.toList());
+                        .map(eee -> new BalanceVO(eee.getKey(), eee.getValue())).filter(b -> b.getBalance() > 0).collect(Collectors.toList());
                 return InterBidVO.builder().timeFrame(timeFrame)
                         .capacity(capacity)
                         .bidVOs(Collect.transfer(ee.getValue(), Convertor.INST::to))
