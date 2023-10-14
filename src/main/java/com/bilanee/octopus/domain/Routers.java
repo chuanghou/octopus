@@ -13,14 +13,8 @@ import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.infrastructure.entity.InterSpotUnitOfferDO;
-import com.bilanee.octopus.infrastructure.entity.TieLinePowerDO;
-import com.bilanee.octopus.infrastructure.entity.TransactionDO;
-import com.bilanee.octopus.infrastructure.entity.UnmetDemand;
-import com.bilanee.octopus.infrastructure.mapper.InterSpotUnitOfferDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.TieLinePowerDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.TransactionDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.UnmetDemandMapper;
+import com.bilanee.octopus.infrastructure.entity.*;
+import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -187,6 +181,7 @@ public class Routers implements EventRouters {
 
     final UnmetDemandMapper unmetDemandMapper;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
+    final InterSpotTransactionDOMapper interSpotTransactionDOMapper;
 
     @EventRouter
     public void clearForInterSpotBid(CompEvent.Stepped stepped, Context context) {
@@ -205,27 +200,54 @@ public class Routers implements EventRouters {
             List<Section> sections = interSpotUnitOfferDOMapper.selectList(eq1)
                     .stream().filter(i -> !i.getSpotOfferMw1().equals(0D) || !i.getSpotOfferMw2().equals(0D) || !i.getSpotOfferMw3().equals(0D))
                     .map(u -> Arrays.asList(
-                            new Section(u.getUnitId(), u.getSpotOfferMw1(), u.getSpotOfferPrice1()),
-                            new Section(u.getUnitId(), u.getSpotOfferMw2(), u.getSpotOfferPrice2()),
-                            new Section(u.getUnitId(), u.getSpotOfferMw3(), u.getSpotOfferPrice3())
+                            new Section(u.getUnitId(), u.getSpotOfferMw1(), u.getSpotOfferPrice1(), 0D),
+                            new Section(u.getUnitId(), u.getSpotOfferMw2(), u.getSpotOfferPrice2(), 0D),
+                            new Section(u.getUnitId(), u.getSpotOfferMw3(), u.getSpotOfferPrice3(), 0D)
                     )).flatMap(Collection::stream).sorted(Comparator.comparing(Section::getPrice)).collect(Collectors.toList());
             Double price = null;
-            double marketQuantity;
+            double marketQuantity = 0D;
             double nonMarketQuantity = 0D;
             double accumulate = 0D;
+
             for (Section section : sections) {
                 double v = accumulate + section.getQuantity();
                 if (v >= require) {
                     price = section.price;
                     marketQuantity = require;
+                    section.setDealQuantity(require - accumulate);
                     break;
                 }
+                accumulate += section.getQuantity();
+                section.setDealQuantity(section.quantity);
             }
+
             if (price == null) {
+                if (!sections.isEmpty()) {
+                    price = sections.get(sections.size() - 1).getPrice();
+                }
                 marketQuantity = accumulate;
                 nonMarketQuantity = require - marketQuantity;
             }
+            LambdaQueryWrapper<TieLinePowerDO> eq2 = new LambdaQueryWrapper<TieLinePowerDO>()
+                    .eq(TieLinePowerDO::getRoundId, roundId + 1).eq(TieLinePowerDO::getPrd, instant);
+            TieLinePowerDO tieLinePowerDO = tieLinePowerDOMapper.selectOne(eq2);
+            tieLinePowerDO.setDaNonmarketTielinePower(nonMarketQuantity);
+            tieLinePowerDO.setDaMarketTielinePower(marketQuantity);
+            tieLinePowerDOMapper.updateById(tieLinePowerDO);
 
+            Map<Integer, Collection<Section>> map = sections.stream().collect(Collect.listMultiMap(Section::getSourceId)).asMap();
+            for (Map.Entry<Integer, Collection<Section>> entry : map.entrySet()) {
+                Integer sourceId = entry.getKey();
+                double dealTotal = entry.getValue().stream().collect(Collectors.summarizingDouble(Section::getDealQuantity)).getSum();
+                LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                        .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
+                        .eq(InterSpotTransactionDO::getPrd, instant)
+                        .eq(InterSpotTransactionDO::getSellerId, sourceId);
+                InterSpotTransactionDO interSpotTransactionDO = interSpotTransactionDOMapper.selectOne(eq3);
+                interSpotTransactionDO.setClearedPrice(price);
+                interSpotTransactionDO.setClearedMw(dealTotal);
+                interSpotTransactionDOMapper.updateById(interSpotTransactionDO);
+            }
         }
     }
 
@@ -239,6 +261,7 @@ public class Routers implements EventRouters {
         int sourceId;
         double quantity;
         double price;
+        double dealQuantity;
 
     }
 
