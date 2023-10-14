@@ -13,8 +13,14 @@ import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.infrastructure.entity.InterSpotUnitOfferDO;
+import com.bilanee.octopus.infrastructure.entity.TieLinePowerDO;
 import com.bilanee.octopus.infrastructure.entity.TransactionDO;
+import com.bilanee.octopus.infrastructure.entity.UnmetDemand;
+import com.bilanee.octopus.infrastructure.mapper.InterSpotUnitOfferDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.TieLinePowerDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.TransactionDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.UnmetDemandMapper;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -27,10 +33,13 @@ import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -152,6 +161,88 @@ public class Routers implements EventRouters {
     public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
         WsHandler.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
+
+    final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
+
+    @EventRouter
+    public void routeClearInterSpotBid(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
+        boolean b1 = now.getMarketStatus() == MarketStatus.BID;
+        if (!(b0 && b1)) {
+            return;
+        }
+        Integer roundId = now.getRoundId();
+        LambdaQueryWrapper<InterSpotUnitOfferDO> eq = new LambdaQueryWrapper<InterSpotUnitOfferDO>().eq(InterSpotUnitOfferDO::getRoundId, roundId + 1);
+        interSpotUnitOfferDOMapper.selectList(eq).forEach(interSpotUnitOfferDO -> {
+            interSpotUnitOfferDO.setSpotOfferMw1(0D);
+            interSpotUnitOfferDO.setSpotOfferMw2(0D);
+            interSpotUnitOfferDO.setSpotOfferMw3(0D);
+            interSpotUnitOfferDO.setSpotOfferPrice1(0D);
+            interSpotUnitOfferDO.setSpotOfferPrice2(0D);
+            interSpotUnitOfferDO.setSpotOfferPrice3(0D);
+            interSpotUnitOfferDOMapper.updateById(interSpotUnitOfferDO);
+        });
+    }
+
+    final UnmetDemandMapper unmetDemandMapper;
+    final TieLinePowerDOMapper tieLinePowerDOMapper;
+
+    @EventRouter
+    public void clearForInterSpotBid(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        Integer roundId = now.getRoundId();
+        LambdaQueryWrapper<TieLinePowerDO> eq
+                = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
+        Map<Integer, Double> already = tieLinePowerDOMapper.selectList(eq).stream()
+                .collect(Collectors.toMap(TieLinePowerDO::getPrd, t -> t.getAnnualTielinePower() + t.getMonthlyTielinePower()));
+        Map<Integer, Double> demand = unmetDemandMapper.selectList(null).stream()
+                .collect(Collectors.toMap(UnmetDemand::getPrd, u -> u.getDaReceivingMw() - already.get(u.getPrd())));
+        for (int instant = 0; instant < 24; instant++) {
+            double require = demand.get(instant) - already.get(instant);
+            LambdaQueryWrapper<InterSpotUnitOfferDO> eq1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
+                    .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1).eq(InterSpotUnitOfferDO::getPrd, instant);
+            List<Section> sections = interSpotUnitOfferDOMapper.selectList(eq1)
+                    .stream().filter(i -> !i.getSpotOfferMw1().equals(0D) || !i.getSpotOfferMw2().equals(0D) || !i.getSpotOfferMw3().equals(0D))
+                    .map(u -> Arrays.asList(
+                            new Section(u.getUnitId(), u.getSpotOfferMw1(), u.getSpotOfferPrice1()),
+                            new Section(u.getUnitId(), u.getSpotOfferMw2(), u.getSpotOfferPrice2()),
+                            new Section(u.getUnitId(), u.getSpotOfferMw3(), u.getSpotOfferPrice3())
+                    )).flatMap(Collection::stream).sorted(Comparator.comparing(Section::getPrice)).collect(Collectors.toList());
+            Double price = null;
+            double marketQuantity;
+            double nonMarketQuantity = 0D;
+            double accumulate = 0D;
+            for (Section section : sections) {
+                double v = accumulate + section.getQuantity();
+                if (v >= require) {
+                    price = section.price;
+                    marketQuantity = require;
+                    break;
+                }
+            }
+            if (price == null) {
+                marketQuantity = accumulate;
+                nonMarketQuantity = require - marketQuantity;
+            }
+
+        }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static private class Section {
+
+        int sourceId;
+        double quantity;
+        double price;
+
+    }
+
+
 
 
 
