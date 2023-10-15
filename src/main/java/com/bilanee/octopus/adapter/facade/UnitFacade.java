@@ -287,6 +287,7 @@ public class UnitFacade {
                     .bidId(bid.getBidId())
                     .quantity(bid.getQuantity())
                     .transit(bid.getTransit())
+                    .direction(bid.getDirection())
                     .bidStatus(bid.getBidStatus())
                     .price(bid.getPrice())
                     .declareTimeStamp(bid.getDeclareTimeStamp())

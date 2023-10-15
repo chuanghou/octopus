@@ -1,6 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.basic.enums.BidStatus;
+import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.Operation;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -24,6 +25,11 @@ public class IntraBidVO {
      * 初始挂牌电力
      */
     Double quantity;
+
+    /**
+     * 报单方向
+     */
+    Direction direction;
 
 
     /**
