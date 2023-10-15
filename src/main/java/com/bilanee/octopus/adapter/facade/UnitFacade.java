@@ -584,10 +584,9 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param unitType 机组列表，或者负荷列表
      */
-
+    @GetMapping("listClearedUnitVOs")
     public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
         UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
-        BizEx.nullThrow(uType, PARAM_FORMAT_WRONG.message("单元类型不正确"));
         boolean equals = tunnel.runningComp().getCompStage().equals(CompStage.TRADE);
         StageId parsed = StageId.parse(stageId);
         Long compId = parsed.getCompId();
@@ -610,6 +609,7 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param unitId 待查看的机组unitId
      */
+    @GetMapping("listGeneratorClearances")
     public Result<GeneratorClearVO> listGeneratorClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);

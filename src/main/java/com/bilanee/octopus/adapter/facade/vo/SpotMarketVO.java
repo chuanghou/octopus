@@ -13,6 +13,16 @@ import java.util.List;
 public class SpotMarketVO {
 
     /**
+     * 日前市场成交概况
+     */
+    IntraSpotDealVO daIntraSpotDealVO;
+
+    /**
+     * 实时市场成交概况
+     */
+    IntraSpotDealVO rtIntraSpotDealVO;
+
+    /**
      * 单元搜索信息
      */
     List<UnitVO> unitVOs;
@@ -26,5 +36,6 @@ public class SpotMarketVO {
      * 日前供需曲线集合，数组长度为24，代表0~23个时间点
      */
     List<SpotMarketEntityVO> rtEntityVOs;
+
 
 }

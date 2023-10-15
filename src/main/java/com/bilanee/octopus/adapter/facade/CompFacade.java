@@ -231,9 +231,11 @@ public class CompFacade {
         return sections;
     }
 
+    final SubregionPriceMapper subregionPriceMapper;
+
 
     /**
-     * 市场供需曲线
+     * 省内现货市场：市场成交概况，市场供需曲线
      * @param stageId 当前页面所处stageId
      * @param province 查看省份
      * @return 现货供需曲线
@@ -243,17 +245,58 @@ public class CompFacade {
         StageId parsed = StageId.parse(stageId);
         Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
         Comp comp = tunnel.runningComp();
+
+        SpotMarketVO.SpotMarketVOBuilder builder = SpotMarketVO.builder();
+
+        LambdaQueryWrapper<SubregionPrice> eq = new LambdaQueryWrapper<SubregionPrice>()
+                .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1).eq(SubregionPrice::getSubregionId, parsedProvince.getDbCode());
+        List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq);
+        Double maxDaPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
+        Double minDaPrice = subregionPrices.stream().min(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
+        Double maxRtPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getRtLmp)).map(SubregionPrice::getRtLmp).orElseThrow(SysEx::unreachable);
+        Double minRtPrice = subregionPrices.stream().min(Comparator.comparing(SubregionPrice::getRtLmp)).map(SubregionPrice::getRtLmp).orElseThrow(SysEx::unreachable);
+
+        LambdaQueryWrapper<UnitDO> queryWrapper0 = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsed.getCompId())
+                .eq(UnitDO::getRoundId, parsed.getRoundId());
+        List<Integer> loadSourceIds = unitDOMapper.selectList(queryWrapper0).stream()
+                .filter(u -> u.getMetaUnit().getProvince().equals(parsedProvince))
+                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.LOAD))
+                .map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
+
+        LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>().eq(LoadDaForecastBidDO::getRoundId, parsed.getRoundId() + 1)
+                .in(LoadDaForecastBidDO::getLoadId, loadSourceIds);
+        List<Double> daInstantLoadBids = loadDaForecastBidMapper.selectList(in).stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd)).values()
+                .stream().map(bids -> bids.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum()).collect(Collectors.toList());
+
+        LambdaQueryWrapper<LoadForecastValueDO> in1 = new LambdaQueryWrapper<LoadForecastValueDO>().in(LoadForecastValueDO::getLoadId, loadSourceIds);
+        List<Double> rtInstantLoadBids = loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
+                .stream().map(vs -> vs.stream().collect(Collectors.summarizingDouble(LoadForecastValueDO::getRtP)).getSum()).collect(Collectors.toList());
+
+        IntraSpotDealVO daIntraSpotDealVO = IntraSpotDealVO.builder().maxDealPrice(maxDaPrice).minDealPrice(minDaPrice)
+                .minLoad(daInstantLoadBids.stream().min(Double::compareTo).orElse(null))
+                .maxLoad(daInstantLoadBids.stream().max(Double::compareTo).orElse(null)).build();
+        builder.daIntraSpotDealVO(daIntraSpotDealVO);
+
+        IntraSpotDealVO rtIntraSpotDealVO = IntraSpotDealVO.builder().maxDealPrice(maxRtPrice).minDealPrice(minRtPrice)
+                .minLoad(rtInstantLoadBids.stream().min(Double::compareTo).orElse(null))
+                .maxLoad(rtInstantLoadBids.stream().max(Double::compareTo).orElse(null)).build();
+        builder.rtIntraSpotDealVO(rtIntraSpotDealVO);
+
         boolean equals = comp.getCompStage().equals(CompStage.RANKING);
-        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+        LambdaQueryWrapper<UnitDO> queryWrapper1 = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
                 .eq(UnitDO::getRoundId, parsed.getRoundId())
                 .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
-        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper1);
         List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
-                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+                .filter(unit -> unit.getMetaUnit().getProvince().equals(parsedProvince))
+                .filter(unit -> unit.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .collect(Collectors.toList());
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
-        SpotMarketVO.SpotMarketVOBuilder builder = SpotMarketVO.builder().unitVOs(unitVOs);
+
+        builder.unitVOs(unitVOs);
 
         Qps supply = supply(parsed, parsedProvince);
         Qps demand = demand(parsed, parsedProvince);
@@ -486,10 +529,13 @@ public class CompFacade {
     }
 
 
+
+
     /**
-     *  中标电源结构
+     *  省内现货市场：中标电源结构
      * @param stageId 界面阶段id
      * @param province 查看省份
+     *
      */
     @GetMapping ("listSpotBiddenEntityVOs")
     public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token)  {
@@ -497,7 +543,6 @@ public class CompFacade {
         Long compId = parsedStageId.getCompId();
         Integer roundId = parsedStageId.getRoundId();
         Province parsedProvince = Kit.enumOf(Province::name, province).orElse(null);
-        BizEx.nullThrow(parsedProvince, ErrorEnums.PARAM_FORMAT_WRONG.message("应该传递正确的省份信息"));
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId);
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
@@ -667,6 +712,139 @@ public class CompFacade {
         )).stream().map(ls -> ls.stream().collect(Collectors.summarizingDouble(Pair::getLeft)).getSum()).collect(Collectors.toList());
 
     }
+
+    final InterSpotTransactionDOMapper interSpotTransactionDOMapper;
+
+    /**
+     * 省间现货市场，全天市场成交情况
+     * @param stageId 阶段id
+     */
+    @GetMapping("getSpotInterClearanceVO")
+    public Result<SpotInterClearanceVO> getSpotInterClearanceVO(String stageId, @RequestHeader String token) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Long compId = StageId.parse(stageId).getCompId();
+        String userId = TokenUtils.getUserId(token);
+        List<Unit> units = tunnel.listUnits(compId, roundId, userId).stream()
+                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .filter(u -> u.getMetaUnit().getProvince().equals(Province.TRANSFER))
+                .collect(Collectors.toList());
+        LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                .eq(InterSpotTransactionDO::getRoundId, roundId + 1);
+        Map<Integer, List<InterSpotTransactionDO>> spotTransactionDOs = interSpotTransactionDOMapper
+                .selectList(eq3).stream().collect(Collectors.groupingBy(InterSpotTransactionDO::getPrd));
+        List<Double> dealPrices = IntStream.range(0, 24).mapToObj(i -> {
+            List<InterSpotTransactionDO> interSpotTransactionDOS = spotTransactionDOs.get(i);
+            return interSpotTransactionDOS.stream().filter(t -> !t.getClearedPrice().equals(0D))
+                    .findFirst().map(InterSpotTransactionDO::getClearedPrice).orElse(null);
+        }).collect(Collectors.toList());
+        LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
+        List<Double> dealTotals = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd))
+                .map(TieLinePowerDO::getDaMarketTielinePower).collect(Collectors.toList());
+        Map<String, List<Double>> generatorDeals = new HashMap<>();
+        units.forEach(u -> {
+            String unitName = u.getMetaUnit().getName();
+            LambdaQueryWrapper<InterSpotTransactionDO> eqs = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                    .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
+                    .eq(InterSpotTransactionDO::getSellerId, u.getMetaUnit().getSourceId());
+            List<Double> deals = interSpotTransactionDOMapper.selectList(eqs).stream()
+                    .sorted(Comparator.comparing(InterSpotTransactionDO::getPrd))
+                    .map(InterSpotTransactionDO::getClearedMw).collect(Collectors.toList());
+            generatorDeals.put(unitName, deals);
+        });
+        SpotInterClearanceVO spotInterClearanceVO = SpotInterClearanceVO.builder()
+                .dealTotals(dealTotals).dealPrices(dealPrices).generatorDeals(generatorDeals).build();
+        return Result.success(spotInterClearanceVO);
+    }
+
+    final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
+    final UnmetDemandMapper unmetDemandMapper;
+
+    /**
+     * 省间现货分时供需曲线
+     * @param stageId 阶段id
+     * @param instant 时刻
+     */
+    @GetMapping("getInterSpotMarketVO")
+    public Result<InterSpotMarketVO> getInterSpotMarketVO(String stageId, Integer instant, @RequestHeader String token) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Long compId = StageId.parse(stageId).getCompId();
+
+        LambdaQueryWrapper<InterSpotUnitOfferDO> eq = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
+                .eq(InterSpotUnitOfferDO::getPrd, instant)
+                .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1);
+        List<InterSpotUnitOfferDO> interSpotUnitOfferDOS = interSpotUnitOfferDOMapper.selectList(eq);
+        List<Pair<Double, Double>> pairs = interSpotUnitOfferDOS.stream().flatMap(i -> Stream.of(
+                Pair.of(i.getSpotOfferMw1(), i.getSpotOfferPrice1()),
+                Pair.of(i.getSpotOfferMw2(), i.getSpotOfferPrice2()),
+                Pair.of(i.getSpotOfferMw3(), i.getSpotOfferPrice3())
+        )).filter(p -> !p.getLeft().equals(0D)).sorted(Comparator.comparing(Pair::getRight)).collect(Collectors.toList());
+        double sellDeclaredTotal = pairs.stream().collect(Collectors.summarizingDouble(Pair::getLeft)).getSum();
+
+        LambdaQueryWrapper<TieLinePowerDO> eqx
+                = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1).eq(TieLinePowerDO::getPrd, instant);
+        TieLinePowerDO tieLinePowerDO = tieLinePowerDOMapper.selectOne(eqx);
+        double already = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
+        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getPrd, instant);
+        Double receiverDeclaredTotal = unmetDemandMapper.selectOne(eq1).getDaReceivingMw() - already;
+
+
+
+        LambdaQueryWrapper<InterSpotTransactionDO> last = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                .eq(InterSpotTransactionDO::getRoundId, roundId + 1);
+
+        List<InterSpotTransactionDO> transactionDOs = interSpotTransactionDOMapper
+                .selectList(last).stream().filter(i -> i.getClearedMw() > 0).collect(Collectors.toList());
+        double dealTotal = transactionDOs.stream().collect(Collectors.summarizingDouble(InterSpotTransactionDO::getClearedMw)).getSum();
+        Double dealAveragePrice = Collect.isEmpty(transactionDOs) ? null : transactionDOs.get(0).getClearedPrice();
+
+
+        Double lx = 0D;
+        List<SpotSection> spotSections = new ArrayList<>();
+        for (Pair<Double, Double> pair : pairs) {
+            SpotSection spotSection = new SpotSection(lx, lx + pair.getLeft(), pair.getRight());
+            spotSections.add(spotSection);
+            lx += pair.getLeft();
+        }
+        InterSpotMarketVO interSpotMarketVO = InterSpotMarketVO.builder()
+                .sellDeclaredTotal(sellDeclaredTotal)
+                .receiverDeclaredTotal(receiverDeclaredTotal)
+                .dealTotal(dealTotal)
+                .dealAveragePrice(dealAveragePrice)
+                .requireQuantity(receiverDeclaredTotal)
+                .clearPrice(dealAveragePrice)
+                .spotSections(spotSections)
+                .build();
+         return Result.success(interSpotMarketVO);
+    }
+
+
+    /**
+     * 省间现货分设备成交量价
+     * @param stageId 阶段id
+     */
+    @GetMapping("listInterSpotDeals")
+    public Result<List<InterSpotUnitDealVO>> listInterSpotDeals(String stageId, @RequestHeader String token) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Long compId = StageId.parse(stageId).getCompId();
+        String userId = TokenUtils.getUserId(token);
+        boolean equals = tunnel.runningComp().getTradeStage().equals(TradeStage.END);
+        List<Unit> units = tunnel.listUnits(compId, roundId, equals ? null : userId).stream()
+                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .filter(u -> u.getMetaUnit().getProvince().equals(Province.TRANSFER))
+                .collect(Collectors.toList());
+        List<InterSpotUnitDealVO> interSpotUnitDealVOs = units.stream().map(unit -> {
+            String name = unit.getMetaUnit().getName();
+            Integer sourceId = unit.getMetaUnit().getSourceId();
+            LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                    .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
+                    .eq(InterSpotTransactionDO::getSellerId, sourceId);
+            List<InterSpotUnitDealVO.Deal> deals = interSpotTransactionDOMapper.selectList(eq3).stream().sorted(Comparator.comparing(InterSpotTransactionDO::getPrd))
+                    .map(i -> new InterSpotUnitDealVO.Deal(i.getClearedMw(), i.getClearedPrice())).collect(Collectors.toList());
+            return new InterSpotUnitDealVO(name, deals);
+        }).collect(Collectors.toList());
+        return Result.success(interSpotUnitDealVOs);
+    }
+
 
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
