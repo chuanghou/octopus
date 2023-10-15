@@ -283,7 +283,9 @@ public class UnitFacade {
             }
 
             // 报单内容
-            List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> IntraBidVO.builder().quantity(bid.getQuantity())
+            List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> IntraBidVO.builder()
+                    .bidId(bid.getBidId())
+                    .quantity(bid.getQuantity())
                     .transit(bid.getTransit())
                     .bidStatus(bid.getBidStatus())
                     .price(bid.getPrice())

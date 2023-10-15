@@ -15,6 +15,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IntraBidVO {
 
+    Long bidId;
+
     /**
      * 初始挂牌电力
      */
