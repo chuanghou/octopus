@@ -337,7 +337,7 @@ public class UnitFacade {
      * @return 报单结果
      */
     @PostMapping("submitIntraCancelPO")
-    public Result<Void> submitIntraCancelPO(IntraCancelPO intraCancelPO) {
+    public Result<Void> submitIntraCancelPO(@RequestBody IntraCancelPO intraCancelPO) {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
 
