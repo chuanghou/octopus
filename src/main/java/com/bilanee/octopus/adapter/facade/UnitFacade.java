@@ -165,7 +165,10 @@ public class UnitFacade {
      */
     @PostMapping("submitInterBidsPO")
     public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
-
+        Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
+        UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
+        GridLimit gridLimit = tunnel.priceLimit(unitType);
+        interBidsPO.getBidPOs().forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
@@ -311,7 +314,10 @@ public class UnitFacade {
     public Result<Void> submitIntraBidPO(@RequestBody IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
-
+        Long unitId = intraBidPO.getBidPO().getUnitId();
+        UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
+        GridLimit gridLimit = tunnel.priceLimit(unitType);
+        gridLimit.check(intraBidPO.getBidPO().getPrice());
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
         BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA,
                 PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
