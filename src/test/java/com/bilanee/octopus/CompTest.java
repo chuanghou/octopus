@@ -87,12 +87,12 @@ public class CompTest {
                 .marketStageBidLengths(marketStageBidLengths)
                 .marketStageClearLengths(marketStageClearLengths)
                 .tradeResultLength(2)
-                .userIds(Arrays.asList("0", "1"))
+                .userIds(Arrays.asList("1000", "1001"))
                 .enableQuiz(true)
                 .build();
 
         manageFacade.createComp(compCreatePO);
-        Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("0"));
+        Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("1000"));
         Assertions.assertTrue(compVOResult.getSuccess());
         Comp comp = tunnel.runningComp();
         StageId stageId = comp.getStageId();
