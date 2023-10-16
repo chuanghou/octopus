@@ -2,6 +2,7 @@ package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,6 +10,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName("interprovincial_spot_pool_transaction_result")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class InterSpotTransactionDO {
 

@@ -76,8 +76,8 @@ public class CompTest {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
-            marketStageBidLengths.put(marketStage, 2);
-            marketStageClearLengths.put(marketStage, 2);
+            marketStageBidLengths.put(marketStage, 2000);
+            marketStageClearLengths.put(marketStage, 2000);
         }
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
@@ -245,8 +245,8 @@ public class CompTest {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
-            marketStageBidLengths.put(marketStage, 1000);
-            marketStageClearLengths.put(marketStage, 1000);
+            marketStageBidLengths.put(marketStage, 100000);
+            marketStageClearLengths.put(marketStage, 100000);
         }
 
         // 比赛参数
@@ -406,7 +406,7 @@ public class CompTest {
         bidResult = unitFacade.submitIntraBidPO(intraBidPO);
         Assertions.assertTrue(bidResult.getSuccess());
 
-        Thread.sleep(100);
+        Thread.sleep(1000);
         BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(generatorUnitId)).tradeStage(TradeStage.AN_INTRA).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
         Assertions.assertEquals(bids.size(), 1);
@@ -456,7 +456,7 @@ public class CompTest {
 
         manageFacade.step();
 
-        Thread.sleep(100);
+        Thread.sleep(3000);
         generatorUnit = domainTunnel.getByAggregateId(Unit.class, generatorUnitId);
         Assertions.assertEquals(unitBalance0, generatorUnit.getBalance().get(TimeFrame.PEAK).get(Direction.SELL));
 

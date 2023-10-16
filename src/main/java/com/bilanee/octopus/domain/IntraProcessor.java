@@ -176,11 +176,11 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
               the stock market will use the higher price
              */
             Double dealPrice = buyBid.getDeclareTimeStamp() > sellBid.getDeclareTimeStamp() ? sellBid.getPrice() : buyBid.getPrice();
-            double dealQuantity = Math.min(buyBid.getQuantity(), sellBid.getQuantity());
+            double dealQuantity = Math.min(buyBid.getTransit(), sellBid.getTransit());
             deal = Deal.builder().quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
-            double buyBalance = buyBid.getTransit() - dealQuantity;
+            double buyBalance = buyBid.getTransit();
             if (Double.valueOf(0D).equals(buyBalance)) {
                 buyBid.setBidStatus(BidStatus.COMPLETE_DEAL);
                 buyPriorityQueue.remove();
@@ -188,7 +188,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 buyBid.setBidStatus(BidStatus.PART_DEAL);
             }
 
-            double sellBalance = sellBid.getTransit() - dealQuantity;
+            double sellBalance = sellBid.getTransit();
             if (Double.valueOf(0D).equals(sellBalance)) {
                 sellBid.setBidStatus(BidStatus.COMPLETE_DEAL);
                 sellPriorityQueue.remove();
