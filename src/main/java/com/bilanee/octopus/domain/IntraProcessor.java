@@ -180,16 +180,16 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             deal = Deal.builder().quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
-            double buyBalance = buyBid.getQuantity() - dealQuantity;
-            if (buyBalance == 0L) {
+            double buyBalance = buyBid.getTransit() - dealQuantity;
+            if (Double.valueOf(0D).equals(buyBalance)) {
                 buyBid.setBidStatus(BidStatus.COMPLETE_DEAL);
                 buyPriorityQueue.remove();
             } else {
                 buyBid.setBidStatus(BidStatus.PART_DEAL);
             }
 
-            double sellBalance = sellBid.getQuantity() - dealQuantity;
-            if (sellBalance == 0L) {
+            double sellBalance = sellBid.getTransit() - dealQuantity;
+            if (Double.valueOf(0D).equals(sellBalance)) {
                 sellBid.setBidStatus(BidStatus.COMPLETE_DEAL);
                 sellPriorityQueue.remove();
             } else {
