@@ -76,17 +76,17 @@ public class CompTest {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
-            marketStageBidLengths.put(marketStage, 2000);
-            marketStageClearLengths.put(marketStage, 2000);
+            marketStageBidLengths.put(marketStage, 5);
+            marketStageClearLengths.put(marketStage, 5);
         }
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
-                .startTimeStamp(Clock.currentTimeMillis() + 2_000)
-                .quitCompeteLength(2)
-                .quitResultLength(2)
+                .startTimeStamp(Clock.currentTimeMillis() + 2)
+                .quitCompeteLength(5)
+                .quitResultLength(5)
                 .marketStageBidLengths(marketStageBidLengths)
                 .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(2)
+                .tradeResultLength(5)
                 .userIds(Arrays.asList("1000", "1001"))
                 .enableQuiz(true)
                 .build();
@@ -96,19 +96,19 @@ public class CompTest {
         Assertions.assertTrue(compVOResult.getSuccess());
         Comp comp = tunnel.runningComp();
         StageId stageId = comp.getStageId();
-        Thread.sleep(2100);
+        Thread.sleep(3_000);
         StageId stageId1 = tunnel.runningComp().getStageId();
         boolean equals = stageId1.equals(stageId.next(comp));
         Assertions.assertTrue(equals);
         Assertions.assertEquals(stageId1.getCompStage(), CompStage.QUIT_COMPETE);
 
-        Thread.sleep(2100);
+        Thread.sleep(6_000);
         StageId stageId2 = tunnel.runningComp().getStageId();
         equals = stageId2.equals(stageId1.next(comp));
         Assertions.assertTrue(equals);
         Assertions.assertEquals(stageId2.getCompStage(), CompStage.QUIT_RESULT);
 
-        Thread.sleep(2100);
+        Thread.sleep(6000);
         StageId stageId3 = tunnel.runningComp().getStageId();
         equals = stageId3.equals(stageId2.next(comp));
         Assertions.assertTrue(equals);
@@ -125,7 +125,7 @@ public class CompTest {
         Assertions.assertEquals(stageId.getRoundId(), 0);
         Assertions.assertEquals(stageId.getTradeStage(), TradeStage.END);
         Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
-        Thread.sleep(2050);
+        Thread.sleep(6000);
         stageId = tunnel.runningComp().getStageId();
         Assertions.assertEquals(stageId.getCompStage(), CompStage.TRADE);
         Assertions.assertEquals(stageId.getRoundId(), 1);
@@ -148,7 +148,7 @@ public class CompTest {
         Assertions.assertEquals(stageId.getRoundId(), 2);
         Assertions.assertEquals(stageId.getTradeStage(), TradeStage.END);
         Assertions.assertEquals(stageId.getMarketStatus(), MarketStatus.BID);
-        Thread.sleep(2050);
+        Thread.sleep(6000);
         Comp comp1 = tunnel.runningComp();
         Assertions.assertNull(comp1.getEndingTimeStamp());
         stageId = tunnel.runningComp().getStageId();
@@ -156,7 +156,7 @@ public class CompTest {
         Assertions.assertNull(stageId.getRoundId());
         Assertions.assertNull(stageId.getTradeStage());
         Assertions.assertNull(stageId.getMarketStatus());
-        Thread.sleep(3000);
+        Thread.sleep(6000);
         stageId = tunnel.runningComp().getStageId();
         Assertions.assertEquals(stageId.getCompStage(), CompStage.RANKING);
         Assertions.assertNull(stageId.getRoundId());
