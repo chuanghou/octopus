@@ -539,7 +539,6 @@ public class CompTest {
 
 
     @Test
-    @Transactional
     public void testSpotBid() {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
