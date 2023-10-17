@@ -1,7 +1,5 @@
 package com.bilanee.octopus.infrastructure.entity;
 
-import java.util.Date;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.*;

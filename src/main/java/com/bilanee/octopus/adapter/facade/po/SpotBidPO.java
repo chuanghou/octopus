@@ -1,10 +1,10 @@
 package com.bilanee.octopus.adapter.facade.po;
 
-import com.bilanee.octopus.adapter.facade.vo.InterSpotBid;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 @Data

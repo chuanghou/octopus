@@ -3,6 +3,7 @@ package com.bilanee.octopus;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
+import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.*;
@@ -31,9 +32,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @CustomLog
@@ -530,6 +534,175 @@ public class CompTest {
         Assertions.assertTrue(spotMarketVO2.getSuccess());
         Result<SpotMarketVO> spotMarketVO3 = compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("1001"));
         Assertions.assertTrue(spotMarketVO3.getSuccess());
+
+    }
+
+
+    @Test
+    @Transactional
+    public void testSpotBid() {
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 100);
+            marketStageClearLengths.put(marketStage, 100);
+        }
+
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .startTimeStamp(Clock.currentTimeMillis() + 2000000)
+                .quitCompeteLength(5)
+                .quitResultLength(5)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(5)
+                .userIds(Arrays.asList("1000", "1001"))
+                .enableQuiz(false)
+                .build();
+
+        manageFacade.createComp(compCreatePO);
+        manageFacade.step();
+        Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("1000"));
+        Assertions.assertTrue(compVOResult.getSuccess());
+        Comp comp = tunnel.runningComp();
+        StageId stageId = comp.getStageId();
+        StageId stageId1 = StageId.builder().compStage(CompStage.TRADE).compId(comp.getCompId())
+                .roundId(0).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
+        Assertions.assertEquals(stageId1, stageId);
+
+
+        IntStream.range(0, 8).forEach(i -> manageFacade.step());
+        comp = tunnel.runningComp();
+        stageId = comp.getStageId();
+        stageId1 = StageId.builder().compStage(CompStage.TRADE).compId(comp.getCompId())
+                .roundId(0).tradeStage(TradeStage.DA_INTRA).marketStatus(MarketStatus.BID).build();
+        Assertions.assertEquals(stageId1, stageId);
+
+        Result<List<UnitVO>> listResult0 = unitFacade.listAssignUnitVOs(stageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult0.getSuccess());
+        List<UnitVO> unitVOs = listResult0.getData();
+        Assertions.assertEquals(unitVOs.size(), 4);
+        UnitVO classicGenerator = unitVOs.get(0);
+        UnitVO renewableGenerator = unitVOs.get(1);
+        UnitVO load0 = unitVOs.get(2);
+        UnitVO load1 = unitVOs.get(3);
+
+        Result<List<IntraDaBidVO>> listResult1 = unitFacade.listDaBidVOs(stageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult1.getSuccess());
+        List<IntraDaBidVO> intraDaBidVOs = listResult1.getData();
+
+
+        IntraDaBidVO classicDaBidVO = intraDaBidVOs.stream()
+                .filter(i -> i.getUnitId().equals(classicGenerator.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        Segment minSegment = classicDaBidVO.getMinSegment();
+        Assertions.assertNotNull(classicDaBidVO.getMinSegment());
+        Assertions.assertEquals(minSegment.getPrice(), classicGenerator.getMetaUnit().getMinOutputPrice());
+        Assertions.assertEquals(minSegment.getStart(), 0D);
+        Assertions.assertEquals(minSegment.getEnd(), classicGenerator.getMetaUnit().getMinCapacity());
+        Assertions.assertEquals(classicDaBidVO.getSegments().size(), 5);
+        Assertions.assertEquals(classicDaBidVO.getSegments().get(0).getStart(), classicGenerator.getMetaUnit().getMinCapacity());
+        Assertions.assertEquals(classicDaBidVO.getSegments().get(4).getEnd(), classicGenerator.getMetaUnit().getMaxCapacity());
+        classicDaBidVO.getSegments().forEach(s -> Assertions.assertTrue(s.getEnd() >= s.getStart()));
+        List<Segment> segments = classicDaBidVO.getSegments();
+        IntStream.range(0, 4).forEach(i -> Assertions.assertEquals(segments.get(i).getEnd(), segments.get(i + 1).getStart()));
+
+
+        IntraDaBidVO renewableDaBidVO = intraDaBidVOs.stream()
+                .filter(i -> i.getUnitId().equals(renewableGenerator.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        Assertions.assertNull(renewableDaBidVO.getMinSegment());
+        List<Segment> segments1 = renewableDaBidVO.getSegments();
+        Assertions.assertNotNull(segments1);
+        Assertions.assertEquals(segments1.size(), 5);
+        Assertions.assertEquals(segments1.get(0).getStart(), 0D);
+        Assertions.assertEquals(segments1.get(4).getEnd(), renewableGenerator.getMetaUnit().getMaxCapacity());
+        segments1.forEach(s -> Assertions.assertTrue(s.getEnd() >= s.getStart()));
+        IntStream.range(0, 4).forEach(i -> Assertions.assertEquals(segments1.get(i).getEnd(), segments1.get(i + 1).getStart()));
+        Assertions.assertNotNull(renewableDaBidVO.getForecasts());
+        Assertions.assertEquals(renewableDaBidVO.getForecasts().size(), 24);
+        Assertions.assertNotNull(renewableDaBidVO.getDeclares());
+        Assertions.assertEquals(renewableDaBidVO.getDeclares().size(), 24);
+
+        IntraDaBidVO loadDaBidVO0 = intraDaBidVOs.stream()
+                .filter(i -> i.getUnitId().equals(load0.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        Assertions.assertNotNull(loadDaBidVO0.getForecasts());
+        Assertions.assertEquals(loadDaBidVO0.getForecasts().size(), 24);
+        Assertions.assertNotNull(loadDaBidVO0.getDeclares());
+        Assertions.assertEquals(loadDaBidVO0.getDeclares().size(), 24);
+        List<Segment> segments2 = classicDaBidVO.getSegments();
+        int second = LocalTime.now().getHour() / 4 + 1;
+        IntStream.range(0, 4).forEach(i -> {
+            segments2.get(i).setEnd(segments2.get(0).getStart() + (i + 1) * second);
+            segments2.get(i + 1).setStart(segments2.get(0).getStart() + (i + 1) * second);
+        });
+        IntStream.range(0, 5).forEach( i ->  segments2.get(i).setPrice((double) ((i + 1) * second)));
+        IntraDaBidPO intraDaBidPO = IntraDaBidPO.builder().unitId(classicDaBidVO.getUnitId()).segments(segments2).build();
+        Result<Void> voidResult = unitFacade.submitDaBidVO(stageId.toString(), intraDaBidPO, TokenUtils.sign("1000"));
+        Assertions.assertTrue(voidResult.getSuccess());
+        listResult1 = unitFacade.listDaBidVOs(stageId.toString(), TokenUtils.sign("1000"));
+        intraDaBidVOs = listResult1.getData();
+
+
+        classicDaBidVO = intraDaBidVOs.stream()
+                .filter(i -> i.getUnitId().equals(classicGenerator.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        Assertions.assertEquals(classicDaBidVO.getSegments().size(), 5);
+        Assertions.assertEquals(classicDaBidVO.getSegments().get(0).getStart(), classicGenerator.getMetaUnit().getMinCapacity());
+        Assertions.assertEquals(classicDaBidVO.getSegments().get(4).getEnd(), classicGenerator.getMetaUnit().getMaxCapacity());
+        List<Segment> segments3 = classicDaBidVO.getSegments();
+        IntStream.range(0, 4).forEach(i -> {
+            Segment segment = segments3.get(i);
+            double v = segment.getEnd() - segment.getStart();
+            Assertions.assertEquals(v, second);
+        });
+        IntStream.range(0, 4).forEach(i -> {
+            Assertions.assertEquals(segments3.get(i).getEnd(), segments3.get(i + 1).getStart());
+            Assertions.assertEquals(segments3.get(i).getPrice(), (double) (i + 1) * second);
+        });
+
+        List<Segment> segments4 = renewableDaBidVO.getSegments();
+        IntStream.range(0, 4).forEach(i -> {
+            segments4.get(i).setEnd(segments4.get(0).getStart() + (i + 1) * second);
+            segments4.get(i + 1).setStart(segments4.get(0).getStart() + (i + 1) * second);
+        });
+        IntStream.range(0, 5).forEach( i ->  segments4.get(i).setPrice((double) ((i + 1) * second)));
+        intraDaBidPO = IntraDaBidPO.builder().unitId(renewableDaBidVO.getUnitId())
+                .segments(segments4)
+                .declares(IntStream.range(0, 24).mapToObj(i -> (double) (i + 1) * second).collect(Collectors.toList()))
+                .build();
+        voidResult = unitFacade.submitDaBidVO(stageId.toString(), intraDaBidPO, TokenUtils.sign("1000"));
+        Assertions.assertTrue(voidResult.getSuccess());
+
+        listResult1 = unitFacade.listDaBidVOs(stageId.toString(), TokenUtils.sign("1000"));
+        IntraDaBidVO renewableDaBidVO1 = listResult1.getData().stream()
+                .filter(i -> i.getUnitId().equals(renewableGenerator.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        List<Segment> segments5 = renewableDaBidVO1.getSegments();
+
+        IntStream.range(0, 4).forEach(i -> {
+            Segment segment = segments5.get(i);
+            double v = segment.getEnd() - segment.getStart();
+            Assertions.assertEquals(v, second);
+        });
+        IntStream.range(0, 4).forEach(i -> {
+            Assertions.assertEquals(segments5.get(i).getEnd(), segments5.get(i + 1).getStart());
+            Assertions.assertEquals(segments5.get(i).getPrice(), (double) (i + 1) * second);
+        });
+
+        IntStream.range(0, 24).forEach(i -> {
+            List<Double> declares = renewableDaBidVO1.getDeclares();
+            Assertions.assertEquals(declares.get(i), (i + 1) * second);
+        });
+
+        IntraDaBidPO intraDaBidPOx = IntraDaBidPO.builder().unitId(loadDaBidVO0.getUnitId())
+                .declares(IntStream.range(0, 24).mapToObj(i -> (double) (i + 1) * second).collect(Collectors.toList()))
+                .build();
+        Result<Void> voidResult1 = unitFacade.submitDaBidVO(stageId.toString(), intraDaBidPOx, TokenUtils.sign("10000"));
+        Assertions.assertTrue(voidResult1.getSuccess());
+
+        listResult1 = unitFacade.listDaBidVOs(stageId.toString(), TokenUtils.sign("1000"));
+        IntraDaBidVO loadVO = listResult1.getData().stream()
+                .filter(i -> i.getUnitId().equals(load0.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+        IntStream.range(0, 24).forEach(i -> {
+            List<Double> declares = loadVO.getDeclares();
+            Assertions.assertEquals(declares.get(i), (i + 1) * second);
+        });
 
     }
 

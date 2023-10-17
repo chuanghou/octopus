@@ -387,7 +387,7 @@ public class UnitFacade {
                 builder.minSegment(segment);
             }
 
-            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinOutputPrice(): 0D;
+            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinCapacity(): 0D;
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
                     .eq(GeneratorDaSegmentBidDO::getUnitId, metaUnit.getSourceId());
@@ -396,44 +396,31 @@ public class UnitFacade {
             List<Segment> segments = new ArrayList<>();
 
             for (GeneratorDaSegmentBidDO gDO : gDOs) {
-                Double price = gDO.getOfferPrice().equals(0D) ? null : gDO.getOfferPrice();
-                Segment segment = Segment.builder().start(start).end(start + gDO.getOfferMw()).price(price).build();
+                Segment segment = Segment.builder().start(start).end(start + gDO.getOfferMw()).price(gDO.getOfferPrice()).build();
                 segments.add(segment);
                 start = start + gDO.getOfferMw();
             }
             segments.get(segments.size() - 1).setEnd(metaUnit.getMaxCapacity());
-
-            for (int i = 1; i < segments.size(); i++) {
-                if (segments.get(i).getStart().equals(start)) {
-                    segments.get(i).setStart(null);
-                }
-            }
-
-            for (int i = 0; i < segments.size() - 1; i++) {
-                if (segments.get(i).getEnd().equals(start)) {
-                    segments.get(i).setEnd(null);
-                }
-            }
 
             builder.segments(segments);
             if (generatorType == GeneratorType.RENEWABLE) {
 
                 LambdaQueryWrapper<GeneratorForecastValueDO> eq1 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
                         .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId());
-                List<Double> declares = generatorForecastValueMapper.selectList(eq1).stream()
+                List<Double> forecasts = generatorForecastValueMapper.selectList(eq1).stream()
                         .sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
                         .map(GeneratorForecastValueDO::getDaPForecast)
                         .collect(Collectors.toList());
 
-                builder.declares(declares);
+                builder.forecasts(forecasts);
                 LambdaQueryWrapper<GeneratorDaForecastBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
                         .eq(GeneratorDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
                         .eq(GeneratorDaForecastBidDO::getUnitId, unit.getMetaUnit().getSourceId());
-                List<Double> forecasts = generatorDaForecastBidMapper.selectList(eq2)
+                List<Double> declares = generatorDaForecastBidMapper.selectList(eq2)
                         .stream().sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd))
                         .map(GeneratorDaForecastBidDO::getForecastMw)
                         .collect(Collectors.toList());
-                builder.forecasts(forecasts);
+                builder.declares(declares);
             }
 
         } else if (unitType == UnitType.LOAD){
@@ -461,7 +448,7 @@ public class UnitFacade {
      * @param intraDaBidPO 省内现货报单结构体
      */
     @PostMapping("submitDaBidVO")
-    public Result<List<IntraDaBidVO>> submitDaBidVO(@NotBlank String stageId,
+    public Result<Void> submitDaBidVO(@NotBlank String stageId,
                                                     @RequestBody IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
         StageId parsed = StageId.parse(stageId);
         boolean equals = tunnel.runningComp().getStageId().equals(parsed);
@@ -507,7 +494,7 @@ public class UnitFacade {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
 
-        return null;
+        return Result.success();
     }
 
 

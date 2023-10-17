@@ -3,7 +3,7 @@ package com.bilanee.octopus.adapter.tunnel;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
-import lombok.*;
+import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Component;
 

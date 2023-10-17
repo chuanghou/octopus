@@ -4,7 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Data
 @Builder
@@ -16,19 +16,19 @@ public class Segment {
     /**
      * 起始出力
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     Double start;
 
     /**
      * 终止出力
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     Double end;
 
     /**
      * 申报价格
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     Double price;
 
 }
