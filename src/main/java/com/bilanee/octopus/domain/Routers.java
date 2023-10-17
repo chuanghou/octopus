@@ -15,6 +15,7 @@ import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -240,20 +241,29 @@ public class Routers implements EventRouters {
             tieLinePowerDO.setDaMarketTielinePower(marketQuantity);
             tieLinePowerDOMapper.updateById(tieLinePowerDO);
 
-            //TODO transaction 表为空
-//            Map<Integer, Collection<Section>> map = sections.stream().collect(Collect.listMultiMap(Section::getSourceId)).asMap();
-//            for (Map.Entry<Integer, Collection<Section>> entry : map.entrySet()) {
-//                Integer sourceId = entry.getKey();
-//                double dealTotal = entry.getValue().stream().collect(Collectors.summarizingDouble(Section::getDealQuantity)).getSum();
-//                LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
-//                        .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
-//                        .eq(InterSpotTransactionDO::getPrd, instant)
-//                        .eq(InterSpotTransactionDO::getSellerId, sourceId);
-//                InterSpotTransactionDO interSpotTransactionDO = interSpotTransactionDOMapper.selectOne(eq3);
-//                interSpotTransactionDO.setClearedPrice(price);
-//                interSpotTransactionDO.setClearedMw(dealTotal);
-//                interSpotTransactionDOMapper.updateById(interSpotTransactionDO);
-//            }
+            Map<Integer, Collection<Section>> map = sections.stream().collect(Collect.listMultiMap(Section::getSourceId)).asMap();
+            for (Map.Entry<Integer, Collection<Section>> entry : map.entrySet()) {
+                Integer sourceId = entry.getKey();
+                double dealTotal = entry.getValue().stream().collect(Collectors.summarizingDouble(Section::getDealQuantity)).getSum();
+                LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
+                        .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
+                        .eq(InterSpotTransactionDO::getPrd, instant)
+                        .eq(InterSpotTransactionDO::getSellerId, sourceId);
+                InterSpotTransactionDO interSpotTransactionDO = interSpotTransactionDOMapper.selectOne(eq3);
+                if (interSpotTransactionDO == null) {
+                    InterSpotTransactionDO spotTransactionDO = InterSpotTransactionDO.builder().prd(instant)
+                            .roundId(roundId + 1)
+                            .sellerId(sourceId)
+                            .clearedMw(dealTotal)
+                            .clearedPrice(price)
+                            .id(uniqueIdGetter.get())
+                            .dt(Clock.todayString())
+                            .build();
+                    interSpotTransactionDOMapper.insert(spotTransactionDO);
+                } else {
+                    interSpotTransactionDOMapper.updateById(interSpotTransactionDO);
+                }
+            }
         }
     }
 
