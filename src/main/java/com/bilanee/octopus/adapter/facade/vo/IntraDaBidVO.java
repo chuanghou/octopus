@@ -56,6 +56,11 @@ public class IntraDaBidVO {
     Segment minSegment;
 
     /**
+     * 机组成本曲线, 五段成本，画图用
+     */
+    List<Segment> costs;
+
+    /**
      * 价格限制
      */
     GridLimit priceLimit;

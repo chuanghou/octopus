@@ -705,4 +705,37 @@ public class CompTest {
 
     }
 
+
+    @Test
+    public void calculateCost() {
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 100);
+            marketStageClearLengths.put(marketStage, 100);
+        }
+
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .startTimeStamp(Clock.currentTimeMillis() + 2000000)
+                .quitCompeteLength(5)
+                .quitResultLength(5)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(5)
+                .userIds(Arrays.asList("1000", "1001"))
+                .enableQuiz(false)
+                .build();
+
+        Result<Void> result = manageFacade.createComp(compCreatePO);
+        Assertions.assertTrue(result.getSuccess());
+        Result<Void> stepResult = manageFacade.step();
+        Comp comp = tunnel.runningComp();
+        StageId stageId = comp.getStageId();
+        Result<List<UnitVO>> listResult = unitFacade.listAssignUnitVOs(stageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult.getSuccess());
+        List<UnitVO> unitVOs = listResult.getData();
+
+//        unitFacade.calculateDaCost()
+    }
+
 }
