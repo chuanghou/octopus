@@ -594,7 +594,7 @@ public class UnitFacade {
     @GetMapping("listClearedUnitVOs")
     public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
         UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
-        boolean equals = tunnel.runningComp().getCompStage().equals(CompStage.TRADE);
+        boolean equals = tunnel.runningComp().getCompStage().equals(CompStage.RANKING);
         StageId parsed = StageId.parse(stageId);
         Long compId = parsed.getCompId();
         Integer roundId = parsed.getRoundId();
@@ -628,12 +628,9 @@ public class UnitFacade {
         List<NodalPriceVoltage> nodalPriceVoltages = nodalPriceVoltageMapper.selectList(eq1).stream()
                 .sorted(Comparator.comparing(NodalPriceVoltage::getPrd)).collect(Collectors.toList());
         List<Double> daPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp);
-        List<Double> rtPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp);
+        List<Double> rtPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getRtLmp);
 
         GeneratorClearVO.GeneratorClearVOBuilder builder = GeneratorClearVO.builder().daPrice(daPrices).rtPrice(rtPrices);
-
-        Double minCapacity = unit.getMetaUnit().getMinCapacity();
-        Double minOutputPrice = unit.getMetaUnit().getMinOutputPrice();
 
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, roundId + 1)
@@ -652,7 +649,7 @@ public class UnitFacade {
 
         List<Double> daCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getDaClearedMw);
 
-        List<Double> rtCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getDaClearedMw);
+        List<Double> rtCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getRtClearedMw);
 
         List<Pair<List<Double>, List<Double>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
             List<Double> bids = new ArrayList<>();
@@ -662,8 +659,7 @@ public class UnitFacade {
             }
             generatorDaSegmentBidDOS.forEach(gDO -> bids.add(gDO.getOfferMw()));
             Double daTotal = daCleared.get(i);
-            Double rtTotal = rtCleared.get(i);
-            Double daAccumulate = 0D, rtAccumulate = 0D;
+            Double daAccumulate = 0D;
             List<Double> das = new ArrayList<>();
             if (!daTotal.equals(0D)) {
                 for (Double bid : bids) {
@@ -675,6 +671,8 @@ public class UnitFacade {
                     das.add(bid);
                 }
             }
+            Double rtAccumulate = 0D;
+            Double rtTotal = rtCleared.get(i);
             List<Double> rts = new ArrayList<>();
             if (!rtTotal.equals(0D)) {
                 for (Double bid : bids) {
@@ -689,9 +687,19 @@ public class UnitFacade {
             return Pair.of(das, rts);
         }).collect(Collectors.toList());
 
-
-        builder.daClearedSections(clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList()));
-        builder.rtClearedSections(clearedSections.stream().map(Pair::getRight).collect(Collectors.toList()));
+        List<List<Double>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
+        List<List<Double>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
+        if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
+            List<Pair<Double, List<Double>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            List<Pair<Double, List<Double>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
+            builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
+            builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
+            builder.rtClearedSections(rtPs.stream().map(Pair::getRight).collect(Collectors.toList()));
+        } else {
+            builder.daClearedSections(daSections);
+            builder.rtClearedSections(rtSections);
+        }
         GeneratorClearVO generatorClearVO = builder.build();
         return Result.success(generatorClearVO);
     }
@@ -707,19 +715,18 @@ public class UnitFacade {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         Integer sourceId = unit.getMetaUnit().getSourceId();
         LambdaQueryWrapper<SpotLoadCleared> eq = new LambdaQueryWrapper<SpotLoadCleared>()
-                .eq(SpotLoadCleared::getRoundId, sourceId + 1)
+                .eq(SpotLoadCleared::getRoundId, roundId + 1)
                 .eq(SpotLoadCleared::getLoadId, sourceId);
         List<Double> daCleared = spotLoadClearedMapper.selectList(eq).stream()
                 .sorted(Comparator.comparing(SpotLoadCleared::getPrd)).map(SpotLoadCleared::getDaClearedMw).collect(Collectors.toList());
         LoadClearVO.LoadClearVOBuilder builder = LoadClearVO.builder().daCleared(daCleared);
         LambdaQueryWrapper<LoadForecastValueDO> eq1 = new LambdaQueryWrapper<LoadForecastValueDO>()
                 .eq(LoadForecastValueDO::getLoadId, sourceId);
-
         List<Double> rtCleared = loadForecastValueMapper.selectList(eq1).stream()
                 .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getRtP).collect(Collectors.toList());
         builder.rtCleared(rtCleared);
 
-        //TODO update
+        //TODO update 之后负责结算部分的同学会说明计算方法
         builder.daPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
         builder.rtPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
 
