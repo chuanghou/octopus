@@ -247,6 +247,7 @@ public class CompFacade {
 
         SpotMarketVO.SpotMarketVOBuilder builder = SpotMarketVO.builder();
 
+        //  表头的4个值
         LambdaQueryWrapper<SubregionPrice> eq = new LambdaQueryWrapper<SubregionPrice>()
                 .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1).eq(SubregionPrice::getSubregionId, parsedProvince.getDbCode());
         List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq);
@@ -272,16 +273,19 @@ public class CompFacade {
         List<Double> rtInstantLoadBids = loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
                 .stream().map(vs -> vs.stream().collect(Collectors.summarizingDouble(LoadForecastValueDO::getRtP)).getSum()).collect(Collectors.toList());
 
+        // 日前的
         IntraSpotDealVO daIntraSpotDealVO = IntraSpotDealVO.builder().maxDealPrice(maxDaPrice).minDealPrice(minDaPrice)
                 .minLoad(daInstantLoadBids.stream().min(Double::compareTo).orElse(null))
                 .maxLoad(daInstantLoadBids.stream().max(Double::compareTo).orElse(null)).build();
         builder.daIntraSpotDealVO(daIntraSpotDealVO);
 
+        // 实时的
         IntraSpotDealVO rtIntraSpotDealVO = IntraSpotDealVO.builder().maxDealPrice(maxRtPrice).minDealPrice(minRtPrice)
                 .minLoad(rtInstantLoadBids.stream().min(Double::compareTo).orElse(null))
                 .maxLoad(rtInstantLoadBids.stream().max(Double::compareTo).orElse(null)).build();
         builder.rtIntraSpotDealVO(rtIntraSpotDealVO);
 
+        // 搜索的单元列表
         boolean equals = comp.getCompStage().equals(CompStage.RANKING);
         LambdaQueryWrapper<UnitDO> queryWrapper1 = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
@@ -375,7 +379,7 @@ public class CompFacade {
         List<UnitDO> loadUnitDOs = unitDOs.stream().filter(unitDO -> UnitType.LOAD.equals(unitDO.getMetaUnit().getUnitType())).collect(Collectors.toList());
 
         // 1. 火电机组的最小输出量
-        List<Qp> minOutputQps = classicUnitDOs.stream().filter(m -> Kit.eq(GeneratorType.CLASSIC, m.getMetaUnit().getGeneratorType()))
+        List<Qp> minOutputQps = classicUnitDOs.stream()
                 .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()))
                 .collect(Collectors.toList());
 
@@ -390,7 +394,7 @@ public class CompFacade {
         List<Qp> classicQps = generatorDaSegmentBidDOs.stream()
                 .map(gDO -> new Qp(null, classicUnitIds.get(gDO.getUnitId()), gDO.getOfferMw(), gDO.getOfferPrice())).collect(Collectors.toList());
 
-        // 3. 新能源机组的根据预测调整量价段
+        // 3. 新能源机组的根据预测调整量价段，区分日前和实时
         Map<Integer, Long> renewableUnitIds = renewableUnitDOs.stream()
                 .collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in1 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
@@ -426,11 +430,12 @@ public class CompFacade {
                 .map(unitId -> instantQps(groupSegments, rtCutOffs, unitId)).flatMap(Collection::stream).collect(Collectors.toList());
 
 
+
         List<Qp> tielineQps = new ArrayList<>();
         if (province == Province.RECEIVER) {
             MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
             LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1);
-            tielineQps = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
+            tielineQps = tieLinePowerDOMapper.selectList(eq).stream().map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
                 return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor());
             }).collect(Collectors.toList());
@@ -456,6 +461,8 @@ public class CompFacade {
                 .filter(unitDO -> unitDO.getMetaUnit().getUnitType().equals(UnitType.LOAD))
                 .filter(unitDO -> unitDO.getMetaUnit().getProvince().equals(province))
                 .collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
+
+        //  日前
         LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>()
                 .eq(LoadDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
                 .in(LoadDaForecastBidDO::getLoadId, loadIds.keySet());
@@ -477,7 +484,7 @@ public class CompFacade {
             LambdaQueryWrapper<TieLinePowerDO> eq1 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId());
             tielineQps = tieLinePowerDOMapper.selectList(eq1).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
-                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor());
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getBidPriceFloor());
             }).collect(Collectors.toList());
         }
 
@@ -505,8 +512,9 @@ public class CompFacade {
             double accumulate = 0D;
             for (GeneratorDaSegmentBidDO segmentBidDO : segmentBidDOs) {
                 accumulate += segmentBidDO.getOfferMw();
-                double lastQuantity = cutoff - (accumulate - segmentBidDO.getOfferMw());
                 if (accumulate >= cutoff) {
+                    double lastQuantity = cutoff - (accumulate - segmentBidDO.getOfferMw());
+                    qps.add(new Qp(i, unitId, lastQuantity, segmentBidDO.getOfferPrice()));
                     break;
                 } else {
                     qps.add(new Qp(i, unitId, segmentBidDO.getOfferMw(), segmentBidDO.getOfferPrice()));
@@ -575,7 +583,7 @@ public class CompFacade {
             LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
                     .eq(LoadDaForecastBidDO::getRoundId, roundId).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
             List<LoadDaForecastBidDO> loadDaForecastBidDOs = loadDaForecastBidMapper.selectList(wrapper0);
-            intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
+                intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
                     .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
                     .map(bs -> bs.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum())
                     .collect(Collectors.toList());
@@ -646,12 +654,7 @@ public class CompFacade {
         builder.renewableNotBidden(IntStream.range(0, 24).mapToObj(i -> renewableTotals.get(i) - renewableBidden.get(i)).collect(Collectors.toList()));
 
 
-        List<Pair<Double, Double>> classicMinPutBids = unitDOs.stream().map(UnitDO::getMetaUnit)
-                .filter(metaUnit -> GeneratorType.CLASSIC.equals(metaUnit.getGeneratorType()))
-                .map(metaUnit -> Pair.of(metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice())).collect(Collectors.toList());
-
-        Map<Integer, Double> maxPs = unitBasics.stream().collect(Collectors.toMap(UnitBasic::getUnitId, UnitBasic::getMaxP));
-
+        // 分报价区间
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, parsedStageId.getRoundId() + 1)
                 .in(GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
@@ -664,13 +667,13 @@ public class CompFacade {
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
 
         List<List<Double>> priceStatistics = IntStream.range(0, 24)
-                .mapToObj(i -> process(segmentBids.get(i), indexedSpotUnitCleared.get(i), unitDOs)).collect(Collectors.toList());
+                .mapToObj(i -> process(segmentBids.get(i), indexedSpotUnitCleared.get(i), unitDOs, da)).collect(Collectors.toList());
         builder.priceStatistics(priceStatistics);
 
         return builder.build();
     }
 
-    private List<Double> process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears, List<UnitDO> unitDOs) {
+    private List<Double> process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears, List<UnitDO> unitDOs, boolean da) {
         Map<Integer, List<GeneratorDaSegmentBidDO>> groupedByUnitIds = segments.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getUnitId));
         Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMapMightEx(clears, SpotUnitCleared::getUnitId);
         List<Pair<Double, Double>> collectQps = unitDOs.stream().map(unitDO -> {
@@ -691,8 +694,9 @@ public class CompFacade {
             for (GeneratorDaSegmentBidDO generatorDaSegmentBidDO : generatorDaSegmentBidDOs) {
                 Double q = generatorDaSegmentBidDO.getOfferMw();
                 Double p = generatorDaSegmentBidDO.getOfferPrice();
-                if (accumulate + q >= spotUnitCleared.getDaClearedMw()) {
-                    double v = accumulate + q - spotUnitCleared.getDaClearedMw();
+                Double clear = da ? spotUnitCleared.getDaClearedMw() : spotUnitCleared.getRtClearedMw();
+                if (accumulate + q >= clear) {
+                    double v = accumulate + q - clear;
                     Pair<Double, Double> qp = Pair.of(v, p);
                     qps.add(qp);
                     return qps;

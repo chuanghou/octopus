@@ -389,7 +389,7 @@ public class UnitFacade {
                 List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
                         .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
 
-                List<Segment> costs = buildCostSegments(thermalCostDOs);
+                List<Segment> costs = buildCostSegments(thermalCostDOs, metaUnit.getMinCapacity());
                 builder.costs(costs);
             } else {
                 Double maxCapacity = metaUnit.getMaxCapacity();
@@ -528,13 +528,11 @@ public class UnitFacade {
             return -400;
         }
         Double minCapacity = unit.getMetaUnit().getMinCapacity();
-        start = start - minCapacity;
-        end = end - minCapacity;
         LambdaQueryWrapper<ThermalCostDO> eq = new LambdaQueryWrapper<ThermalCostDO>().eq(ThermalCostDO::getUnitId, unit.getMetaUnit().getSourceId());
         List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
                 .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
 
-        List<Segment> segments = buildCostSegments(thermalCostDOs);
+        List<Segment> segments = buildCostSegments(thermalCostDOs, minCapacity);
 
         double accumulate = 0D;
         for (Segment segment : segments) {
@@ -542,15 +540,14 @@ public class UnitFacade {
                 accumulate += (segment.getEnd() - start) * segment.getPrice();
             else if (end > segment.getStart() && end <= segment.getEnd()) {
                 accumulate += (end - segment.getStart()) * segment.getPrice();
-            } else if (start < segment.getStart() || end > segment.getEnd()){
+            } else if (start <= segment.getStart() && end >= segment.getEnd()){
                 accumulate += (segment.getEnd() - segment.getStart()) * segment.getPrice();
             }
         }
         return accumulate/(end - start);
     }
 
-    private List<Segment> buildCostSegments(List<ThermalCostDO> thermalCostDOs) {
-        Double start = 0D;
+    private List<Segment> buildCostSegments(List<ThermalCostDO> thermalCostDOs, Double start) {
         List<Segment> segments = new ArrayList<>();
         for (ThermalCostDO thermalCostDO : thermalCostDOs) {
             Segment segment = Segment.builder().start(start)

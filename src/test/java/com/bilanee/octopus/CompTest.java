@@ -10,10 +10,7 @@ import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.Bid;
-import com.bilanee.octopus.basic.Deal;
-import com.bilanee.octopus.basic.StageId;
-import com.bilanee.octopus.basic.TokenUtils;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
@@ -735,7 +732,16 @@ public class CompTest {
         Assertions.assertTrue(listResult.getSuccess());
         List<UnitVO> unitVOs = listResult.getData();
 
-//        unitFacade.calculateDaCost()
+        UnitVO classicGenerator = unitVOs.stream().filter(unitVO -> GeneratorType.CLASSIC.equals(unitVO.getMetaUnit().getGeneratorType())).findFirst().orElseThrow(SysEx::unreachable);
+        MetaUnit metaUnit = classicGenerator.getMetaUnit();
+        Double minCapacity = metaUnit.getMinCapacity();
+        Double maxCapacity = metaUnit.getMaxCapacity();
+        double cost = unitFacade.calculateDaCost(classicGenerator.getUnitId(), minCapacity, minCapacity + 280);
+        compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("10000"));
+        compFacade.listSpotMarketVOs(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("10000"));
     }
+
+
+
 
 }
