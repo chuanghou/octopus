@@ -5,6 +5,7 @@ import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.domain.support.dependency.ConcurrentOperate;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author houchuang
  */
 @Component
+@CustomLog
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ConcurrentOperateImpl extends ConcurrentOperate {
@@ -39,6 +41,7 @@ public class ConcurrentOperateImpl extends ConcurrentOperate {
             if (reentrantLock.tryLock()) {
                 resultMap.put(key, Result.success());
             } else {
+                log.arg0(lockParam).error("LOCK_FAIL");
                 resultMap.put(key, Result.error(ErrorEnumsBase.CONCURRENCY_VIOLATION.message("不要操作太快"), ExceptionType.BIZ));
             }
         });

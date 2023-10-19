@@ -61,9 +61,10 @@ public class ManageFacade {
      */
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
+        delayExecutor.removeStepCommand();
         CompCmd.Create command = Convertor.INST.to(compCreatePO);
         if (command.getStartTimeStamp() == null) {
-            command.setStartTimeStamp(Clock.currentTimeMillis() + 5 * 60 * 1000L);
+            command.setStartTimeStamp(Clock.currentTimeMillis() + 5 * 1000L);
         }
         command.setCompId(uniqueIdGetter.get());
         CommandBus.accept(command, new HashMap<>());

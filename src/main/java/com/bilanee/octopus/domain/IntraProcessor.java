@@ -103,13 +103,11 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         TradeStage tradeStage = tunnel.runningComp().getTradeStage();
         if (tradeStage == TradeStage.AN_INTRA) {
             wsTopic = WsTopic.AN_INTRA_BID;
+            WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
         } else if (tradeStage == TradeStage.MO_INTRA) {
             wsTopic = WsTopic.MO_INTRA_BID;
-        } else {
-            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
         }
-        WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
-
     }
 
     private void doClose() {
