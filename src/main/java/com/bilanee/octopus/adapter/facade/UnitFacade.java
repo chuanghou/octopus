@@ -710,6 +710,7 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param unitId 待查看的负荷unitId
      */
+    @GetMapping("listLoadClearances")
     public Result<LoadClearVO> listLoadClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
