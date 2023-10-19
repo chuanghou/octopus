@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -35,16 +36,16 @@ public class ConcurrentOperateImpl extends ConcurrentOperate {
     @SneakyThrows
     protected Map<String, Result<Void>> batchTryLock(List<Pair<String, Duration>> lockParams) {
         Map<String, Result<Void>> resultMap = new HashMap<>();
-        lockParams.forEach(lockParam -> {
+        for (Pair<String, Duration> lockParam : lockParams) {
             String key = lockParam.getLeft();
             ReentrantLock reentrantLock = lockMap.computeIfAbsent(key, k -> new ReentrantLock());
-            if (reentrantLock.tryLock()) {
+            if (reentrantLock.tryLock(3, TimeUnit.SECONDS)) {
                 resultMap.put(key, Result.success());
             } else {
                 log.arg0(lockParam).error("LOCK_FAIL");
                 resultMap.put(key, Result.error(ErrorEnumsBase.CONCURRENCY_VIOLATION.message("不要操作太快"), ExceptionType.BIZ));
             }
-        });
+        }
         return resultMap;
     }
 
