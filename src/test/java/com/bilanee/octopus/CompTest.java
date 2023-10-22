@@ -818,7 +818,7 @@ public class CompTest {
             Assertions.assertTrue(interSpotMarketVO.getSuccess());
         });
 
-        Result<List<InterSpotUnitDealVO>> listResult1 = compFacade.listInterSpotDeals(currentStageId.toString(), TokenUtils.sign("1000"));
+        Result<List<InterSpotUnitDealVO>> listResult1 = compFacade.listInterSpotDeals(currentStageId.toString(), 1, TokenUtils.sign("1000"));
         Assertions.assertTrue(listResult1.getSuccess());
         List<InterSpotUnitDealVO> data = listResult1.getData();
         System.out.println("");

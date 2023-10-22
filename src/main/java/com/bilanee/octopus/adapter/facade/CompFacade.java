@@ -827,7 +827,7 @@ public class CompFacade {
      * @param stageId 阶段id
      */
     @GetMapping("listInterSpotDeals")
-    public Result<List<InterSpotUnitDealVO>> listInterSpotDeals(String stageId, @RequestHeader String token) {
+    public Result<List<InterSpotUnitDealVO>> listInterSpotDeals(String stageId, Integer instant, @RequestHeader String token) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
         String userId = TokenUtils.getUserId(token);
@@ -841,8 +841,9 @@ public class CompFacade {
             Integer sourceId = unit.getMetaUnit().getSourceId();
             LambdaQueryWrapper<InterSpotTransactionDO> eq3 = new LambdaQueryWrapper<InterSpotTransactionDO>()
                     .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
-                    .eq(InterSpotTransactionDO::getSellerId, sourceId);
-            List<InterSpotUnitDealVO.Deal> deals = interSpotTransactionDOMapper.selectList(eq3).stream().sorted(Comparator.comparing(InterSpotTransactionDO::getPrd))
+                    .eq(InterSpotTransactionDO::getSellerId, sourceId)
+                    .eq(InterSpotTransactionDO::getPrd, instant);
+            List<InterSpotUnitDealVO.Deal> deals = interSpotTransactionDOMapper.selectList(eq3).stream()
                     .map(i -> new InterSpotUnitDealVO.Deal(i.getClearedMw(), i.getClearedPrice())).collect(Collectors.toList());
             return new InterSpotUnitDealVO(name, deals);
         }).collect(Collectors.toList());

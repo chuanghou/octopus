@@ -1,6 +1,7 @@
 package com.bilanee.octopus.adapter.tunnel;
 
 import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 import lombok.SneakyThrows;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
 import java.util.Properties;
+
+import static java.lang.System.in;
 
 @Component
 public class SshClient {
@@ -23,16 +26,13 @@ public class SshClient {
         String password = "co188.com";
         session.setPassword(password);
         session.connect(30000);
-        ChannelExec channel = (ChannelExec) session.openChannel("exec");
-        InputStream in = channel.getInputStream();
-        channel.setCommand(command);
-        channel.setErrStream(System.err);
-        channel.connect();
+        ChannelShell channelShell = (ChannelShell) session.openChannel("shell");
+        channelShell.sendSignal("python --version");
         return IOUtils.toString(in, "GBK");
     }
 
     public static void main(String[] args) {
-        System.out.println(new SshClient().exec("python --version"));
+        System.out.println(new SshClient().exec("python C:\\Users\\Administrator\\Desktop\\PowerMarketExperiment\\manage.py intra_pre_clearing 1"));
     }
 
 }
