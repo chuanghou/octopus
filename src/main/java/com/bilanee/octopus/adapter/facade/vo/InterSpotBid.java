@@ -16,12 +16,6 @@ import javax.validation.constraints.Positive;
 public class InterSpotBid {
 
     /**
-     * 时刻
-     */
-    @NotNull @Min(0) @Max(23)
-    Integer instant;
-
-    /**
      * 数量
      */
     @NotNull @Positive

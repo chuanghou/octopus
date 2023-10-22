@@ -760,7 +760,9 @@ public class UnitFacade {
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId).eq(UnitDO::getUserId, TokenUtils.getUserId(token));
         List<UnitDO> generatorUnitDOs = unitDOMapper.selectList(queryWrapper).stream()
-                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR)).collect(Collectors.toList());
+                .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .filter(u -> u.getMetaUnit().getProvince().equals(Province.TRANSFER))
+                .collect(Collectors.toList());
         Map<Integer, List<Double>> maxCapacities = generatorUnitDOs.stream().collect(Collectors.toMap(u -> u.getMetaUnit().getSourceId(), this::highLimit));
         List<Integer> sourceIds = Collect.transfer(generatorUnitDOs, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<SpotUnitCleared> in = new LambdaQueryWrapper<SpotUnitCleared>()
@@ -770,7 +772,7 @@ public class UnitFacade {
         LambdaQueryWrapper<InterSpotUnitOfferDO> in1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
                 .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1)
                 .in(InterSpotUnitOfferDO::getUnitId, sourceIds);
-        Map<Integer, List<InterSpotUnitOfferDO>> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collectors.groupingBy(InterSpotUnitOfferDO::getUnitId));
+        ListMultimap<Integer, InterSpotUnitOfferDO> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collect.listMultiMap(InterSpotUnitOfferDO::getUnitId));
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
         List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
@@ -786,11 +788,11 @@ public class UnitFacade {
                 SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
                 if (available > 0 && capacities.get(i) - spotUnitCleared.getPreclearClearedMw() > 0) {
                     InterSpotUnitOfferDO interSpotUnitOfferDO = interSpotUnitOfferDOS.get(i);
-                    InterSpotBid interSpotBid1 = InterSpotBid.builder().instant(i)
+                    InterSpotBid interSpotBid1 = InterSpotBid.builder()
                             .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
-                    InterSpotBid interSpotBid2 = InterSpotBid.builder().instant(i)
+                    InterSpotBid interSpotBid2 = InterSpotBid.builder()
                             .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
-                    InterSpotBid interSpotBid3 = InterSpotBid.builder().instant(i)
+                    InterSpotBid interSpotBid3 = InterSpotBid.builder()
                             .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
                     return InstantSpotBidVO.builder().instant(i)
                             .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
@@ -807,7 +809,7 @@ public class UnitFacade {
     }
 
     private List<Double> highLimit(UnitDO unitDO) {
-        if (UnitType.GENERATOR.equals(unitDO.getMetaUnit().getUnitType())) {
+        if (GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())) {
             return IntStream.range(0, 24).mapToObj(i -> unitDO.getMetaUnit().getMaxCapacity()).collect(Collectors.toList());
         } else {
             LambdaQueryWrapper<LoadForecastValueDO> eq = new LambdaQueryWrapper<LoadForecastValueDO>()

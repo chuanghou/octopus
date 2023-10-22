@@ -723,6 +723,7 @@ public class CompFacade {
      * @param stageId 阶段id
      */
     @GetMapping("getSpotInterClearanceVO")
+    @SuppressWarnings("unchecked")
     public Result<SpotInterClearanceVO> getSpotInterClearanceVO(String stageId, @RequestHeader String token) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
@@ -736,7 +737,7 @@ public class CompFacade {
         Map<Integer, List<InterSpotTransactionDO>> spotTransactionDOs = interSpotTransactionDOMapper
                 .selectList(eq3).stream().collect(Collectors.groupingBy(InterSpotTransactionDO::getPrd));
         List<Double> dealPrices = IntStream.range(0, 24).mapToObj(i -> {
-            List<InterSpotTransactionDO> interSpotTransactionDOS = spotTransactionDOs.get(i);
+            List<InterSpotTransactionDO> interSpotTransactionDOS = Kit.whenNull(spotTransactionDOs.get(i), (List<InterSpotTransactionDO>) Collections.EMPTY_LIST);
             return interSpotTransactionDOS.stream().filter(t -> !t.getClearedPrice().equals(0D))
                     .findFirst().map(InterSpotTransactionDO::getClearedPrice).orElse(null);
         }).collect(Collectors.toList());
@@ -749,9 +750,9 @@ public class CompFacade {
             LambdaQueryWrapper<InterSpotTransactionDO> eqs = new LambdaQueryWrapper<InterSpotTransactionDO>()
                     .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
                     .eq(InterSpotTransactionDO::getSellerId, u.getMetaUnit().getSourceId());
-            List<Double> deals = interSpotTransactionDOMapper.selectList(eqs).stream()
-                    .sorted(Comparator.comparing(InterSpotTransactionDO::getPrd))
-                    .map(InterSpotTransactionDO::getClearedMw).collect(Collectors.toList());
+            Map<Integer, Double> collect = interSpotTransactionDOMapper.selectList(eqs).stream()
+                    .collect(Collectors.toMap(InterSpotTransactionDO::getPrd, InterSpotTransactionDO::getClearedMw));
+            List<Double> deals = IntStream.range(0, 24).mapToObj(collect::get).collect(Collectors.toList());
             generatorDeals.put(unitName, deals);
         });
         SpotInterClearanceVO spotInterClearanceVO = SpotInterClearanceVO.builder()

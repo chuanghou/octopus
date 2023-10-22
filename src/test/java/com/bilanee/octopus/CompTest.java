@@ -739,9 +739,90 @@ public class CompTest {
         double cost = unitFacade.calculateDaCost(classicGenerator.getUnitId(), minCapacity, minCapacity + 280);
         compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("10000"));
         compFacade.listSpotMarketVOs(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("10000"));
+
+
     }
 
+    @Test
+    public void testSpotInterBid() {
+        Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
+        Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
+        for (TradeStage marketStage : TradeStage.marketStages()) {
+            marketStageBidLengths.put(marketStage, 100);
+            marketStageClearLengths.put(marketStage, 100);
+        }
 
+        CompCreatePO compCreatePO = CompCreatePO.builder()
+                .startTimeStamp(Clock.currentTimeMillis() + 2000000)
+                .quitCompeteLength(5)
+                .quitResultLength(5)
+                .marketStageBidLengths(marketStageBidLengths)
+                .marketStageClearLengths(marketStageClearLengths)
+                .tradeResultLength(5)
+                .userIds(Arrays.asList("1000", "1001"))
+                .enableQuiz(false)
+                .build();
+
+        manageFacade.createComp(compCreatePO);
+        IntStream.range(0, 10).forEach(i -> manageFacade.step());
+        Comp comp = tunnel.runningComp();
+        StageId currentStageId = comp.getStageId();
+        StageId targetStageId = StageId.builder().compId(comp.getCompId())
+                .roundId(0)
+                .compStage(CompStage.TRADE)
+                .tradeStage(TradeStage.DA_INTER)
+                .marketStatus(MarketStatus.BID)
+                .build();
+        Assertions.assertEquals(currentStageId, targetStageId);
+
+        Result<List<SpotInterBidVO>> listResult = unitFacade.listSpotInterBidVO(currentStageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult.getSuccess());
+        List<SpotInterBidVO> spotInterBidVOs = listResult.getData();
+        SpotInterBidVO spotInterBidVO = spotInterBidVOs.get(0);
+
+        SpotBidPO.SpotBidPOBuilder builder = SpotBidPO.builder().unitId(spotInterBidVO.getUnitId()).stageId(currentStageId.toString());
+
+        double price = (LocalTime.now().getSecond() + 1) * 10;
+        SpotInterBidVO finalSpotInterBidVO = spotInterBidVO;
+        List<InstantSpotBidPO> instantSpotBidPOs = spotInterBidVO.getInstantSpotBidVOs().stream().map(vo -> {
+            SpotInterBidPO spotInterBidPO = new SpotInterBidPO();
+            spotInterBidPO.setUnitId(finalSpotInterBidVO.getUnitId());
+            Integer instant = vo.getInstant();
+            Double preCleared = vo.getPreCleared();
+            Double maxCapacity = vo.getMaxCapacity();
+            double q = (maxCapacity - preCleared) / 3;
+            InterSpotBid interSpotBid = InterSpotBid.builder().price((double) price).quantity(q).build();
+            List<InterSpotBid> interSpotBids = Collect.asList(interSpotBid, interSpotBid, interSpotBid);
+            return InstantSpotBidPO.builder().instant(instant).interSpotBids(interSpotBids).build();
+        }).collect(Collectors.toList());
+        SpotBidPO spotBidPO = builder.instantSpotBidPOs(instantSpotBidPOs).build();
+        Result<Void> submitResult = unitFacade.submitInterSpotBid(spotBidPO);
+        Assertions.assertTrue(submitResult.getSuccess());
+
+        listResult = unitFacade.listSpotInterBidVO(currentStageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult.getSuccess());
+        spotInterBidVO = listResult.getData().get(0);
+        List<InstantSpotBidVO> instantSpotBidVOs = spotInterBidVO.getInstantSpotBidVOs();
+        instantSpotBidVOs.forEach(i -> i.getInterSpotBids().forEach(b -> Assertions.assertEquals(b.getPrice(), price)));
+
+        Result<Void> step = manageFacade.step();
+        Assertions.assertTrue(step.getSuccess());
+
+        Result<SpotInterClearanceVO> spotInterClearanceVO = compFacade.getSpotInterClearanceVO(currentStageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(spotInterClearanceVO.getSuccess());
+        SpotInterClearanceVO sVO = spotInterClearanceVO.getData();
+
+        Comp comp1 = tunnel.runningComp();
+        IntStream.range(0, 24).forEach(i -> {
+            Result<InterSpotMarketVO> interSpotMarketVO = compFacade.getInterSpotMarketVO(comp1.getStageId().toString(), i, TokenUtils.sign("1000"));
+            Assertions.assertTrue(interSpotMarketVO.getSuccess());
+        });
+
+        Result<List<InterSpotUnitDealVO>> listResult1 = compFacade.listInterSpotDeals(currentStageId.toString(), TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult1.getSuccess());
+        List<InterSpotUnitDealVO> data = listResult1.getData();
+        System.out.println("");
+    }
 
 
 }
