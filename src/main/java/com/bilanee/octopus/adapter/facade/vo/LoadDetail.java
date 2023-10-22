@@ -8,10 +8,5 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Settlement {
-
-    /**
-     *
-     */
-    Double transferTotalIncome;
+public class LoadDetail {
 }

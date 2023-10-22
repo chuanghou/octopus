@@ -862,10 +862,19 @@ public class CompFacade {
 
 
     /**
-     * 本轮成绩排名
+     * 结算概况
      */
-    @GetMapping("getRanking")
-    public Result<Settlement> getSettlement(String stageId, @RequestHeader String token) {
+    @GetMapping("getSettlementProfile")
+    public Result<SettlementProfile> getSettlementProfile(String stageId, @RequestHeader String token) {
+
+        return null;
+    }
+
+    /**
+     * 结算明细
+     */
+    @GetMapping("getSettlementDetail")
+    public Result<SettlementDetail> getSettlementDetail(String stageId, @RequestHeader String token) {
 
         return null;
     }
