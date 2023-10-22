@@ -42,6 +42,9 @@ public class IntraDaBidVO {
      */
     GeneratorType generatorType;
 
+
+    Integer sourceId;
+
     /**
      * 分段式报价，当单元类型为机组时存在segments报价区
      */
@@ -75,14 +78,5 @@ public class IntraDaBidVO {
      */
     List<Double> declares;
 
-    @AfterValidation
-    public void afterValidation() {
-        segments.forEach(s -> BizEx.trueThrow(s.getStart() >= s.getEnd(),
-                ErrorEnums.PARAM_FORMAT_WRONG.message("报价段起点必须小于终点")));
-        for (int i = 0; i < segments.size() - 1; i++) {
-            boolean equals = segments.get(i).getEnd().equals(segments.get(i + 1).getStart());
-            BizEx.falseThrow(equals, ErrorEnums.PARAM_FORMAT_WRONG.message("报价段必须连续"));
-        }
-    }
 
 }

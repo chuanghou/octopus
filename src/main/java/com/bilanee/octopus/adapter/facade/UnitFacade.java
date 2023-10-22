@@ -378,6 +378,7 @@ public class UnitFacade {
         IntraDaBidVO.IntraDaBidVOBuilder builder = IntraDaBidVO.builder()
                 .unitId(unit.getUnitId()).unitName(unit.getMetaUnit().getName())
                 .unitType(unitType).generatorType(generatorType)
+                .sourceId(metaUnit.getSourceId())
                 .priceLimit(priceLimit);
         if (unitType == UnitType.GENERATOR) {
 
