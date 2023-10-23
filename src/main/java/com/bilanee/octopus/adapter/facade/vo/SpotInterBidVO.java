@@ -23,6 +23,8 @@ public class SpotInterBidVO {
      */
     String unitName;
 
+    Integer sourceId;
+
     /**
      * 分时刻量价
      */

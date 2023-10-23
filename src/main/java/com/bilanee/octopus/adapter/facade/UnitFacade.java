@@ -778,7 +778,7 @@ public class UnitFacade {
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
         List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
             Integer sourceId = unitDO.getMetaUnit().getSourceId();
-            SpotInterBidVO.SpotInterBidVOBuilder builder = SpotInterBidVO.builder()
+            SpotInterBidVO.SpotInterBidVOBuilder builder = SpotInterBidVO.builder().sourceId(sourceId)
                     .unitId(unitDO.getUnitId()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
             Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMap(clearResult.get(sourceId), SpotUnitCleared::getPrd);
             List<Double> capacities = maxCapacities.get(sourceId);
