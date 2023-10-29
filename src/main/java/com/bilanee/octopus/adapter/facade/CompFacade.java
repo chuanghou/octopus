@@ -160,9 +160,7 @@ public class CompFacade {
                 .eq(UnitDO::getRoundId, parsed.getRoundId())
                 .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
-        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
-                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
-        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+
 
         ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
         List<IntraClearanceVO> intraClearanceVOs = groupedBids.asMap().entrySet().stream().map(e -> {
@@ -176,6 +174,10 @@ public class CompFacade {
             Double averagePrice = totalQuantity.equals(0D) ? null : (totalVolume / totalQuantity);
             Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).map(Bid::getTransit).reduce(0D, Double::sum);
             Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).map(Bid::getTransit).reduce(0D, Double::sum);
+
+            List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                    .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
+            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
             List<Predicate<Deal>> selectors = IntStream.range(0, 10)
                     .mapToObj(i -> (Predicate<Deal>) d -> d.getPrice() > i * 200D && d.getPrice() <= (i + 1) * 200).collect(Collectors.toList());

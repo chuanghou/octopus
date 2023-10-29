@@ -245,8 +245,8 @@ public class CompTest {
         Map<TradeStage, Integer> marketStageBidLengths = new HashMap<>();
         Map<TradeStage, Integer> marketStageClearLengths = new HashMap<>();
         for (TradeStage marketStage : TradeStage.marketStages()) {
-            marketStageBidLengths.put(marketStage, 100000);
-            marketStageClearLengths.put(marketStage, 100000);
+            marketStageBidLengths.put(marketStage, 100000000);
+            marketStageClearLengths.put(marketStage, 10000000);
         }
 
         // 比赛参数
