@@ -109,12 +109,13 @@ public class Comp extends AggregateRoot {
         SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
-        bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().values().forEach(this::doClear);
+        Arrays.stream(TimeFrame.values())
+                .map(t -> bids.stream().filter(b -> b.getTimeFrame().equals(t)).collect(Collectors.toList())).forEach(this::doClear);
         List<Long> unitIds = bids.stream().map(Bid::getUnitId).distinct().collect(Collectors.toList());
 
     }
     @SuppressWarnings("UnstableApiUsage")
-    private void doClear(Collection<Bid> bids) {
+    private void doClear(List<Bid> bids) {
 
         List<Bid> sortedBuyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
                 .sorted(Comparator.comparing(Bid::getPrice).reversed())
