@@ -162,7 +162,9 @@ public class CompFacade {
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
 
 
-        ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
+        ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream()
+                .filter(bid -> !Collect.isNotEmpty(bid.getDeals()))
+                .collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
         List<IntraClearanceVO> intraClearanceVOs = groupedBids.asMap().entrySet().stream().map(e -> {
             IntraSymbol intraSymbol = e.getKey();
             Collection<Bid> bids = e.getValue();
