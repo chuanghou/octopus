@@ -26,7 +26,7 @@ public class IdGetterConfiguration {
 
     @Bean
     public UniqueIdBuilder uniqueIdBuilder(SectionLoader sectionLoader) {
-        return new UniqueIdBuilder("unique_id", "default", sectionLoader);
+        return new UniqueIdBuilder("octopus_unique_id", "default", sectionLoader);
     }
 
     @Bean

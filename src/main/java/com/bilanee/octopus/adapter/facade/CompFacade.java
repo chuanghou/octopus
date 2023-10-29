@@ -850,29 +850,6 @@ public class CompFacade {
         return Result.success(interSpotUnitDealVOs);
     }
 
-
-    /**
-     * 本轮成绩排名
-     */
-    @GetMapping("getRanking")
-    public Result<RankingVO> getRanking(String stageId, @RequestHeader String token) {
-
-        return null;
-    }
-
-
-    /**
-     * 本轮成绩排名
-     */
-    @GetMapping("getRanking")
-    public Result<Settlement> getSettlement(String stageId, @RequestHeader String token) {
-
-        return null;
-    }
-
-
-
-
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public interface Convertor extends BasicConvertor {
