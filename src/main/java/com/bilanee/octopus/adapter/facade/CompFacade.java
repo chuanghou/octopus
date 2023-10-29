@@ -163,7 +163,7 @@ public class CompFacade {
 
 
         ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream()
-                .filter(bid -> !Collect.isNotEmpty(bid.getDeals()))
+                .filter(bid -> Collect.isNotEmpty(bid.getDeals()))
                 .collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
         List<IntraClearanceVO> intraClearanceVOs = groupedBids.asMap().entrySet().stream().map(e -> {
             IntraSymbol intraSymbol = e.getKey();
