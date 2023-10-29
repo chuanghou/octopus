@@ -247,7 +247,7 @@ public class UnitFacade {
     private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol) {
         Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
 
-        BidQuery bidQuery = BidQuery.builder().unitIds(unitIds).tradeStage(stageId.getTradeStage())
+        BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
         ListMultimap<Long, Bid> bidMap = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
         return units.stream().map(unit -> {
@@ -256,6 +256,7 @@ public class UnitFacade {
                     .unitName(unit.getMetaUnit().getName())
                     .unitType(unit.getMetaUnit().getUnitType())
                     .sourceId(unit.getMetaUnit().getSourceId());
+
             List<Bid> bids = bidMap.get(unit.getUnitId());
             UnitType unitType = unit.getMetaUnit().getUnitType();
             Double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
@@ -263,6 +264,8 @@ public class UnitFacade {
             Double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
             builder.position(general - opposite);
+
+            bids = bids.stream().filter(bid -> bid.getTradeStage().equals(stageId.getTradeStage())).collect(Collectors.toList());
             Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
             builder.transit(transit);
 

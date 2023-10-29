@@ -823,5 +823,9 @@ public class CompTest {
         System.out.println("");
     }
 
+    @Test
+    public void test() {
+        compFacade.intraClearanceVO("2492.TRADE.0.AN_INTRA.CLEAR", "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImV4cCI6MjEyOTQ3MTM3MSwidXNlcklkIjoiMTAwMCJ9.HT07bjvrue_80ul2qwCQZfaaW1qpVVNgvU3pMY0wJu0");
+    }
 
 }
