@@ -165,7 +165,7 @@ public class Comp extends AggregateRoot {
         Double sellDeclaredQuantity = sortedSellBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
         List<Deal> buyDeals = sortedBuyBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
         Double dealQuantity = buyDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-        Double dealPrice = buyDeals.get(0).getPrice();
+        Double dealPrice = Collect.isNotEmpty(buyDeals) ? buyDeals.get(0).getPrice() : null;
         interClearBOBuilder.buyDeclaredQuantity(buyDeclaredQuantity)
                 .sellDeclaredQuantity(sellDeclaredQuantity)
                 .dealQuantity(dealQuantity)
@@ -176,11 +176,10 @@ public class Comp extends AggregateRoot {
         List<Section> buildSections = buildSections(sortedBuyBids);
         List<Section> sellSections = buildSections(sortedSellBids);
         interClearBOBuilder.buySections(buildSections)
-                .buyTerminus(new Point<>(buildSections.get(buildSections.size() - 1).getRx(), priceLimit.getHigh()))
+                .buyTerminus(new Point<>(buildSections.get(buildSections.size() - 1).getRx(), 0D))
                 .sellSections(sellSections)
-                .sellTerminus(new Point<>(sellSections.get(sellSections.size() -  1).getRx(), 0D))
-                .transLimit(transLimit)
-                ;
+                .sellTerminus(new Point<>(sellSections.get(sellSections.size() -  1).getRx(), priceLimit.getHigh()))
+                .transLimit(transLimit);
         tunnel.persistInterClearance(interClearBOBuilder.build());
         tunnel.updateBids(sortedBuyBids);
         tunnel.updateBids(sortedSellBids);

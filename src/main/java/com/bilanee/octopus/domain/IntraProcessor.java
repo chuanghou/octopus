@@ -142,6 +142,21 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             return false;
         });
         BizEx.falseThrow(b, ErrorEnums.SYS_EX.message("无可撤报单" + cancelBidId));
+
+        // 实时
+        List<Ask> buyAsks = extractAsks(buyPriorityQueue);
+        List<Ask> sellAsks = extractAsks(sellPriorityQueue);
+
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue);
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue);
+
+        StageId stageId = tunnel.runningComp().getStageId();
+
+        IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
+                .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
+                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
+                .build();
+        tunnel.record(null, intraInstantDO);
     }
 
     public void doNewBid(Bid declareBid) {

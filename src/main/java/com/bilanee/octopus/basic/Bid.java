@@ -33,7 +33,11 @@ public class Bid {
     BidStatus bidStatus;
 
     public Double getTransit() {
-        return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        if (bidStatus != BidStatus.CANCELLED) {
+            return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        } else {
+            return 0D;
+        }
     }
 
 }
