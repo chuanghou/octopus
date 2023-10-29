@@ -109,13 +109,14 @@ public class Comp extends AggregateRoot {
         SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
         BidQuery bidQuery = BidQuery.builder().compId(compId).roundId(roundId).tradeStage(tradeStage).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
-        Arrays.stream(TimeFrame.values())
-                .map(t -> bids.stream().filter(b -> b.getTimeFrame().equals(t)).collect(Collectors.toList())).forEach(this::doClear);
-        List<Long> unitIds = bids.stream().map(Bid::getUnitId).distinct().collect(Collectors.toList());
+        Arrays.stream(TimeFrame.values()).forEach(t -> {
+            List<Bid> timeFrameBids = bids.stream().filter(b -> b.getTimeFrame().equals(t)).collect(Collectors.toList());
+            doClear(timeFrameBids, t);
+        });
 
     }
     @SuppressWarnings("UnstableApiUsage")
-    private void doClear(List<Bid> bids) {
+    private void doClear(List<Bid> bids, TimeFrame timeFrame) {
 
         List<Bid> sortedBuyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
                 .sorted(Comparator.comparing(Bid::getPrice).reversed())
@@ -134,7 +135,6 @@ public class Comp extends AggregateRoot {
             interPoint = new Point<>(0D, null);
         }
 
-        TimeFrame timeFrame = sortedBuyBids.get(0).getTimeFrame();
         GridLimit transLimit = tunnel.transLimit(getStageId(), timeFrame);
 
         double nonMarketQuantity = 0D;
@@ -177,9 +177,9 @@ public class Comp extends AggregateRoot {
         List<Section> buildSections = buildSections(sortedBuyBids);
         List<Section> sellSections = buildSections(sortedSellBids);
         interClearBOBuilder.buySections(buildSections)
-                .buyTerminus(new Point<>(buildSections.get(buildSections.size() - 1).getRx(), 0D))
+                .buyTerminus(buildSections.isEmpty() ? null : new Point<>(buildSections.get(buildSections.size() - 1).getRx(), 0D))
                 .sellSections(sellSections)
-                .sellTerminus(new Point<>(sellSections.get(sellSections.size() -  1).getRx(), priceLimit.getHigh()))
+                .sellTerminus(sellSections.isEmpty() ? null : new Point<>(sellSections.get(sellSections.size() -  1).getRx(), priceLimit.getHigh()))
                 .transLimit(transLimit);
         tunnel.persistInterClearance(interClearBOBuilder.build());
         tunnel.updateBids(sortedBuyBids);

@@ -144,8 +144,13 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         BizEx.falseThrow(b, ErrorEnums.SYS_EX.message("无可撤报单" + cancelBidId));
 
         // 实时
-        List<Ask> buyAsks = extractAsks(buyPriorityQueue);
-        List<Ask> sellAsks = extractAsks(sellPriorityQueue);
+        List<Bid> sortedBuyBids = buyPriorityQueue.stream()
+                .sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList());
+        List<Ask> buyAsks = extractAsks(sortedBuyBids);
+
+        List<Bid> sortedSellBids = sellPriorityQueue.stream()
+                .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
+        List<Ask> sellAsks = extractAsks(sortedSellBids);
 
         List<Volume> buyVolumes = extractVolumes(buyPriorityQueue);
         List<Volume> sellVolumes = extractVolumes(sellPriorityQueue);
