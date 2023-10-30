@@ -854,6 +854,44 @@ public class CompFacade {
         return Result.success(interSpotUnitDealVOs);
     }
 
+
+    /**
+     * 本轮成绩排名
+     * @param stageId 阶段id
+     */
+    @GetMapping("getRoundRankVO")
+    Result<RoundRankVO> getRoundRankVO(String stageId, @RequestHeader String token) {
+        return null;
+    }
+
+    /**
+     * 总成绩排名
+     * @param stageId 阶段id
+     */
+    @GetMapping("getFinalRankVO")
+    Result<FinalRankVO> getFinalRankVO(String stageId, @RequestHeader String token) {
+        return null;
+    }
+
+    /**
+     * 结算明细--分机组
+     * @param stageId 阶段id
+     */
+    @GetMapping("listGeneratorResults")
+    Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
+        return null;
+    }
+
+    /**
+     * 结算明细--分负荷
+     * @param stageId 阶段id
+     */
+    @GetMapping("listLoadsResults")
+    Result<List<LoadsResult>> listLoadsResults(String stageId, @RequestHeader String token) {
+        return null;
+    }
+
+
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public interface Convertor extends BasicConvertor {
