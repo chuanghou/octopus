@@ -194,7 +194,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
              */
             Double dealPrice = buyBid.getDeclareTimeStamp() > sellBid.getDeclareTimeStamp() ? sellBid.getPrice() : buyBid.getPrice();
             double dealQuantity = Math.min(buyBid.getTransit(), sellBid.getTransit());
-            deal = Deal.builder().quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            deal = Deal.builder().buyUnitId(buyBid.getUnitId()).sellUnitId(sellBid.getUnitId())
+                    .quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
             double buyBalance = buyBid.getTransit();
