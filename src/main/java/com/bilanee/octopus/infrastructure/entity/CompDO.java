@@ -6,11 +6,13 @@ import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.domain.DelayConfig;
+import com.bilanee.octopus.infrastructure.handlers.ListStepRecordHandler;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
 import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -38,6 +40,9 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
     @TableField(typeHandler = JacksonTypeHandler.class)
     DelayConfig delayConfig;
     Boolean enableQuiz;
+
+    @TableField(typeHandler = ListStepRecordHandler.class)
+    List<StepRecord> stepRecords = new ArrayList<>();
 
     @Override
     public Long getPrimaryId() {

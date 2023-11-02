@@ -4,6 +4,7 @@ import com.bilanee.octopus.basic.Volume;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.infrastructure.entity.Ask;
+import com.bilanee.octopus.infrastructure.entity.StepRecord;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -61,6 +62,12 @@ public class IntraSymbolBidVO {
      * 实时成交曲线
      */
     List<QuotationVO> quotationVOs;
+
+
+    /**
+     * 阶段起始时间
+     */
+    StepRecord stepRecord;
 
 
 

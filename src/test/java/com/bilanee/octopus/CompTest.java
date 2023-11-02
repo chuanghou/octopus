@@ -65,6 +65,9 @@ public class CompTest {
     @Autowired
     Comp.DelayExecutor delayExecutor;
 
+
+    @Test
+
     @AfterEach
     public void clear() {
         delayExecutor.removeStepCommand();

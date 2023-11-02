@@ -218,6 +218,8 @@ public class UnitFacade {
         ListMultimap<IntraSymbol, IntraQuotationDO> quotationDOMap = future1.get();
         List<Unit> units = future2.get();
 
+        StepRecord stepRecord = tunnel.runningComp().getStepRecords().stream()
+                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
 
         List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
@@ -239,6 +241,7 @@ public class UnitFacade {
                     .map(i -> new QuotationVO(i.getTimeStamp(), i.getLatestPrice(), i.getBuyQuantity(), i.getSellQuantity()))
                     .sorted(Comparator.comparing(QuotationVO::getTimeStamp)).collect(Collectors.toList());
             builder.quotationVOs(quotationVOs);
+            builder.stepRecord(stepRecord);
             return builder.build();
         }).collect(Collectors.toList());
         return Result.success(intraSymbolBidVOs);

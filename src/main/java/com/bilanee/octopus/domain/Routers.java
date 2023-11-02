@@ -150,6 +150,12 @@ public class Routers implements EventRouters {
         WsHandler.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 
+
+    @EventRouter
+    public void routerForRecord(CompEvent.Stepped stepped, Context context) {
+
+    }
+
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
 
     @EventRouter

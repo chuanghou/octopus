@@ -6,10 +6,12 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.config.OctopusProperties;
+import com.bilanee.octopus.infrastructure.entity.StepRecord;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.ErrorEnums;
@@ -53,6 +55,8 @@ public class Comp extends AggregateRoot {
     Long endingTimeStamp;
 
     DelayConfig delayConfig;
+
+    List<StepRecord> stepRecords = new ArrayList<>();
 
     @StaticWire
     static private DelayExecutor delayExecutor;
@@ -220,6 +224,10 @@ public class Comp extends AggregateRoot {
         } else {
             this.endingTimeStamp = null;
         }
+
+        StepRecord stepRecord = StepRecord.builder().stageId(getStageId().toString())
+                .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
+        this.getStepRecords().add(stepRecord);
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);
