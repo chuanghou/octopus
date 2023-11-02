@@ -240,8 +240,8 @@ public class UnitFacade {
                 builder.buyVolumes(intraInstantDO.getBuyVolumes());
                 builder.sellVolumes(intraInstantDO.getSellVolumes());
             }
-
-            builder.unitIntraBidVOs(to(units, StageId.parse(stageId), intraSymbol));
+            List<Unit> us = units.stream().filter(u -> u.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
+            builder.unitIntraBidVOs(to(us, StageId.parse(stageId), intraSymbol));
 
             List<IntraQuotationDO> intraQuotationDOs = quotationDOMap.get(intraSymbol);
             List<QuotationVO> quotationVOs = intraQuotationDOs.stream()
