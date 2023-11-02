@@ -166,6 +166,7 @@ public class UnitFacade {
     @PostMapping("submitInterBidsPO")
     public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
         Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
+  ;
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         interBidsPO.getBidPOs().forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
@@ -176,7 +177,12 @@ public class UnitFacade {
                 PARAM_FORMAT_WRONG.message("当前为中长期省省间报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
-        List<BidPO> bidPOs = interBidsPO.getBidPOs();
+        List<BidPO> bidPOs = interBidsPO.getBidPOs().stream()
+                .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0).collect(Collectors.toList());
+        bidPOs = bidPOs.stream().filter(bidPO -> bidPO.getPrice() != null && bidPO.getPrice() > 0).collect(Collectors.toList());
+        if (Collect.isEmpty(bidPOs)) {
+            return Result.success();
+        }
         UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
                 .bids(Collect.transfer(bidPOs, Convertor.INST::to))
                 .build();
