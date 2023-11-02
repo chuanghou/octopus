@@ -150,11 +150,15 @@ public class CompFacade {
 
         Comp comp = tunnel.runningComp();
         StageId parsed = StageId.parse(stageId);
+        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
+
         BidQuery bidQuery = BidQuery.builder().compId(parsed.getCompId())
                 .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
                 .build();
+        if (!equals) {
+            bidQuery.setUserId(TokenUtils.getUserId(token));
+        }
 
-        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
                 .eq(UnitDO::getRoundId, parsed.getRoundId())
