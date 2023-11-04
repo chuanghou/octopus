@@ -135,6 +135,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         PriorityQueue<Bid> bids = cancelBidDirection == Direction.BUY ? buyPriorityQueue : sellPriorityQueue;
         boolean b = bids.removeIf(bid -> {
             if (bid.getBidId().equals(cancelBidId)) {
+                bid.setCancelledTimeStamp(Clock.currentTimeMillis());
                 bid.setBidStatus(BidStatus.CANCELLED);
                 tunnel.updateBids(Collect.asList(bid));
                 UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
