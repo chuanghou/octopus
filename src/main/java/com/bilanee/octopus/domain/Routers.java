@@ -86,6 +86,11 @@ public class Routers implements EventRouters {
         } );
 
 
+        // 清空 上一次的
+        LambdaQueryWrapper<InterDealDO> eq = new LambdaQueryWrapper<InterDealDO>().eq(InterDealDO::getRoundId, now.getRoundId() + 1)
+                .eq(InterDealDO::getMarketType, now.getTradeStage().getMarketType());
+        interDealDOMapper.delete(eq);
+
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
@@ -130,6 +135,11 @@ public class Routers implements EventRouters {
         if (!(b0 || b1)) {
             return;
         }
+
+        // 清空 上一次的
+        LambdaQueryWrapper<IntraDealDO> eq = new LambdaQueryWrapper<IntraDealDO>().eq(IntraDealDO::getRoundId, now.getRoundId() + 1)
+                .eq(IntraDealDO::getMarketType, now.getTradeStage().getMarketType());
+        intraDealDOMapper.delete(eq);
 
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
