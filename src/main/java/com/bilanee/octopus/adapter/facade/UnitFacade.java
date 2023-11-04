@@ -858,7 +858,7 @@ public class UnitFacade {
             Integer instant = instantSpotBidPO.getInstant();
             InstantSpotBidVO instantSpotBidVO = instantSpotBidVOs.get(instant);
             double balance = instantSpotBidVO.getMaxCapacity() - instantSpotBidVO.getPreCleared();
-            double sum = instantSpotBidVO.getInterSpotBids().stream().collect(Collectors.summarizingDouble(InterSpotBid::getQuantity)).getSum();
+            double sum = instantSpotBidPO.getInterSpotBids().stream().collect(Collectors.summarizingDouble(InterSpotBid::getQuantity)).getSum();
             BizEx.trueThrow(sum > balance, PARAM_FORMAT_WRONG.message("三段报价超过剩留量！"));
         }
 
