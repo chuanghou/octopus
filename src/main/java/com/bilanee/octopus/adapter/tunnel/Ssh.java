@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import net.schmizz.sshj.SSHClient;
 import net.schmizz.sshj.connection.channel.direct.Session;
 import net.schmizz.sshj.connection.channel.direct.Session.Command;
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ public class Ssh {
     public static void exec(String command) {
         long l = System.currentTimeMillis();
         final SSHClient ssh = new SSHClient();
+        ssh.addHostKeyVerifier(new PromiscuousVerifier());
         ssh.loadKnownHosts();
         Session session = null;
         long s;
