@@ -55,7 +55,6 @@ public class ManageFacade {
         return Collect.transfer(userDOs, userDO -> new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait()));
     }
 
-
     /**
      * 竞赛新建接口
      * @param compCreatePO 创建竞赛参数

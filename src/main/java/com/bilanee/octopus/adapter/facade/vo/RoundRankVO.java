@@ -33,8 +33,20 @@ public class RoundRankVO {
     @AllArgsConstructor
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class Ranking {
-        Integer number;
-        String name;
+
+        /**
+         * 排名id
+         */
+        Integer ranking;
+
+        /**
+         * 交易员id
+         */
+        String userId;
+
+        /**
+         * 利润
+         */
         Double profit;
     }
 }

@@ -858,6 +858,7 @@ public class CompFacade {
         return Result.success(interSpotUnitDealVOs);
     }
 
+    final GameResultMapper gameResultMapper;
 
     /**
      * 本轮成绩排名
@@ -865,34 +866,87 @@ public class CompFacade {
      */
     @GetMapping("getRoundRankVO")
     Result<RoundRankVO> getRoundRankVO(String stageId, @RequestHeader String token) {
-        return null;
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        String userId = TokenUtils.getUserId(token);
+        LambdaQueryWrapper<GameResult> eq = new LambdaQueryWrapper<GameResult>().eq(GameResult::getTraderId, userId)
+                .eq(GameResult::getRoundId, roundId + 1);
+        GameResult gameResult = gameResultMapper.selectOne(eq);
+
+        Comp comp = tunnel.runningComp();
+        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
+
+        int size = tunnel.runningComp().getUserIds().size();
+        long number = Math.round(Math.max(10D, size * 0.1));
+        LambdaQueryWrapper<GameResult> last = new LambdaQueryWrapper<GameResult>().eq(GameResult::getRoundId, roundId + 1)
+                .last(equals, String.format("limit %s", number));
+        List<GameResult> gameResults = gameResultMapper.selectList(last).stream().sorted(Comparator.comparing(GameResult::getRanking)).collect(Collectors.toList());
+        RoundRankVO roundRankVO = RoundRankVO.builder()
+                .headLine(equals ? "提示：成绩排名表第一栏显示自己的排名，自第二栏起显示成绩排名前10%的交易员" : "提示：成绩排名表第一栏显示自己的排名，自第二栏起显示所有的交易员的成绩")
+                .myRanking(Convertor.INST.to(gameResult))
+                .rankings(Collect.transfer(gameResults, Convertor.INST::to))
+                .build();
+
+        return Result.success(roundRankVO);
     }
 
+
+    final GameRankingMapper gameRankingMapper;
     /**
      * 总成绩排名
      * @param stageId 阶段id
      */
     @GetMapping("getFinalRankVO")
     Result<FinalRankVO> getFinalRankVO(String stageId, @RequestHeader String token) {
-        return null;
+
+        String userId = TokenUtils.getUserId(token);
+        LambdaQueryWrapper<GameRanking> eq = new LambdaQueryWrapper<GameRanking>().eq(GameRanking::getTraderId, userId);
+        GameRanking gameRanking = gameRankingMapper.selectOne(eq);
+
+        List<GameRanking> gameRankings = gameRankingMapper.selectList(null).stream().sorted(Comparator.comparing(GameRanking::getTotalRanking)).collect(Collectors.toList());
+
+        FinalRankVO finalRankVO = FinalRankVO.builder()
+                .myFinalRanking(Convertor.INST.to(gameRanking))
+                .finalRankings(Collect.transfer(gameRankings, Convertor.INST::to))
+                .build();
+        return Result.success(finalRankVO);
     }
 
+    final GeneratorResultMapper generatorResultMapper;
     /**
      * 结算明细--分机组
      * @param stageId 阶段id
      */
     @GetMapping("listGeneratorResults")
     Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
-        return null;
+        String userId = TokenUtils.getUserId(token);
+        StageId parsed = StageId.parse(stageId);
+        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId);
+        List<Integer> sourceIds = units.stream().filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
+        LambdaQueryWrapper<GeneratorResult> in = new LambdaQueryWrapper<GeneratorResult>()
+                .eq(GeneratorResult::getRoundId, parsed.getRoundId() + 1)
+                .in(GeneratorResult::getUnitId, sourceIds);
+        List<GeneratorResult> generatorResults = generatorResultMapper.selectList(in);
+        return Result.success(generatorResults);
     }
 
+    final LoadResultMapper loadResultMapper;
     /**
      * 结算明细--分负荷
      * @param stageId 阶段id
      */
     @GetMapping("listLoadsResults")
     Result<List<LoadResult>> listLoadsResults(String stageId, @RequestHeader String token) {
-        return null;
+        String userId = TokenUtils.getUserId(token);
+        StageId parsed = StageId.parse(stageId);
+        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId);
+        List<Integer> sourceIds = units.stream().filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.LOAD))
+                .map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
+        LambdaQueryWrapper<LoadResult> in = new LambdaQueryWrapper<LoadResult>()
+                .eq(LoadResult::getRoundId, parsed.getRoundId() + 1)
+                .in(LoadResult::getLoadId, sourceIds);
+        List<LoadResult> loadResults = loadResultMapper.selectList(in);
+        return Result.success(loadResults);
     }
 
 
@@ -924,6 +978,14 @@ public class CompFacade {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         InterClearanceVO to(InterClearance interClearance);
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        @Mapping(source = "traderId", target = "userId")
+        RoundRankVO.Ranking to(GameResult gameResult);
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        @Mapping(source = "traderId", target = "userId")
+        FinalRankVO.Ranking to (GameRanking gameRanking);
 
     }
 

@@ -42,7 +42,7 @@ public class FinalRankVO {
         /**
          * 姓名
          */
-        String name;
+        String userId;
 
         /**
          * 分数
