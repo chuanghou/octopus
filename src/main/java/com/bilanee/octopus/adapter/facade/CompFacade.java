@@ -589,7 +589,7 @@ public class CompFacade {
         // 日前
         if (da) {
             LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
-                    .eq(LoadDaForecastBidDO::getRoundId, roundId).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
+                    .eq(LoadDaForecastBidDO::getRoundId, roundId + 1).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
             List<LoadDaForecastBidDO> loadDaForecastBidDOs = loadDaForecastBidMapper.selectList(wrapper0);
                 intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
                     .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
@@ -601,7 +601,7 @@ public class CompFacade {
         }
 
 
-        LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId - 1);
+        LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         List<Double> tielinePowers = tieLinePowerDOMapper.selectList(eq).stream().collect(Collectors.groupingBy(TieLinePowerDO::getPrd))
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
                 .map(ds -> ds.stream().collect(Collectors.summarizingDouble(d -> d.getAnnualTielinePower() + d.getMonthlyTielinePower() + d.getDaTielinePower())).getSum())
