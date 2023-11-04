@@ -1,5 +1,6 @@
 package com.bilanee.octopus.infrastructure.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -26,6 +27,7 @@ public class UnitBasic {
   Double hotStartupCost;
   Double hotStartupTime;
   Double warmStartupTime;
+  @TableField("t_to_MWh")
   Double tToMWh;
   Double maxAgc;
   Double minAgc;
@@ -35,18 +37,6 @@ public class UnitBasic {
   Double minP;
   Double maxQ;
   Double minQ;
-  Double startupCurve1;
-  Double startupCurve2;
-  Double startupCurve3;
-  Double startupCurve4;
-  Double startupCurve5;
-  Double startupCurve6;
-  Double shutdownCurve1;
-  Double shutdownCurve2;
-  Double shutdownCurve3;
-  Double shutdownCurve4;
-  Double shutdownCurve5;
-  Double shutdownCurve6;
   Integer numStartupCurvePrds;
   Integer numShutdownCurvePrds;
   Integer nodeId;
