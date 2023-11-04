@@ -64,7 +64,7 @@ public class ManageFacade {
         delayExecutor.removeStepCommand();
         CompCmd.Create command = Convertor.INST.to(compCreatePO);
         if (command.getStartTimeStamp() == null) {
-            command.setStartTimeStamp(Clock.currentTimeMillis() + 5 * 1000L);
+            command.setStartTimeStamp(Clock.currentTimeMillis() + 30 * 1000L);
         }
         command.setCompId(uniqueIdGetter.get());
         CommandBus.accept(command, new HashMap<>());
