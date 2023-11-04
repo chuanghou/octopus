@@ -627,39 +627,49 @@ public class CompFacade {
         double classicTotal = unitBasics.stream().filter(unitBasic -> classicUnitIds.containsKey(unitBasic.getUnitId()))
                 .collect(Collectors.summarizingDouble(UnitBasic::getMaxP)).getSum();
 
-        List<Double> renewableTotals;
-        if (da) {
-            LambdaQueryWrapper<GeneratorDaForecastBidDO> in = new LambdaQueryWrapper<GeneratorDaForecastBidDO>().eq(GeneratorDaForecastBidDO::getRoundId, roundId + 1)
-                    .in(GeneratorDaForecastBidDO::getUnitId, unitIds.keySet());
-            renewableTotals = generatorDaForecastBidMapper.selectList(in).stream()
-                    .collect(Collectors.groupingBy(GeneratorDaForecastBidDO::getPrd))
-                    .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                    .map(ls -> ls.stream().collect(Collectors.summarizingDouble(GeneratorDaForecastBidDO::getForecastMw)).getSum()).collect(Collectors.toList());
-        } else {
-            LambdaQueryWrapper<SprDO> eqx = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
-            renewableTotals = sprDOMapper.selectList(eqx).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtRenewable).collect(Collectors.toList());
+        List<Double> renewableTotals = IntStream.range(0, 24).mapToObj(i -> 0D).collect(Collectors.toList());
+        if (!Collect.isEmpty(renewableUnitIds)) {
+            if (da) {
+                LambdaQueryWrapper<GeneratorDaForecastBidDO> in = new LambdaQueryWrapper<GeneratorDaForecastBidDO>().eq(GeneratorDaForecastBidDO::getRoundId, roundId + 1)
+                        .in(GeneratorDaForecastBidDO::getUnitId, unitIds.keySet());
+                renewableTotals = generatorDaForecastBidMapper.selectList(in).stream()
+                        .collect(Collectors.groupingBy(GeneratorDaForecastBidDO::getPrd))
+                        .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                        .map(ls -> ls.stream().collect(Collectors.summarizingDouble(GeneratorDaForecastBidDO::getForecastMw)).getSum()).collect(Collectors.toList());
+            } else {
+                LambdaQueryWrapper<SprDO> eqx = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
+                renewableTotals = sprDOMapper.selectList(eqx).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtRenewable).collect(Collectors.toList());
+            }
         }
-
         LambdaQueryWrapper<SpotUnitCleared> in1 = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, parsedStageId.getRoundId() + 1)
                 .in(SpotUnitCleared::getUnitId, unitIds.keySet());
         List<SpotUnitCleared> spotUnitCleareds = spotUnitClearedMapper.selectList(in1);
+        List<Double> classicBidden = IntStream.range(0, 24).mapToObj(i -> 0D).collect(Collectors.toList());
+        if (Collect.isNotEmpty(classicUnitIds)) {
+            classicBidden = spotUnitCleareds.stream().filter(c -> classicUnitIds.containsKey(c.getUnitId()))
+                    .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
+                    .collect(Collectors.toList());
+        }
 
-        List<Double> classicBidden = spotUnitCleareds.stream().filter(c -> classicUnitIds.containsKey(c.getUnitId()))
-                .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
-                .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
-                .collect(Collectors.toList());
         builder.classicBidden(classicBidden);
         builder.classicNotBidden(classicBidden.stream().map(c -> classicTotal - c).collect(Collectors.toList()));
+        List<Double> renewableBidden = IntStream.range(0, 24).mapToObj(i -> 0D).collect(Collectors.toList());
 
-        List<Double> renewableBidden = spotUnitCleareds.stream().filter(c -> renewableUnitIds.containsKey(c.getUnitId()))
-                .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
-                .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
-                .collect(Collectors.toList());
-        builder.renewableBidden(renewableBidden);
-        builder.renewableNotBidden(IntStream.range(0, 24).mapToObj(i -> renewableTotals.get(i) - renewableBidden.get(i)).collect(Collectors.toList()));
+        if (Collect.isNotEmpty(renewableUnitIds)) {
+            renewableBidden = spotUnitCleareds.stream().filter(c -> renewableUnitIds.containsKey(c.getUnitId()))
+                    .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
+                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
+                    .collect(Collectors.toList());
+            builder.renewableBidden(renewableBidden);
+        }
+
+        List<Double> finalRenewableTotals = renewableTotals;
+        List<Double> finalRenewableBidden = renewableBidden;
+        builder.renewableNotBidden(IntStream.range(0, 24).mapToObj(i -> finalRenewableTotals.get(i) - finalRenewableBidden.get(i)).collect(Collectors.toList()));
 
 
         // 分报价区间
@@ -668,21 +678,21 @@ public class CompFacade {
                 .in(GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = generatorDaSegmentMapper.selectList(in);
 
-        List<List<GeneratorDaSegmentBidDO>> segmentBids = generatorDaSegmentBidDOs.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getPrd))
-                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+        ListMultimap<Integer, GeneratorDaSegmentBidDO> collect = generatorDaSegmentBidDOs.stream().collect(Collect.listMultiMap(GeneratorDaSegmentBidDO::getPrd));
+
 
         List<List<SpotUnitCleared>> indexedSpotUnitCleared = spotUnitCleareds.stream().collect(Collectors.groupingBy(SpotUnitCleared::getPrd))
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
 
         List<List<Double>> priceStatistics = IntStream.range(0, 24)
-                .mapToObj(i -> process(segmentBids.get(i), indexedSpotUnitCleared.get(i), unitDOs, da)).collect(Collectors.toList());
+                .mapToObj(i -> process(collect.get(i), indexedSpotUnitCleared.get(i), unitDOs, da)).collect(Collectors.toList());
         builder.priceStatistics(priceStatistics);
 
         return builder.build();
     }
 
     private List<Double> process(List<GeneratorDaSegmentBidDO> segments, List<SpotUnitCleared> clears, List<UnitDO> unitDOs, boolean da) {
-        Map<Integer, List<GeneratorDaSegmentBidDO>> groupedByUnitIds = segments.stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getUnitId));
+        ListMultimap<Integer, GeneratorDaSegmentBidDO> groupedByUnitIds = segments.stream().collect(Collect.listMultiMap(GeneratorDaSegmentBidDO::getUnitId));
         Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMapMightEx(clears, SpotUnitCleared::getUnitId);
         List<Pair<Double, Double>> collectQps = unitDOs.stream().map(unitDO -> {
             Integer sourceId = unitDO.getMetaUnit().getSourceId();
