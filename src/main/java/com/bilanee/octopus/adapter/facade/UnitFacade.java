@@ -839,12 +839,29 @@ public class UnitFacade {
      * @param spotBidPO 省间现货报价结构体
      */
     @PostMapping("submitInterSpotBid")
-    public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO) {
+    public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO, @RequestHeader String token) {
+
+        String cStageId = tunnel.runningComp().getStageId().toString();
+        StageId stageId = StageId.parse(spotBidPO.getStageId());
+        BizEx.trueThrow(Kit.notEq(cStageId, stageId.toString()), PARAM_FORMAT_WRONG.message("已经进入下一个阶段"));
         Long unitId = spotBidPO.getUnitId();
         Integer sourceId = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getSourceId();
-        StageId stageId = StageId.parse(spotBidPO.getStageId());
         Long compId = stageId.getCompId();
         Integer roundId = stageId.getRoundId();
+
+        List<SpotInterBidVO> spotInterBidVOs = listSpotInterBidVO(cStageId, token).getData();
+        SpotInterBidVO spotInterBidVO = spotInterBidVOs.stream().filter(s -> s.getUnitId().equals(unitId)).findFirst().orElseThrow(SysEx::unreachable);
+        Map<Integer, InstantSpotBidVO> instantSpotBidVOs = spotInterBidVO.getInstantSpotBidVOs().stream().collect(Collectors.toMap(InstantSpotBidVO::getInstant, i -> i));
+
+
+        for (InstantSpotBidPO instantSpotBidPO : spotBidPO.getInstantSpotBidPOs()) {
+            Integer instant = instantSpotBidPO.getInstant();
+            InstantSpotBidVO instantSpotBidVO = instantSpotBidVOs.get(instant);
+            double balance = instantSpotBidVO.getMaxCapacity() - instantSpotBidVO.getPreCleared();
+            double sum = instantSpotBidVO.getInterSpotBids().stream().collect(Collectors.summarizingDouble(InterSpotBid::getQuantity)).getSum();
+            BizEx.trueThrow(sum > balance, PARAM_FORMAT_WRONG.message("三段报价超过剩留量！"));
+        }
+
         for (InstantSpotBidPO instantSpotBidPO : spotBidPO.getInstantSpotBidPOs()) {
             Integer instant = instantSpotBidPO.getInstant();
             LambdaQueryWrapper<InterSpotUnitOfferDO> eq = new LambdaQueryWrapper<InterSpotUnitOfferDO>()

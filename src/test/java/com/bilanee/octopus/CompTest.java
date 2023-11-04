@@ -798,7 +798,7 @@ public class CompTest {
             return InstantSpotBidPO.builder().instant(instant).interSpotBids(interSpotBids).build();
         }).collect(Collectors.toList());
         SpotBidPO spotBidPO = builder.instantSpotBidPOs(instantSpotBidPOs).build();
-        Result<Void> submitResult = unitFacade.submitInterSpotBid(spotBidPO);
+        Result<Void> submitResult = unitFacade.submitInterSpotBid(spotBidPO, comp.getStageId().toString());
         Assertions.assertTrue(submitResult.getSuccess());
 
         listResult = unitFacade.listSpotInterBidVO(currentStageId.toString(), TokenUtils.sign("1000"));
