@@ -88,6 +88,24 @@ public class ManageFacade {
         return Result.success();
     }
 
+    /**
+     * 手动多个阶段
+     */
+    @PostMapping("/steps")
+    public Result<Void> steps(@RequestParam Integer steps) {
+        Comp comp = tunnel.runningComp();
+        if (comp == null) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("没有运行中的竞赛"));
+        } else if (comp.getCompStage() == CompStage.RANKING) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
+        }
+        delayExecutor.removeStepCommand();
+        for (int i = 0; i < steps; i++) {
+            CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
+            CommandBus.accept(command, new HashMap<>());
+        }
+        return Result.success();
+    }
 
 
 
