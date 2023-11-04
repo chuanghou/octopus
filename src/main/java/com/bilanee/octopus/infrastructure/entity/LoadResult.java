@@ -2,6 +2,7 @@ package com.bilanee.octopus.infrastructure.entity;
 
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -33,6 +34,13 @@ public class LoadResult {
      * 负荷id
      **/
     Integer loadId;
+
+    /**
+     * 负荷名称
+     */
+    @TableField(exist = false)
+    String unitName;
+
     /**
      * 该轮比赛省间中长期净支出（元）
      **/

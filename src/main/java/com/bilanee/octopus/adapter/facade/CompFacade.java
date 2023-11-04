@@ -927,6 +927,10 @@ public class CompFacade {
                 .eq(GeneratorResult::getRoundId, parsed.getRoundId() + 1)
                 .in(GeneratorResult::getUnitId, sourceIds);
         List<GeneratorResult> generatorResults = generatorResultMapper.selectList(in);
+        generatorResults.forEach(g -> {
+            String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getUnitId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
+            g.setUnitName(name);
+        });
         return Result.success(generatorResults);
     }
 
@@ -946,6 +950,12 @@ public class CompFacade {
                 .eq(LoadResult::getRoundId, parsed.getRoundId() + 1)
                 .in(LoadResult::getLoadId, sourceIds);
         List<LoadResult> loadResults = loadResultMapper.selectList(in);
+
+        loadResults.forEach(g -> {
+            String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getLoadId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
+            g.setUnitName(name);
+        });
+
         return Result.success(loadResults);
     }
 
