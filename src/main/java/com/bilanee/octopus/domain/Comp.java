@@ -56,6 +56,8 @@ public class Comp extends AggregateRoot {
 
     DelayConfig delayConfig;
 
+    String dt;
+
     List<StepRecord> stepRecords = new ArrayList<>();
 
     @StaticWire
@@ -85,6 +87,7 @@ public class Comp extends AggregateRoot {
         long endingTimeStamp = command.getStartTimeStamp();
         comp.setEndingTimeStamp(endingTimeStamp);
         comp.setEnableQuiz(command.getEnableQuiz());
+        comp.setDt(command.getDt());
 
         // assign metaUnit
         List<Map<String, List<MetaUnit>>> roundMetaUnits = IntStream.range(0, comp.getRoundTotal())

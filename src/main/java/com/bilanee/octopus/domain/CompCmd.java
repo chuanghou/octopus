@@ -23,7 +23,7 @@ public class CompCmd {
         DelayConfig delayConfig;
         List<String> userIds;
         Boolean enableQuiz;
-
+        String dt;
 
         @Override
         public String getAggregateId() {

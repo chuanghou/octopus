@@ -1,6 +1,8 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -11,7 +13,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @TableName("loads_assigned_to_trader_results")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class LoadsResult {
+public class LoadResult {
+
+    @TableId(type = IdType.INPUT)
     Long id;
     /**
      * 当前比赛轮次
@@ -24,7 +28,7 @@ public class LoadsResult {
     /**
      * 交易员id
      **/
-    Integer traderId;
+    String traderId;
     /**
      * 负荷id
      **/

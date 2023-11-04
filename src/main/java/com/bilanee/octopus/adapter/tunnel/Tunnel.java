@@ -11,6 +11,7 @@ import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.stellariver.milky.common.base.ErrorEnumsBase;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
@@ -42,6 +43,8 @@ public class Tunnel {
     final UnitDOMapper unitDOMapper;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final StackDiagramDOMapper stackDiagramDOMapper;
+    final GeneratorResultMapper generatorResultMapper;
+    final LoadResultMapper loadResultMapper;
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
@@ -52,6 +55,28 @@ public class Tunnel {
             List<MetaUnitDO> metaUnitDOs = metaUnitDOMapper.selectList(in);
             metaUnitMap.put(userIds.get(i), Collect.transfer(metaUnitDOs, Convertor.INST::to));
         }
+
+        metaUnitMap.forEach((userId, metaUnits) -> {
+            metaUnits.forEach(metaUnit -> {
+               if (metaUnit.getUnitType() == UnitType.GENERATOR) {
+                   LambdaQueryWrapper<GeneratorResult> eq = new LambdaQueryWrapper<GeneratorResult>()
+                           .eq(GeneratorResult::getRoundId, roundId + 1)
+                           .eq(GeneratorResult::getUnitId, metaUnit.getSourceId());
+                   GeneratorResult generatorResult = generatorResultMapper.selectOne(eq);
+                   generatorResult.setTraderId(userId);
+                   generatorResultMapper.updateById(generatorResult);
+               } else if (metaUnit.getUnitType() == UnitType.LOAD) {
+                   LambdaQueryWrapper<LoadResult> eq = new LambdaQueryWrapper<LoadResult>()
+                           .eq(LoadResult::getRoundId, roundId + 1)
+                           .eq(LoadResult::getLoadId, metaUnit.getSourceId() + 1);
+                   LoadResult loadResult = loadResultMapper.selectOne(eq);
+                   loadResult.setTraderId(userId);
+                   loadResultMapper.updateById(loadResult);
+               } else {
+                   throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+               }
+            });
+        });
 
         return metaUnitMap;
     }

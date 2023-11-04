@@ -16,6 +16,7 @@ import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.common.Clock;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -105,6 +106,12 @@ public class ManageFacade {
         @Mapping(source = "marketStageClearLengths", target = "delayConfig.marketStageClearLengths")
         @Mapping(source = "tradeResultLength", target = "delayConfig.tradeResultLength")
         CompCmd.Create to(CompCreatePO compCreatePO);
+
+        @AfterMapping
+        default void afterMapping(CompCreatePO compCreatePO, @MappingTarget CompCmd.Create create) {
+            String dt = Kit.isBlank(compCreatePO.getDt()) ? Clock.todayString() : compCreatePO.getDt();
+            create.setDt(dt);
+        }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);

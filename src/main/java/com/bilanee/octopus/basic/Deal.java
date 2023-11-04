@@ -1,5 +1,6 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.basic.enums.TimeFrame;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,6 +15,8 @@ import lombok.experimental.SuperBuilder;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Deal {
 
+    Long id;
+    TimeFrame timeFrame;
     Long buyUnitId;
     Long sellUnitId;
     Double quantity;

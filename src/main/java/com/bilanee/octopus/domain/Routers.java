@@ -6,15 +6,13 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.ws.WsHandler;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
-import com.bilanee.octopus.basic.Bid;
-import com.bilanee.octopus.basic.Deal;
-import com.bilanee.octopus.basic.MetaUnit;
-import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -39,6 +37,8 @@ public class Routers implements EventRouters {
     final IntraManager intraManager;
     final DomainTunnel domainTunnel;
     final TransactionDOMapper transactionDOMapper;
+    final LoadResultMapper loadResultMapper;
+    final GeneratorResultMapper generatorResultMapper;
 
     @EventRouter
     public void route(CompEvent.Created created, Context context) {
@@ -62,6 +62,9 @@ public class Routers implements EventRouters {
         }
     }
 
+    final InterDealDOMapper interDealDOMapper;
+    final IntraDealDOMapper intraDealDOMapper;
+
 
     /**
      * 年度省间出清和月度省间出清，主要是为了清算集中竞价结果，算成交价格，确定各个量价最后的成交数量
@@ -83,7 +86,37 @@ public class Routers implements EventRouters {
         } );
 
 
+        BidQuery bidQuery = BidQuery.builder()
+                .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        String dt = tunnel.runningComp().getDt();
+        Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
+        bidMap.forEach((unitId, userBids) -> {
+            Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+            userBids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach(((timeFrame, bs) -> {
+                Map<Double, Collection<Bid>> priceGrouped = bids.stream().collect(Collect.listMultiMap(Bid::getPrice)).asMap();
+                if (priceGrouped.size() != 1) {
+                    throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+                }
+                priceGrouped.forEach((k, cbs) -> {
+                    InterDealDO interDealDO = InterDealDO.builder().roundId(now.getRoundId() + 1)
+                            .resourceId(unit.getMetaUnit().getSourceId())
+                            .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
+                            .dt(dt)
+                            .pfvPrd(timeFrame.getDbCode())
+                            .marketType(now.getTradeStage().getMarketType())
+                            .clearedMw(cbs.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
+                            .clearedPrice(k)
+                            .build();
+                    interDealDOMapper.insert(interDealDO);
+                });
+            } ));
+        });
+
+
         storeDb(now);
+
+
     }
 
     /**
@@ -97,6 +130,32 @@ public class Routers implements EventRouters {
         if (!(b0 || b1)) {
             return;
         }
+
+        BidQuery bidQuery = BidQuery.builder()
+                .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        String dt = tunnel.runningComp().getDt();
+        bids.stream().flatMap(b -> b.getDeals().stream()).distinct().forEach(deal -> {
+            Unit buyUnit = domainTunnel.getByAggregateId(Unit.class, deal.getBuyUnitId());
+            Unit sellUnit = domainTunnel.getByAggregateId(Unit.class, deal.getSellUnitId());
+            IntraDealDO intraDealDO = IntraDealDO.builder()
+                    .roundId(now.getRoundId() + 1)
+                    .buyerId(buyUnit.getMetaUnit().getSourceId())
+                    .buyerType(buyUnit.getMetaUnit().getUnitType().getDbCode())
+                    .sellerId(sellUnit.getMetaUnit().getSourceId())
+                    .sellerType(sellUnit.getMetaUnit().getUnitType().getDbCode())
+                    .dt(dt)
+                    .pfvPrd(deal.getTimeFrame().getDbCode())
+                    .marketType(now.getTradeStage().getMarketType())
+                    .transTime(new Date(deal.getTimeStamp()))
+                    .clearedMw(deal.getQuantity())
+                    .clearedPrice(deal.getPrice())
+                    .build();
+            intraDealDOMapper.insert(intraDealDO);
+        });
+
+
+
         storeDb(now);
         intraManager.close();
 

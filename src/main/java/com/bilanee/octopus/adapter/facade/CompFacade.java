@@ -891,7 +891,7 @@ public class CompFacade {
      * @param stageId 阶段id
      */
     @GetMapping("listLoadsResults")
-    Result<List<LoadsResult>> listLoadsResults(String stageId, @RequestHeader String token) {
+    Result<List<LoadResult>> listLoadsResults(String stageId, @RequestHeader String token) {
         return null;
     }
 

@@ -39,6 +39,9 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
     Long endingTimeStamp;
     @TableField(typeHandler = JacksonTypeHandler.class)
     DelayConfig delayConfig;
+
+    String dt;
+
     Boolean enableQuiz;
 
     @TableField(typeHandler = ListStepRecordHandler.class)

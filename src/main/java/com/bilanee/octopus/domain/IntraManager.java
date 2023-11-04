@@ -6,6 +6,7 @@ import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
+import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -21,6 +22,7 @@ public class IntraManager implements ApplicationRunner {
     Map<IntraSymbol, IntraProcessor> intraProcessors = new HashMap<>();
     final BidDOMapper bidDOMapper;
     final Tunnel tunnel;
+    final UniqueIdGetter uniqueIdGetter;
 
     public void declare(Bid bid) {
         IntraSymbol intraSymbol = new IntraSymbol(bid.getProvince(), bid.getTimeFrame());
@@ -45,7 +47,7 @@ public class IntraManager implements ApplicationRunner {
         for (Province province : Province.values()) {
             for (TimeFrame timeFrame : TimeFrame.values()) {
                 IntraSymbol intraSymbol = new IntraSymbol(province, timeFrame);
-                IntraProcessor intraProcessor = new IntraProcessor(tunnel, intraSymbol);
+                IntraProcessor intraProcessor = new IntraProcessor(tunnel, intraSymbol, uniqueIdGetter);
                 intraProcessors.put(intraSymbol, intraProcessor);
             }
         }

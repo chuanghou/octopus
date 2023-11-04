@@ -19,6 +19,7 @@ import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
+import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,12 +37,14 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
     final Disruptor<IntraBidContainer> disruptor = new Disruptor<>(IntraBidContainer::new, 1024, DaemonThreadFactory.INSTANCE);
     final PriorityQueue<Bid> buyPriorityQueue = new PriorityQueue<>(buyComparator);
     final PriorityQueue<Bid> sellPriorityQueue = new PriorityQueue<>(sellComparator);
+    final UniqueIdGetter uniqueIdGetter;
 
     private Double latestPrice = 0D;
 
-    public IntraProcessor(Tunnel tunnel, IntraSymbol intraSymbol) {
+    public IntraProcessor(Tunnel tunnel, IntraSymbol intraSymbol, UniqueIdGetter uniqueIdGetter) {
         this.tunnel = tunnel;
         this.intraSymbol = intraSymbol;
+        this.uniqueIdGetter = uniqueIdGetter;
         disruptor.handleEventsWith(this);
         disruptor.start();
     }
@@ -194,7 +197,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
              */
             Double dealPrice = buyBid.getDeclareTimeStamp() > sellBid.getDeclareTimeStamp() ? sellBid.getPrice() : buyBid.getPrice();
             double dealQuantity = Math.min(buyBid.getTransit(), sellBid.getTransit());
-            deal = Deal.builder().buyUnitId(buyBid.getUnitId()).sellUnitId(sellBid.getUnitId())
+            deal = Deal.builder().id(uniqueIdGetter.get()).timeFrame(intraSymbol.getTimeFrame()).buyUnitId(buyBid.getUnitId()).sellUnitId(sellBid.getUnitId())
                     .quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
