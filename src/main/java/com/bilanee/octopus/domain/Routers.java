@@ -2,6 +2,7 @@ package com.bilanee.octopus.domain;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.ws.WsHandler;
 import com.bilanee.octopus.adapter.ws.WsMessage;
@@ -219,16 +220,29 @@ public class Routers implements EventRouters {
         WsHandler.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 
-
-    @EventRouter
-    public void routerForRecord(CompEvent.Stepped stepped, Context context) {
-
-    }
-
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
 
+    /**
+     * 省内现货之后预出清
+     */
     @EventRouter
-    public void routeClearInterSpotBid(CompEvent.Stepped stepped, Context context) {
+    public void routeBeforeAfterIntraSpotBid(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
+        boolean b1 = now.getMarketStatus() == MarketStatus.BID;
+        if (!(b0 && b1)) {
+            return;
+        }
+        Ssh.exec("python manage.py intra_pre_clearing 1");
+        Ssh.exec("python manage.py intra_pre_clearing 2");
+    }
+
+
+    /**
+     * 省间现货之前清空报价表
+     */
+    @EventRouter
+    public void routeBeforeInterSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.BID;
@@ -252,8 +266,11 @@ public class Routers implements EventRouters {
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final InterSpotTransactionDOMapper interSpotTransactionDOMapper;
 
+    /**
+     * 填充省间现货报价
+     */
     @EventRouter
-    public void clearForInterSpotBid(CompEvent.Stepped stepped, Context context) {
+    public void routerAfterInterSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.CLEAR;
@@ -333,6 +350,27 @@ public class Routers implements EventRouters {
                 }
             }
         }
+    }
+
+
+    /**
+     * 执行正式出清
+     */
+    @EventRouter
+    public void routerAfterIntraSpotBid(CompEvent.Stepped stepped, Context context){
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.DA_INTRA;
+        boolean b1 = now.getMarketStatus() == MarketStatus.CLEAR;
+        if (!(b0 && b1)) {
+            return;
+        }
+
+        Ssh.exec("python manage.py intra_da_market_clearing 2 1");
+        Ssh.exec("python manage.py intra_da_ruc 1");
+        Ssh.exec("python manage.py intra_rt_ed 1");
+        Ssh.exec("python manage.py intra_da_market_clearing 2 2");
+        Ssh.exec("python manage.py intra_da_ruc 2");
+        Ssh.exec("python manage.py intra_rt_ed 2");
     }
 
     @Data
