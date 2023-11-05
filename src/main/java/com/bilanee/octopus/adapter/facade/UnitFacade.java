@@ -710,8 +710,7 @@ public class UnitFacade {
                     return Pair.<Double, List<Double>>of(0D, new ArrayList<>());
                 }
             }).collect(Collectors.toList());
-            List<Pair<Double, List<Double>>> rtPs = rtSections
-                    .stream().map(ds -> {
+            List<Pair<Double, List<Double>>> rtPs = rtSections.stream().map(ds -> {
                         if (ds.size() >= 1) {
                             return Pair.<Double, List<Double>>of(ds.get(0), ds.subList(1, ds.size()));
                         } else {
