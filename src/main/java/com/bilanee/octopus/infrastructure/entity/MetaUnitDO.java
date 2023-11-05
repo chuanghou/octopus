@@ -21,9 +21,6 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetaUnitDO {
 
-    @TableId(type = IdType.INPUT)
-    Integer metaUnitId;
-    Integer nodeId;
     String name;
     Province province;
     UnitType unitType;
@@ -35,5 +32,4 @@ public class MetaUnitDO {
     Double minCapacity;
     Double maxCapacity;
     Double minOutputPrice;
-    String nameType;
 }
