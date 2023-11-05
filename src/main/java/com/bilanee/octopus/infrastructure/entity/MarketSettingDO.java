@@ -7,6 +7,7 @@ import com.stellariver.milky.common.tool.util.Collect;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
 import java.util.Map;
 
 @Data
@@ -95,6 +96,9 @@ public class MarketSettingDO {
     Integer interprovincialMonthlyResultDuration;
     Integer interprovincialSpotResultDuration;
     Integer settleResultDuration;
+    Date dt;
+    Double maxForwardUnitOpenInterest;
+    Double maxForwardLoadOpenInterest;
 
     static private Map<Integer, String> map0 = Collect.asMap(
             1, "政府定价定量",

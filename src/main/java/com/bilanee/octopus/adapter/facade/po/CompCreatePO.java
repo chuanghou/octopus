@@ -66,11 +66,5 @@ public class CompCreatePO {
     @NotNull
     Boolean enableQuiz;
 
-    /**
-     * 比赛日期
-     */
-    String dt;
-
-
 
 }

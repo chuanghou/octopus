@@ -3,15 +3,15 @@ package com.bilanee.octopus.adapter.facade;
 import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
+import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.BasicConvertor;
 import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.StageId;
-import com.bilanee.octopus.basic.enums.CompStage;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
-import com.bilanee.octopus.infrastructure.entity.IndividualLoadBasic;
-import com.bilanee.octopus.infrastructure.entity.UserDO;
+import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
@@ -22,13 +22,17 @@ import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.mapstruct.Mapping;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 管理页面
@@ -58,15 +62,65 @@ public class ManageFacade {
     final UnitBasicMapper unitBasicMapper;
     final LoadBasicMapper loadBasicMapper;
     final MinOutputCostMapper minOutputCostMapper;
-
+    final MarketSettingMapper marketSettingMapper;
+    final MetaUnitDOMapper metaUnitDOMapper;
     /**
      * 竞赛新建接口
      * @param compCreatePO 创建竞赛参数
      */
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
+        // TODO 根据参数初始化数据库的marketSetting
+        // TODO Ssh.exec(""); 初始化脚本
+
+        List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
+        List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
+        Map<Integer, Double> minOutPuts = minOutputCostMapper.selectList(null).stream().collect(Collectors.toMap(MinOutputCost::getUnitId, MinOutputCost::getSpotCostMinoutput));
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        metaUnitDOMapper.delete(null);
+        generatorBasics.forEach(g -> {
+            Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitOpenInterest();
+            Double maxP = g.getMaxP();
+            maxP = maxP * maxForwardUnitOpenInterest;
+            Map<Direction, Double> map = Collect.asMap(Direction.BUY, 0D, Direction.SELL, maxP);
+            Map<TimeFrame, Map<Direction, Double>> capacity = Collect.asMap(TimeFrame.PEAK, map, TimeFrame.FLAT, map, TimeFrame.VALLEY, map);
+            MetaUnitDO metaUnitDO = MetaUnitDO.builder()
+                    .name(g.getUnitName())
+                    .province(Kit.enumOfMightEx(Province::getDbCode, g.getProv()))
+                    .unitType(UnitType.GENERATOR)
+                    .generatorType(Kit.enumOfMightEx(GeneratorType::getDbCode, g.getType()))
+                    .sourceId(g.getUnitId())
+                    .capacity(capacity)
+                    .maxCapacity(g.getMinP())
+                    .minOutputPrice(minOutPuts.get(g.getUnitId()))
+                    .build();
+            metaUnitDOMapper.insert(metaUnitDO);
+        });
+
+        individualLoadBasics.forEach(i -> {
+            Double maxForwardLoadOpenInterest = marketSettingDO.getMaxForwardLoadOpenInterest();
+            Double maxP = i.getMaxP();
+            maxP = maxP * maxForwardLoadOpenInterest;
+            Map<Direction, Double> map = Collect.asMap(Direction.SELL, 0D, Direction.BUY, maxP);
+            Map<TimeFrame, Map<Direction, Double>> capacity = Collect.asMap(TimeFrame.PEAK, map, TimeFrame.FLAT, map, TimeFrame.VALLEY, map);
+            MetaUnitDO metaUnitDO = MetaUnitDO.builder().name(i.getLoadName())
+                    .province(Kit.enumOfMightEx(Province::getDbCode, i.getProv()))
+                    .unitType(UnitType.LOAD)
+                    .sourceId(i.getLoadId())
+                    .capacity(capacity)
+                    .maxCapacity(i.getMaxP())
+                    .minCapacity(0D)
+                    .minOutputPrice(null)
+                    .build();
+            metaUnitDOMapper.insert(metaUnitDO);
+
+        });
+
+
         delayExecutor.removeStepCommand();
         CompCmd.Create command = Convertor.INST.to(compCreatePO);
+        String dt = DateFormatUtils.format(marketSettingDO.getDt(), "yyyyMMdd");
+        command.setDt(dt);
         if (command.getStartTimeStamp() == null) {
             command.setStartTimeStamp(Clock.currentTimeMillis() + 30 * 1000L);
         }
@@ -119,12 +173,6 @@ public class ManageFacade {
         @Mapping(source = "marketStageClearLengths", target = "delayConfig.marketStageClearLengths")
         @Mapping(source = "tradeResultLength", target = "delayConfig.tradeResultLength")
         CompCmd.Create to(CompCreatePO compCreatePO);
-
-        @AfterMapping
-        default void afterMapping(CompCreatePO compCreatePO, @MappingTarget CompCmd.Create create) {
-            String dt = Kit.isBlank(compCreatePO.getDt()) ? Clock.todayString() : compCreatePO.getDt();
-            create.setDt(dt);
-        }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         CompVO to(Comp comp);

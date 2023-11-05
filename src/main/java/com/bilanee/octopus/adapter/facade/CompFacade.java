@@ -1010,7 +1010,6 @@ public class CompFacade {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         @Mapping(source = "traderId", target = "userId")
-        @Mapping(source = "ranking", target = "userId")
         RoundRankVO.Ranking toRound(GameResult gameResult);
 
 
