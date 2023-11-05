@@ -385,6 +385,7 @@ public class Routers implements EventRouters {
         if (!b0) {
             return;
         }
+        log.position("routerAfterIntraSpotClear").info("routerAfterIntraSpotClear");
         Ssh.exec("python manage.py settle");
     }
 

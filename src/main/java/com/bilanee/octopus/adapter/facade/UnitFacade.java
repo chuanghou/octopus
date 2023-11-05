@@ -649,11 +649,9 @@ public class UnitFacade {
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq2 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, roundId + 1)
                 .eq(GeneratorDaSegmentBidDO::getUnitId, sourceId);
-        List<List<GeneratorDaSegmentBidDO>> daSegmentBids = generatorDaSegmentMapper.selectList(eq2)
-                .stream().collect(Collectors.groupingBy(GeneratorDaSegmentBidDO::getPrd))
-                .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                .map(ls -> ls.stream().sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList()))
-                .collect(Collectors.toList());
+
+        ListMultimap<Integer, GeneratorDaSegmentBidDO> collect = generatorDaSegmentMapper
+                .selectList(eq2).stream().collect(Collect.listMultiMap(GeneratorDaSegmentBidDO::getPrd));
 
         LambdaQueryWrapper<SpotUnitCleared> eq3 = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, roundId + 1)
@@ -667,7 +665,8 @@ public class UnitFacade {
 
         List<Pair<List<Double>, List<Double>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
             List<Double> bids = new ArrayList<>();
-            List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOS = daSegmentBids.get(i);
+            List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOS = collect.get(i).stream()
+                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
                 bids.add(unit.getMetaUnit().getMinCapacity());
             }
