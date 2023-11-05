@@ -828,9 +828,7 @@ public class CompTest {
 
     @Test
     public void test() {
-
-        Result<SpotBiddenVO> spotBiddenVOResult = compFacade.listSpotBiddenEntityVOs("10988.TRADE.0.DA_INTRA.CLEAR", Province.TRANSFER.name(), TokenUtils.sign("1001"));
-
+        unitFacade.listGeneratorClearances("12102.TRADE.0.DA_INTRA.CLEAR", 12106L);
     }
 
 
