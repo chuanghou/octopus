@@ -799,23 +799,30 @@ public class UnitFacade {
                     .unitId(unitDO.getUnitId()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
             Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMap(clearResult.get(sourceId), SpotUnitCleared::getPrd);
             List<Double> capacities = maxCapacities.get(sourceId);
-            List<InterSpotUnitOfferDO> interSpotUnitOfferDOS = spotOfferMap.get(sourceId).stream()
-                    .sorted(Comparator.comparing(InterSpotUnitOfferDO::getPrd)).collect(Collectors.toList());
+            Map<Integer, InterSpotUnitOfferDO> collect = spotOfferMap.get(sourceId).stream().collect(Collectors.toMap(InterSpotUnitOfferDO::getPrd, i -> i));
             List<InstantSpotBidVO> instantSpotBidVOs = IntStream.range(0, 24).mapToObj(i -> {
                 Double available = availablePrds.get(i);
                 SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
                 if (available > 0 && capacities.get(i) - spotUnitCleared.getPreclearClearedMw() > 0) {
-                    InterSpotUnitOfferDO interSpotUnitOfferDO = interSpotUnitOfferDOS.get(i);
-                    InterSpotBid interSpotBid1 = InterSpotBid.builder()
-                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
-                    InterSpotBid interSpotBid2 = InterSpotBid.builder()
-                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
-                    InterSpotBid interSpotBid3 = InterSpotBid.builder()
-                            .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
-                    return InstantSpotBidVO.builder().instant(i)
-                            .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
-                            .interSpotBids(Collect.asList(interSpotBid1, interSpotBid2, interSpotBid3))
-                            .build();
+                    InterSpotUnitOfferDO interSpotUnitOfferDO = collect.get(i);
+                    if (interSpotUnitOfferDO != null) {
+                        InterSpotBid interSpotBid1 = InterSpotBid.builder()
+                                .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
+                        InterSpotBid interSpotBid2 = InterSpotBid.builder()
+                                .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
+                        InterSpotBid interSpotBid3 = InterSpotBid.builder()
+                                .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
+                        return InstantSpotBidVO.builder().instant(i)
+                                .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
+                                .interSpotBids(Collect.asList(interSpotBid1, interSpotBid2, interSpotBid3))
+                                .build();
+                    } else {
+                        return InstantSpotBidVO.builder().instant(i)
+                                .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
+                                .interSpotBids(Collect.asList(null, null, null))
+                                .build();
+                    }
+
                 } else {
                     return null;
                 }

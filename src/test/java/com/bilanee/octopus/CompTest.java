@@ -833,7 +833,7 @@ public class CompTest {
 
     @Test
     public void test() {
-        unitFacade.listGeneratorClearances("12102.TRADE.0.DA_INTRA.CLEAR", 12106L);
+        unitFacade.listSpotInterBidVO("12590.TRADE.1.DA_INTER.BID", TokenUtils.sign("1000"));
     }
 
 
