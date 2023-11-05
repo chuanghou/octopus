@@ -35,7 +35,7 @@ public class FinalRankVO {
     static public class Ranking {
 
         /**
-         * 名词
+         *
          */
         Integer number;
 

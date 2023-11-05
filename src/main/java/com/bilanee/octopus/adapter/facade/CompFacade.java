@@ -892,8 +892,8 @@ public class CompFacade {
         List<GameResult> gameResults = gameResultMapper.selectList(last).stream().sorted(Comparator.comparing(GameResult::getRanking)).collect(Collectors.toList());
         RoundRankVO roundRankVO = RoundRankVO.builder()
                 .headLine(equals ? "提示：成绩排名表第一栏显示自己的排名，自第二栏起显示成绩排名前10%的交易员" : "提示：成绩排名表第一栏显示自己的排名，自第二栏起显示所有的交易员的成绩")
-                .myRanking(Convertor.INST.to(gameResult))
-                .rankings(Collect.transfer(gameResults, Convertor.INST::to))
+                .myRanking(Convertor.INST.toRound(gameResult))
+                .rankings(Collect.transfer(gameResults, Convertor.INST::toRound))
                 .build();
 
         return Result.success(roundRankVO);
@@ -909,13 +909,22 @@ public class CompFacade {
     Result<FinalRankVO> getFinalRankVO(String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
-        LambdaQueryWrapper<GameRanking> eq = new LambdaQueryWrapper<GameRanking>().eq(GameRanking::getTraderId, userId);
-        GameRanking gameRanking = gameRankingMapper.selectOne(eq);
+        LambdaQueryWrapper<GameRanking> eq0 = new LambdaQueryWrapper<GameRanking>().eq(GameRanking::getTraderId, userId);
+        GameRanking gameRanking = gameRankingMapper.selectOne(eq0);
+
+        List<FinalRankVO.Ranking> roundRankings = IntStream.range(0, 3).mapToObj(i -> {
+            Integer roundId = StageId.parse(stageId).getRoundId();
+            LambdaQueryWrapper<GameResult> eq1 = new LambdaQueryWrapper<GameResult>().eq(GameResult::getTraderId, userId)
+                    .eq(GameResult::getRoundId, roundId + 1);
+            GameResult gameResult = gameResultMapper.selectOne(eq1);
+            return Convertor.INST.toFinal(gameResult);
+        }).collect(Collectors.toList());
 
         List<GameRanking> gameRankings = gameRankingMapper.selectList(null).stream().sorted(Comparator.comparing(GameRanking::getTotalRanking)).collect(Collectors.toList());
 
         FinalRankVO finalRankVO = FinalRankVO.builder()
                 .myFinalRanking(Convertor.INST.to(gameRanking))
+                .roundRankings(roundRankings)
                 .finalRankings(Collect.transfer(gameRankings, Convertor.INST::to))
                 .build();
         return Result.success(finalRankVO);
@@ -1001,11 +1010,20 @@ public class CompFacade {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         @Mapping(source = "traderId", target = "userId")
-        RoundRankVO.Ranking to(GameResult gameResult);
+        @Mapping(source = "ranking", target = "userId")
+        RoundRankVO.Ranking toRound(GameResult gameResult);
+
+
+        @BeanMapping(builder = @Builder(disableBuilder = true))
+        @Mapping(source = "traderId", target = "userId")
+        @Mapping(source = "ranking", target = "number")
+        FinalRankVO.Ranking toFinal(GameResult gameRanking);
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         @Mapping(source = "traderId", target = "userId")
         FinalRankVO.Ranking to (GameRanking gameRanking);
+
+
 
     }
 
