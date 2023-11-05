@@ -96,7 +96,7 @@ public class ManageFacade {
                     .generatorType(Kit.enumOfMightEx(GeneratorType::getDbCode, g.getType()))
                     .sourceId(g.getUnitId())
                     .capacity(capacity)
-                    .maxCapacity(g.getMinP())
+                    .maxCapacity(g.getMaxP())
                     .minCapacity(g.getMinP())
                     .minOutputPrice(minOutPuts.get(g.getUnitId()))
                     .build();
