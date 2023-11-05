@@ -91,10 +91,15 @@ public class CompTest {
                 .marketStageClearLengths(marketStageClearLengths)
                 .tradeResultLength(5)
                 .userIds(Arrays.asList("1000", "1001"))
-                .enableQuiz(true)
+                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);
+        for (int i = 0; i < 12; i++) {
+            manageFacade.step();
+        }
+
+
         Result<CompVO> compVOResult = compFacade.runningCompVO(TokenUtils.sign("1000"));
         Assertions.assertTrue(compVOResult.getSuccess());
         Comp comp = tunnel.runningComp();
