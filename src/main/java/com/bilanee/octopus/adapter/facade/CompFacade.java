@@ -65,7 +65,6 @@ public class CompFacade {
     final SprDOMapper sprDOMapper;
     final UnitBasicMapper unitBasicMapper;
     final SpotUnitClearedMapper spotUnitClearedMapper;
-    final MinOutputCostMapper minOutputCostMapper;
 
     /**
      * 当前运行竞赛查看

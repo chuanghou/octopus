@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
@@ -61,9 +62,9 @@ public class ManageFacade {
 
     final UnitBasicMapper unitBasicMapper;
     final LoadBasicMapper loadBasicMapper;
-    final MinOutputCostMapper minOutputCostMapper;
     final MarketSettingMapper marketSettingMapper;
     final MetaUnitDOMapper metaUnitDOMapper;
+    final MinOutputCostDOMapper minOutputCostDOMapper;
     /**
      * 竞赛新建接口
      * @param compCreatePO 创建竞赛参数
@@ -75,9 +76,13 @@ public class ManageFacade {
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
-        Map<Integer, Double> minOutPuts = minOutputCostMapper.selectList(null).stream().collect(Collectors.toMap(MinOutputCost::getUnitId, MinOutputCost::getSpotCostMinoutput));
+        Map<Integer, Double> minOutPuts = minOutputCostDOMapper.selectList(null).stream()
+                .collect(Collectors.toMap(MinOutputCostDO::getUnitId, MinOutputCostDO::getSpotCostMinoutput));
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        metaUnitDOMapper.delete(null);
+        for (MetaUnitDO metaUnitDO : metaUnitDOMapper.selectList(null)) {
+            LambdaQueryWrapper<MetaUnitDO> eq = new LambdaQueryWrapper<MetaUnitDO>().eq(MetaUnitDO::getSourceId, metaUnitDO.getSourceId());
+            metaUnitDOMapper.delete(eq);
+        }
         generatorBasics.forEach(g -> {
             Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitOpenInterest();
             Double maxP = g.getMaxP();
@@ -92,6 +97,7 @@ public class ManageFacade {
                     .sourceId(g.getUnitId())
                     .capacity(capacity)
                     .maxCapacity(g.getMinP())
+                    .minCapacity(g.getMinP())
                     .minOutputPrice(minOutPuts.get(g.getUnitId()))
                     .build();
             metaUnitDOMapper.insert(metaUnitDO);
