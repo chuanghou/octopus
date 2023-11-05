@@ -708,20 +708,8 @@ public class UnitFacade {
         List<List<Double>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
         List<List<Double>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
         if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-            List<Pair<Double, List<Double>>> daPs = daSections.stream().map(ds -> {
-                if (ds.size() >= 1) {
-                    return Pair.<Double, List<Double>>of(ds.get(0), ds.subList(1, ds.size()));
-                } else {
-                    return Pair.<Double, List<Double>>of(0D, new ArrayList<>());
-                }
-            }).collect(Collectors.toList());
-            List<Pair<Double, List<Double>>> rtPs = rtSections.stream().map(ds -> {
-                        if (ds.size() >= 1) {
-                            return Pair.<Double, List<Double>>of(ds.get(0), ds.subList(1, ds.size()));
-                        } else {
-                            return Pair.<Double, List<Double>>of(0D, new ArrayList<>());
-                        }
-                    }).collect(Collectors.toList());
+            List<Pair<Double, List<Double>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            List<Pair<Double, List<Double>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
             builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
             builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
             builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
