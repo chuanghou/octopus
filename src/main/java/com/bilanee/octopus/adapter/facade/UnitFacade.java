@@ -172,7 +172,7 @@ public class UnitFacade {
             return Result.success();
         }
         Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
-  ;
+        ;
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         bidPOs.forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
@@ -477,7 +477,7 @@ public class UnitFacade {
      */
     @PostMapping("submitDaBidVO")
     public Result<Void> submitDaBidVO(@NotBlank String stageId,
-                                                    @RequestBody IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
+                                      @RequestBody IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
         StageId parsed = StageId.parse(stageId);
         boolean equals = tunnel.runningComp().getStageId().equals(parsed);
         BizEx.falseThrow(equals, PARAM_FORMAT_WRONG.message("已经进入下一阶段"));
@@ -703,15 +703,21 @@ public class UnitFacade {
         List<List<Double>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
         List<List<Double>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
         if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-
-            List<Pair<Double, List<Double>>> daPs = IntStream.range(0, 24).mapToObj(i -> Pair.<Double, List<Double>>of(0D, new ArrayList<>())).collect(Collectors.toList());
-            if (daSections.size() >= 1) {
-                daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
-            }
-            List<Pair<Double, List<Double>>> rtPs = IntStream.range(0, 24).mapToObj(i -> Pair.<Double, List<Double>>of(0D, new ArrayList<>())).collect(Collectors.toList());
-            if (rtSections.size() >= 1) {
-                rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
-            }
+            List<Pair<Double, List<Double>>> daPs = daSections.stream().map(ds -> {
+                if (ds.size() >= 1) {
+                    return Pair.<Double, List<Double>>of(ds.get(0), ds.subList(1, ds.size()));
+                } else {
+                    return Pair.<Double, List<Double>>of(0D, new ArrayList<>());
+                }
+            }).collect(Collectors.toList());
+            List<Pair<Double, List<Double>>> rtPs = rtSections
+                    .stream().map(ds -> {
+                        if (ds.size() >= 1) {
+                            return Pair.<Double, List<Double>>of(ds.get(0), ds.subList(1, ds.size()));
+                        } else {
+                            return Pair.<Double, List<Double>>of(0D, new ArrayList<>());
+                        }
+                    }).collect(Collectors.toList());
             builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
             builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
             builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
@@ -892,7 +898,7 @@ public class UnitFacade {
 
 
 
-    
+
 
 
 }
