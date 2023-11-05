@@ -620,12 +620,12 @@ public class CompFacade {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
 
-        LambdaQueryWrapper<UnitBasic> in0 = new LambdaQueryWrapper<UnitBasic>().in(UnitBasic::getUnitId, unitIds.keySet());
+        LambdaQueryWrapper<GeneratorBasic> in0 = new LambdaQueryWrapper<GeneratorBasic>().in(GeneratorBasic::getUnitId, unitIds.keySet());
 
-        List<UnitBasic> unitBasics = unitBasicMapper.selectList(in0);
+        List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(in0);
 
-        double classicTotal = unitBasics.stream().filter(unitBasic -> classicUnitIds.containsKey(unitBasic.getUnitId()))
-                .collect(Collectors.summarizingDouble(UnitBasic::getMaxP)).getSum();
+        double classicTotal = generatorBasics.stream().filter(generatorBasic -> classicUnitIds.containsKey(generatorBasic.getUnitId()))
+                .collect(Collectors.summarizingDouble(GeneratorBasic::getMaxP)).getSum();
 
         List<Double> renewableTotals = IntStream.range(0, 24).mapToObj(i -> 0D).collect(Collectors.toList());
         if (!Collect.isEmpty(renewableUnitIds)) {

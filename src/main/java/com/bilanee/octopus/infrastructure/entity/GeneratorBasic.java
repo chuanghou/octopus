@@ -1,6 +1,7 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -8,8 +9,9 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@TableName("unit_basic")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class UnitBasic {
+public class GeneratorBasic {
 
   Integer unitId;
   String unitName;

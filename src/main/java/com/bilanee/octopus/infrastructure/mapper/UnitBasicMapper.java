@@ -1,9 +1,9 @@
 package com.bilanee.octopus.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.bilanee.octopus.infrastructure.entity.UnitBasic;
+import com.bilanee.octopus.infrastructure.entity.GeneratorBasic;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface UnitBasicMapper extends BaseMapper<UnitBasic> {
+public interface UnitBasicMapper extends BaseMapper<GeneratorBasic> {
 }

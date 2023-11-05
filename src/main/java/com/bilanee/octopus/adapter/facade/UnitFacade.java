@@ -635,7 +635,7 @@ public class UnitFacade {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         Integer sourceId = unit.getMetaUnit().getSourceId();
-        LambdaQueryWrapper<UnitBasic> eq = new LambdaQueryWrapper<UnitBasic>().eq(UnitBasic::getUnitId, sourceId);
+        LambdaQueryWrapper<GeneratorBasic> eq = new LambdaQueryWrapper<GeneratorBasic>().eq(GeneratorBasic::getUnitId, sourceId);
         Integer nodeId = unitBasicMapper.selectOne(eq).getNodeId();
         LambdaQueryWrapper<NodalPriceVoltage> eq1 = new LambdaQueryWrapper<NodalPriceVoltage>().eq(NodalPriceVoltage::getRoundId, roundId + 1)
                 .eq(NodalPriceVoltage::getNodeId, nodeId);
