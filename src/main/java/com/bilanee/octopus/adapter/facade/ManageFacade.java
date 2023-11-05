@@ -10,9 +10,9 @@ import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
+import com.bilanee.octopus.infrastructure.entity.IndividualLoadBasic;
 import com.bilanee.octopus.infrastructure.entity.UserDO;
-import com.bilanee.octopus.infrastructure.mapper.CompDOMapper;
-import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.common.Clock;
@@ -54,6 +54,10 @@ public class ManageFacade {
         List<UserDO> userDOs = userDOMapper.selectList(null);
         return Collect.transfer(userDOs, userDO -> new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait()));
     }
+
+    final UnitBasicMapper unitBasicMapper;
+    final LoadBasicMapper loadBasicMapper;
+    final MinOutputCostMapper minOutputCostMapper;
 
     /**
      * 竞赛新建接口
