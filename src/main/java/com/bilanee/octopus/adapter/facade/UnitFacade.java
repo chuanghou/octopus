@@ -667,13 +667,14 @@ public class UnitFacade {
             List<Double> bids = new ArrayList<>();
             List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOS = collect.get(i).stream()
                     .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+            List<Double> das = new ArrayList<>();
+            Double daTotal = daCleared.get(i);
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                bids.add(unit.getMetaUnit().getMinCapacity());
+                das.add(unit.getMetaUnit().getMinCapacity());
+                daTotal = daTotal - unit.getMetaUnit().getMinCapacity();
             }
             generatorDaSegmentBidDOS.forEach(gDO -> bids.add(gDO.getOfferMw()));
-            Double daTotal = daCleared.get(i);
             Double daAccumulate = 0D;
-            List<Double> das = new ArrayList<>();
             if (!daTotal.equals(0D)) {
                 for (Double bid : bids) {
                     if (daAccumulate + bid >= daTotal) {
@@ -687,6 +688,10 @@ public class UnitFacade {
             Double rtAccumulate = 0D;
             Double rtTotal = rtCleared.get(i);
             List<Double> rts = new ArrayList<>();
+            if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
+                rts.add(unit.getMetaUnit().getMinCapacity());
+                rtTotal = rtTotal - unit.getMetaUnit().getMinCapacity();
+            }
             if (!rtTotal.equals(0D)) {
                 for (Double bid : bids) {
                     if (rtAccumulate + bid >= rtTotal) {
