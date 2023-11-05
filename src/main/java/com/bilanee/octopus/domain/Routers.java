@@ -8,6 +8,7 @@ import com.bilanee.octopus.adapter.ws.WsHandler;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
@@ -372,6 +373,31 @@ public class Routers implements EventRouters {
         Ssh.exec("python manage.py intra_da_ruc 2");
         Ssh.exec("python manage.py intra_rt_ed 2");
     }
+
+
+    /**
+     * 执行清算
+     */
+    @EventRouter
+    public void routerAfterIntraSpotClear(CompEvent.Stepped stepped, Context context){
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.END;
+        if (!b0) {
+            return;
+        }
+        Ssh.exec("python manage.py settle");
+    }
+
+    @EventRouter
+    public void routerForFinalClear(CompEvent.Stepped stepped, Context context){
+        StageId now = stepped.getNow();
+        boolean b0 = now.getCompStage() == CompStage.RANKING;
+        if (!b0) {
+            return;
+        }
+        Ssh.exec("python manage.py game_ranking");
+    }
+
 
     @Data
     @Builder
