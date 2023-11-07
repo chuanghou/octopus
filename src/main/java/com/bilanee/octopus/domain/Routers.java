@@ -95,32 +95,27 @@ public class Routers implements EventRouters {
 
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
-        List<Bid> bids = tunnel.listBids(bidQuery);
         String dt = tunnel.runningComp().getDt();
-        Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
-        bidMap.forEach((unitId, userBids) -> {
+        Map<Long, Collection<Bid>> bidMap = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
+        bidMap.forEach((unitId, bids) -> {
             Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
-            userBids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach(((timeFrame, bs) -> {
-                Map<Double, Collection<Bid>> priceGrouped = bids.stream().collect(Collect.listMultiMap(Bid::getPrice)).asMap();
-                if (priceGrouped.size() != 1) {
-                    throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach(((tf, bs) -> {
+                List<Deal> deals = bs.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
+                if (Collect.isEmpty(deals)) {
+                    return;
                 }
-                priceGrouped.forEach((k, cbs) -> {
-                    InterDealDO interDealDO = InterDealDO.builder().roundId(now.getRoundId() + 1)
-                            .resourceId(unit.getMetaUnit().getSourceId())
-                            .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
-                            .dt(dt)
-                            .pfvPrd(timeFrame.getDbCode())
-                            .marketType(now.getTradeStage().getMarketType())
-                            .clearedMw(cbs.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
-                            .clearedPrice(k)
-                            .build();
-                    interDealDOMapper.insert(interDealDO);
-                });
-            } ));
+                InterDealDO interDealDO = InterDealDO.builder().roundId(now.getRoundId() + 1)
+                        .resourceId(unit.getMetaUnit().getSourceId())
+                        .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
+                        .dt(dt)
+                        .pfvPrd(tf.getDbCode())
+                        .marketType(now.getTradeStage().getMarketType())
+                        .clearedMw(deals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
+                        .clearedPrice(deals.get(0).getPrice())
+                        .build();
+                interDealDOMapper.insert(interDealDO);
+            }));
         });
-
-
         storeDb(now);
 
 
