@@ -1007,6 +1007,11 @@ public class CompFacade {
         @BeanMapping(builder = @Builder(disableBuilder = true))
         InterClearanceVO to(InterClearance interClearance);
 
+        @AfterMapping
+        default void after(InterClearance interClearance, @MappingTarget InterClearanceVO interClearanceVO) {
+            interClearanceVO.setDealQuantity(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
+        }
+
         @BeanMapping(builder = @Builder(disableBuilder = true))
         @Mapping(source = "traderId", target = "userId")
         RoundRankVO.Ranking toRound(GameResult gameResult);
