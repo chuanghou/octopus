@@ -25,4 +25,9 @@ public class UserVO {
      */
     String portrait;
 
+    /**
+     * 用户密码
+     */
+    String password;
+
 }

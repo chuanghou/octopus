@@ -72,7 +72,7 @@ public class UserFacade {
     public Result<UserVO> getUser(@RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         UserDO userDO = userDOMapper.selectById(userId);
-        UserVO userVO = new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait());
+        UserVO userVO = new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait(), userDO.getPassword());
         return Result.success(userVO);
     }
 

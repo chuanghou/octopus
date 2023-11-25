@@ -5,6 +5,8 @@ import com.stellariver.milky.common.base.ErrorEnumsBase;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import javax.validation.constraints.NotNull;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -12,7 +14,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GridLimit {
 
+    @NotNull(message = "最大值不为空")
     Double high;
+
+    @NotNull(message = "最小值不为空")
     Double low;
 
     public void check(Double price) {

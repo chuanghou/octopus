@@ -75,7 +75,7 @@ public class CompFacade {
     public Result<CompVO> runningCompVO(@RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         Comp comp = tunnel.runningComp();
-        if (comp == null || !comp.getUserIds().contains(userId)) {
+        if (comp == null || !comp.getUserIds().contains(userId) || comp.getCompStage() == CompStage.END) {
             return Result.error(ErrorEnums.COMP_NOT_EXISTED, ExceptionType.BIZ);
         }
         return Result.success(Convertor.INST.to(comp));

@@ -65,7 +65,9 @@ public class StageId {
             stageId.setTradeStage(TradeStage.AN_INTER);
             stageId.setMarketStatus(MarketStatus.BID);
         } else if (compStage == CompStage.RANKING) {
-            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
+            stageId.setCompStage(CompStage.END);
+        } else if (compStage == CompStage.END) {
+          throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         } else if (compStage == CompStage.TRADE) {
             if (tradeStage == TradeStage.END) {
                 if (stageId.getRoundId() == comp.getRoundTotal() - 1) {
@@ -100,6 +102,8 @@ public class StageId {
             return delayConfig.getQuitCompeteLength();
         } else if (compStage == CompStage.QUIT_RESULT) {
             return delayConfig.getQuitResultLength();
+        } else if (compStage == CompStage.RANKING) {
+            return delayConfig.getRankingLength();
         } else if (compStage == CompStage.TRADE) {
             if (tradeStage != TradeStage.END) {
                 if (marketStatus == MarketStatus.BID) {

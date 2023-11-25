@@ -92,6 +92,7 @@ public class MarketSettingDO {
   String marketStatus;
   String caseSetting;
   Double coalPriceMultiple;
-  Integer qAndADuration;
+  Integer quizCompeteDuration;
+  Integer quizResultDuration;
   String forecastDeviation;
 }

@@ -214,14 +214,9 @@ public class Comp extends AggregateRoot {
         this.tradeStage = command.getStageId().getTradeStage();
         this.marketStatus = command.getStageId().getMarketStatus();
         StageId now = getStageId();
-        if (this.compStage != CompStage.RANKING) {
-            if (command.getDuration() == null) {
-                this.endingTimeStamp = System.currentTimeMillis()
-                        + (long) getStageId().duration(this) * octopusProperties.getDelayUnits();
-            } else {
-                this.endingTimeStamp = System.currentTimeMillis()
-                        +  (long) command.getDuration() * octopusProperties.getDelayUnits();
-            }
+        if (this.compStage != CompStage.END) {
+            long l = command.getDuration() == null ? getStageId().duration(this) : command.getDuration();
+            this.endingTimeStamp = System.currentTimeMillis() + l * octopusProperties.getDelayUnits();
             CompCmd.Step stepCommand = CompCmd.Step.builder().stageId(now.next(this)).build();
             pushDelayCommand(stepCommand, endingTimeStamp);
         } else {

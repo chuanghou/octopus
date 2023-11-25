@@ -31,7 +31,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -66,6 +69,8 @@ public class CompTest {
     Comp.DelayExecutor delayExecutor;
 
 
+
+
     @Test
 
     @AfterEach
@@ -85,13 +90,6 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 2)
-                .quitCompeteLength(5)
-                .quitResultLength(5)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(5)
-                .userIds(Arrays.asList("1000", "1001"))
-                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);
@@ -188,13 +186,6 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 1000)
-                .quitCompeteLength(1000)
-                .quitResultLength(1000)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(1000)
-                .userIds(Arrays.asList("0", "1"))
-                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);
@@ -260,13 +251,6 @@ public class CompTest {
         // 比赛参数
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 1000)
-                .quitCompeteLength(1000)
-                .quitResultLength(1000)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(1000)
-                .userIds(Collect.transfer(userVOs, UserVO::getUserId))
-                .enableQuiz(false)
                 .build();
         Result<Void> result = manageFacade.createComp(compCreatePO);
         Assertions.assertTrue(result.getSuccess());
@@ -517,13 +501,7 @@ public class CompTest {
         // 比赛参数
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 1000)
-                .quitCompeteLength(1000)
-                .quitResultLength(1000)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(1000)
-                .userIds(Collect.transfer(userVOs, UserVO::getUserId))
-                .enableQuiz(false)
+
                 .build();
         Result<Void> result = manageFacade.createComp(compCreatePO);
         Assertions.assertTrue(result.getSuccess());
@@ -553,13 +531,6 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 2000000)
-                .quitCompeteLength(5)
-                .quitResultLength(5)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(5)
-                .userIds(Arrays.asList("1000", "1001"))
-                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);
@@ -721,13 +692,6 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 2000000)
-                .quitCompeteLength(5)
-                .quitResultLength(5)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(5)
-                .userIds(Arrays.asList("1000", "1001"))
-                .enableQuiz(false)
                 .build();
 
         Result<Void> result = manageFacade.createComp(compCreatePO);
@@ -761,13 +725,6 @@ public class CompTest {
 
         CompCreatePO compCreatePO = CompCreatePO.builder()
                 .startTimeStamp(Clock.currentTimeMillis() + 2000000)
-                .quitCompeteLength(5)
-                .quitResultLength(5)
-                .marketStageBidLengths(marketStageBidLengths)
-                .marketStageClearLengths(marketStageClearLengths)
-                .tradeResultLength(5)
-                .userIds(Arrays.asList("1000", "1001"))
-                .enableQuiz(false)
                 .build();
 
         manageFacade.createComp(compCreatePO);

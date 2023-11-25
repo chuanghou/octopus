@@ -10,7 +10,8 @@ public enum CompStage {
     QUIT_COMPETE("知识竞答"),
     QUIT_RESULT("竞答结束"),
     TRADE("交易仿真"),
-    RANKING("成绩排名");
+    RANKING("成绩排名"),
+    END("比赛终止");
 
     final String desc;
 }
