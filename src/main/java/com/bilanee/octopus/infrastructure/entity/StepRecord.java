@@ -1,6 +1,5 @@
 package com.bilanee.octopus.infrastructure.entity;
 
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

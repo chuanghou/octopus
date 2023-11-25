@@ -29,7 +29,6 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +70,11 @@ public class ManageFacade {
      */
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
+
+        Ssh.exec("python manage.py empty_data");
+
+
+
         // TODO 根据参数初始化数据库的marketSetting
         // TODO Ssh.exec(""); 初始化脚本
 
@@ -84,7 +88,7 @@ public class ManageFacade {
             metaUnitDOMapper.delete(eq);
         }
         generatorBasics.forEach(g -> {
-            Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitOpenInterest();
+            Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitPositionInterest();
             Double maxP = g.getMaxP();
             maxP = maxP * maxForwardUnitOpenInterest;
             Map<Direction, Double> map = Collect.asMap(Direction.BUY, 0D, Direction.SELL, maxP);
@@ -104,7 +108,7 @@ public class ManageFacade {
         });
 
         individualLoadBasics.forEach(i -> {
-            Double maxForwardLoadOpenInterest = marketSettingDO.getMaxForwardLoadOpenInterest();
+            Double maxForwardLoadOpenInterest = marketSettingDO.getMaxForwardLoadPositionInterest();
             Double maxP = i.getMaxP();
             maxP = maxP * maxForwardLoadOpenInterest;
             Map<Direction, Double> map = Collect.asMap(Direction.SELL, 0D, Direction.BUY, maxP);
@@ -125,7 +129,7 @@ public class ManageFacade {
 
         delayExecutor.removeStepCommand();
         CompCmd.Create command = Convertor.INST.to(compCreatePO);
-        String dt = DateFormatUtils.format(marketSettingDO.getDt(), "yyyyMMdd");
+        String dt = DateFormatUtils.format(Long.parseLong(marketSettingDO.getDt()), "yyyyMMdd");
         command.setDt(dt);
         if (command.getStartTimeStamp() == null) {
             command.setStartTimeStamp(Clock.currentTimeMillis() + 30 * 1000L);
