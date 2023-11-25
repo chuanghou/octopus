@@ -15,6 +15,7 @@ import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.UnitDO;
+import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
 import com.bilanee.octopus.infrastructure.mapper.MetaUnitDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UnitDOMapper;
 import com.stellariver.milky.common.base.Result;
@@ -788,10 +789,12 @@ public class CompTest {
         System.out.println("");
     }
 
+    @Autowired
+    MarketSettingMapper marketSettingMapper;
     @Test
     public void test() {
-        unitFacade.listSpotInterBidVO("12590.TRADE.1.DA_INTER.BID", TokenUtils.sign("1000"));
-    }
+        marketSettingMapper.selectById(1);
+     }
 
 
 

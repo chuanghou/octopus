@@ -1,6 +1,7 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -28,7 +29,9 @@ public class MarketSettingDO {
   Boolean isBranchConstraint;
   Boolean isSectionConstraint;
   Boolean isSysResConstraint;
+  @TableField("is_unitgroup_MWh_constraint")
   Boolean isUnitgroupMWhConstraint;
+  @TableField("is_unitgroup_MW_constraint")
   Boolean isUnitgroupMwConstraint;
   Boolean isUnitgroupResConstraint;
   Boolean isEnteringReviewStage;
