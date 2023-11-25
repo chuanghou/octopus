@@ -387,7 +387,9 @@ public class ManageFacade {
     }
 
 
-
+    /**
+     * 获取竞赛仿真参数
+     */
     @GetMapping("getSimulateSetting")
     public Result<SimulateSetting> getSimulateSetting() {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
@@ -396,6 +398,9 @@ public class ManageFacade {
     }
 
 
+    /**
+     * 更新竞赛仿真参数
+     */
     @PostMapping("updateSimulateSetting")
     public Result<Void> updateSimulateSetting(@RequestBody SimulateSetting simulateSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
