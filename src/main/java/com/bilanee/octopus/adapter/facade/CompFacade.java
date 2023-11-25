@@ -848,7 +848,7 @@ public class CompFacade {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
         String userId = TokenUtils.getUserId(token);
-        boolean equals = tunnel.runningComp().getTradeStage().equals(TradeStage.END);
+        boolean equals = tunnel.review();
         List<Unit> units = tunnel.listUnits(compId, roundId, equals ? null : userId).stream()
                 .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
                 .filter(u -> u.getMetaUnit().getProvince().equals(Province.TRANSFER))
