@@ -608,7 +608,7 @@ public class UnitFacade {
     @GetMapping("listClearedUnitVOs")
     public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
         UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
-        boolean equals = tunnel.runningComp().getCompStage().equals(CompStage.RANKING);
+        boolean equals = tunnel.review();
         StageId parsed = StageId.parse(stageId);
         Long compId = parsed.getCompId();
         Integer roundId = parsed.getRoundId();

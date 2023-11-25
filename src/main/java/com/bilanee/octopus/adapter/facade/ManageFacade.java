@@ -184,7 +184,7 @@ public class ManageFacade {
         Comp comp = tunnel.runningComp();
         if (comp == null) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("没有运行中的竞赛"));
-        } else if (comp.getCompStage() == CompStage.RANKING) {
+        } else if (comp.getCompStage() == CompStage.END) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();

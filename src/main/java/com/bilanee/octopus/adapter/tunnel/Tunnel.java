@@ -4,6 +4,7 @@ package com.bilanee.octopus.adapter.tunnel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
+import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.basic.enums.UnitType;
@@ -44,6 +45,10 @@ public class Tunnel {
     final StackDiagramDOMapper stackDiagramDOMapper;
     final GeneratorResultMapper generatorResultMapper;
     final LoadResultMapper loadResultMapper;
+
+    public boolean review() {
+        return marketSettingMapper.selectById(1).getIsEnteringReviewStage() && runningComp() != null && CompStage.RANKING.equals(runningComp().getCompStage());
+    }
 
     public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
         Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();

@@ -98,7 +98,7 @@ public class CompFacade {
         List<InterClearance> interClearances = Collect.transfer(clearanceDOs, clearanceDO -> Json.parse(clearanceDO.getClearance(), InterClearance.class));
         Map<TimeFrame, InterClearanceVO> interClearVOs = interClearances.stream().map(Convertor.INST::to).collect(Collectors.toMap(InterClearanceVO::getTimeFrame, i -> i));
 
-        boolean ranking = tunnel.runningComp().getCompStage() == CompStage.RANKING;
+        boolean ranking = tunnel.review();
 
         // 单元信息
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, parsedStageId.getCompId())
@@ -149,7 +149,7 @@ public class CompFacade {
 
         Comp comp = tunnel.runningComp();
         StageId parsed = StageId.parse(stageId);
-        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
+        boolean equals = tunnel.review();
 
         BidQuery bidQuery = BidQuery.builder().compId(parsed.getCompId())
                 .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
@@ -293,7 +293,7 @@ public class CompFacade {
         builder.rtIntraSpotDealVO(rtIntraSpotDealVO);
 
         // 搜索的单元列表
-        boolean equals = comp.getCompStage().equals(CompStage.RANKING);
+        boolean equals = tunnel.review();
         LambdaQueryWrapper<UnitDO> queryWrapper1 = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
                 .eq(UnitDO::getRoundId, parsed.getRoundId())
