@@ -73,8 +73,8 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        CompCreatePO compCreatePO = CompCreatePO.builder().build();
-        manageFacade.createComp(compCreatePO);
+        String sign = TokenUtils.sign("1001");
+        Result<List<IntraClearanceVO>> listResult = compFacade.intraClearanceVO("23701.TRADE.0.AN_INTRA.CLEAR", sign);
 
     }
 

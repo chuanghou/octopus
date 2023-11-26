@@ -288,7 +288,7 @@ public class UnitFacade {
                 BalanceVO balanceVO = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance).build();
                 builder.balanceVOs(Collect.asList(balanceVO));
             } else {
-                if (unit.getMoIntraDirection() == null) {
+                if (unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()) == null) {
                     Double balance0 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
                     BalanceVO balanceVO0 = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance0).build();
                     Double balance1 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection().opposite());

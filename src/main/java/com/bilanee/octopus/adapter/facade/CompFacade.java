@@ -203,7 +203,7 @@ public class CompFacade {
                 dealss.add(subDeals);
             }
 
-            List<DealHist> dealHists = dealss.stream().map(ds -> {
+            List<DealHist> dealHists = dealss.stream().filter(ds -> ds.size() > 0).map(ds -> {
                 Double minSubPrice = ds.stream().min(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
                 Double maxSubPrice = ds.stream().max(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
                 double sum = ds.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
