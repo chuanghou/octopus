@@ -114,7 +114,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     private void doClose() {
 
-        buyPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
+        buyPriorityQueue.forEach(bid -> {
+            bid.setBidStatus(BidStatus.CANCELLED);
+            bid.setCloseBalance(bid.getTransit());
+        });
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
         buyPriorityQueue.forEach(bid -> {
             UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
@@ -122,7 +125,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         });
         buyPriorityQueue.clear();
 
-        sellPriorityQueue.forEach(bid -> bid.setBidStatus(BidStatus.CANCELLED));
+        sellPriorityQueue.forEach(bid -> {
+            bid.setBidStatus(BidStatus.CANCELLED);
+            bid.setCloseBalance(bid.getTransit());
+        });
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
         sellPriorityQueue.forEach(bid -> {
             UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();

@@ -61,7 +61,7 @@ public class IntraClearanceVO {
     /**
      *  成交直方图
      */
-    List<Double> dealHistogram;
+    List<DealHist> dealHists;
 
     /**
      * 市场供需曲线/分设备成交量价/分设备分笔成交量价：单元情况

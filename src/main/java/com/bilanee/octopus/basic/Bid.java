@@ -31,6 +31,7 @@ public class Bid {
     List<Deal> deals = new ArrayList<>();
     Long cancelledTimeStamp;
     BidStatus bidStatus;
+    Double closeBalance;
 
     public Double getTransit() {
         if (bidStatus != BidStatus.CANCELLED) {

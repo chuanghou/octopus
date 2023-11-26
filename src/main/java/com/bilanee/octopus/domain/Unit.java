@@ -24,6 +24,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ public class Unit extends AggregateRoot {
     String userId;
     MetaUnit metaUnit;
     Map<TimeFrame, Map<Direction, Double>> balance;
-    Direction moIntraDirection;
+    Map<TimeFrame, Direction> moIntraDirection;
 
     @StaticWire
     static private UniqueIdGetter uniqueIdGetter;
@@ -63,6 +64,7 @@ public class Unit extends AggregateRoot {
     @ConstructorHandler
     public static Unit create(UnitCmd.Create command, Context context) {
         Unit unit = Convertor.INST.to(command);
+        unit.setMoIntraDirection(new HashMap<>());
         context.publishPlaceHolderEvent(unit.getAggregateId());
         return unit;
     }
@@ -141,10 +143,8 @@ public class Unit extends AggregateRoot {
 
         TradeStage tradeStage = tunnel.runningComp().getStageId().getTradeStage();
         if (tradeStage == TradeStage.MO_INTRA) {
-            if (moIntraDirection == null) {
-                moIntraDirection = bid.getDirection();
-            }
-            BizEx.trueThrow(bid.getDirection() != moIntraDirection, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
+            Direction direction = moIntraDirection.computeIfAbsent(bid.getTimeFrame(), k -> bid.getDirection());
+            BizEx.trueThrow(bid.getDirection() != direction, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
         } else {
             BizEx.trueThrow(bid.getDirection() != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("省内年度报单方向错误"));
         }
@@ -190,7 +190,6 @@ public class Unit extends AggregateRoot {
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
         Unit to(UnitCmd.Create command);
-
 
     }
 

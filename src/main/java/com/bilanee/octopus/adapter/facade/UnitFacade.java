@@ -165,14 +165,17 @@ public class UnitFacade {
      */
     @PostMapping("submitInterBidsPO")
     public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
+
         List<BidPO> bidPOs = interBidsPO.getBidPOs().stream()
-                .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0).collect(Collectors.toList());
-        bidPOs = bidPOs.stream().filter(bidPO -> bidPO.getPrice() != null && bidPO.getPrice() > 0).collect(Collectors.toList());
+                .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0)
+                .filter(bidPO -> bidPO.getPrice() != null)
+                .collect(Collectors.toList());
+
         if (Collect.isEmpty(bidPOs)) {
             return Result.success();
         }
-        Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
-        ;
+
+        Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();;
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         bidPOs.forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
@@ -292,8 +295,8 @@ public class UnitFacade {
                     BalanceVO balanceVO1 = BalanceVO.builder().direction(unitType.generalDirection().opposite()).balance(balance1).build();
                     builder.balanceVOs(Collect.asList(balanceVO0, balanceVO1));
                 } else {
-                    Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unit.getMoIntraDirection());
-                    BalanceVO balanceVO = BalanceVO.builder().direction(unit.getMoIntraDirection()).balance(balance).build();
+                    Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()));
+                    BalanceVO balanceVO = BalanceVO.builder().direction(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame())).balance(balance).build();
                     builder.balanceVOs(Collect.asList(balanceVO));
                 }
             }

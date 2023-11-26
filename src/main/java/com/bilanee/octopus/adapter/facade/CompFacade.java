@@ -177,18 +177,38 @@ public class CompFacade {
             Double totalVolume = deals.stream().map(d -> d.getPrice() * d.getQuantity()).reduce(0D, Double::sum);
             Double totalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
             Double averagePrice = totalQuantity.equals(0D) ? null : (totalVolume / totalQuantity);
-            Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).map(Bid::getTransit).reduce(0D, Double::sum);
-            Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL).map(Bid::getTransit).reduce(0D, Double::sum);
+            Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
+                    .map(Bid::getCloseBalance).filter(Objects::nonNull).reduce(0D, Double::sum);
+            Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
+                    .map(Bid::getCloseBalance).filter(Objects::nonNull).reduce(0D, Double::sum);
 
             List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                     .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
             List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
-            List<Predicate<Deal>> selectors = IntStream.range(0, 10)
-                    .mapToObj(i -> (Predicate<Deal>) d -> d.getPrice() > i * 200D && d.getPrice() <= (i + 1) * 200).collect(Collectors.toList());
+            deals = deals.stream().sorted(Comparator.comparing(Deal::getPrice)).collect(Collectors.toList());
 
-            List<Double> dealHistogram = deals.stream().collect(Collect.select(selectors))
-                    .stream().map(ds -> ds.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum()).collect(Collectors.toList());
+            int baseSize = deals.size() / 10;
+            int leftSize = deals.size() - 10 * baseSize;
+            int begin = 0;
+            List<List<Deal>> dealss = new ArrayList<>();
+            int extendSize = baseSize + 1;
+            for (int i = 0; i < leftSize; i++) {
+                List<Deal> subDeals = deals.subList(i * extendSize, (i + 1) * extendSize);
+                dealss.add(subDeals);
+            }
+            int beginIndex = leftSize * extendSize;
+            for (int i = 0; i < 10 - leftSize; i++) {
+                List<Deal> subDeals = deals.subList(beginIndex + i * baseSize, beginIndex + (i + 1) * baseSize);
+                dealss.add(subDeals);
+            }
+
+            List<DealHist> dealHists = dealss.stream().map(ds -> {
+                Double minSubPrice = ds.stream().min(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
+                Double maxSubPrice = ds.stream().max(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
+                double sum = ds.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+                return DealHist.builder().left(minSubPrice).right(maxSubPrice).value(sum).build();
+            }).collect(Collectors.toList());
 
             Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
             List<UnitDealVO> unitDealVOs = bidMap.entrySet().stream().map(ee -> {
@@ -217,12 +237,11 @@ public class CompFacade {
                     .totalDealQuantity(totalQuantity)
                     .unitVOs(unitVOs)
                     .unitDealVOS(unitDealVOs)
-                    .dealHistogram(dealHistogram)
+                    .dealHists(dealHists)
                     .build();
         }).collect(Collectors.toList());
         return Result.success(intraClearanceVOs);
     }
-
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
         List<Bid> sortedBids = bids.stream().sorted(comparator).collect(Collectors.toList());

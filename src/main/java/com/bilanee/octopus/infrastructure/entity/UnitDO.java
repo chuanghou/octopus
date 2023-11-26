@@ -33,7 +33,8 @@ public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {
     MetaUnit metaUnit;
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> balance;
-    Direction moIntraDirection;
+    @TableField(typeHandler = MoIntraDirectionHandler.class)
+    Map<TimeFrame, Direction> moIntraDirection;
 
 
     @Override

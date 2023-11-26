@@ -38,6 +38,7 @@ public class BidDO {
     Long declareTimeStamp;
     Long cancelledTimeStamp;
     BidStatus bidStatus;
+    Double closeBalance;
 
     static public class DealHandlers extends ListJsonHandler<Deal> {};
 
