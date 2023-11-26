@@ -186,27 +186,33 @@ public class CompFacade {
                     .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
             List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
-            deals = deals.stream().sorted(Comparator.comparing(Deal::getPrice)).collect(Collectors.toList());
+            List<Pair<Double, Double>> cDeals = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).flatMap(bid -> bid.getDeals().stream())
+                    .collect(Collectors.groupingBy(Deal::getPrice)).entrySet().stream()
+                    .map(ee -> Pair.of(ee.getKey(), ee.getValue().stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum()))
+                    .collect(Collectors.toList());
 
-            int baseSize = deals.size() / 10;
-            int leftSize = deals.size() - 10 * baseSize;
+            cDeals = cDeals.stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList());
+
+
+            int baseSize = cDeals.size() / 10;
+            int leftSize = cDeals.size() - 10 * baseSize;
             int begin = 0;
-            List<List<Deal>> dealss = new ArrayList<>();
+            List<List<Pair<Double, Double>>> cDealss = new ArrayList<>();
             int extendSize = baseSize + 1;
             for (int i = 0; i < leftSize; i++) {
-                List<Deal> subDeals = deals.subList(i * extendSize, (i + 1) * extendSize);
-                dealss.add(subDeals);
+                List<Pair<Double, Double>> subDeals = cDeals.subList(i * extendSize, (i + 1) * extendSize);
+                cDealss.add(subDeals);
             }
             int beginIndex = leftSize * extendSize;
             for (int i = 0; i < 10 - leftSize; i++) {
-                List<Deal> subDeals = deals.subList(beginIndex + i * baseSize, beginIndex + (i + 1) * baseSize);
-                dealss.add(subDeals);
+                List<Pair<Double, Double>> subDeals = cDeals.subList(beginIndex + i * baseSize, beginIndex + (i + 1) * baseSize);
+                cDealss.add(subDeals);
             }
 
-            List<DealHist> dealHists = dealss.stream().filter(ds -> ds.size() > 0).map(ds -> {
-                Double minSubPrice = ds.stream().min(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
-                Double maxSubPrice = ds.stream().max(Comparator.comparing(Deal::getPrice)).orElseThrow(SysEx::unreachable).getPrice();
-                double sum = ds.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+            List<DealHist> dealHists = cDealss.stream().filter(ds -> ds.size() > 0).map(ds -> {
+                Double minSubPrice = ds.stream().min(Comparator.comparing(Pair::getLeft)).orElseThrow(SysEx::unreachable).getKey();
+                Double maxSubPrice = ds.stream().max(Comparator.comparing(Pair::getLeft)).orElseThrow(SysEx::unreachable).getKey();
+                double sum = ds.stream().collect(Collectors.summarizingDouble(Pair::getRight)).getSum();
                 return DealHist.builder().left(minSubPrice).right(maxSubPrice).value(sum).build();
             }).collect(Collectors.toList());
 
