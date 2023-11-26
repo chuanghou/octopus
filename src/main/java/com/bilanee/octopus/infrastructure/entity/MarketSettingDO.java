@@ -64,7 +64,6 @@ public class MarketSettingDO {
   Integer robotNum;
   Integer roundId;
   Integer roundNum;
-  Integer marketType;
   Integer intraprovincialAnnualBidDuration;
   Integer intraprovincialMonthlyBidDuration;
   Integer intraprovincialSpotBidDuration;
@@ -91,8 +90,6 @@ public class MarketSettingDO {
   Integer paperId;
   Double maxForwardUnitPositionInterest;
   Double maxForwardLoadPositionInterest;
-  String agentConfig;
-  String marketStatus;
   String caseSetting;
   Double coalPriceMultiple;
   Integer quizCompeteDuration;

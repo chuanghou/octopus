@@ -73,15 +73,12 @@ public class ManageFacade {
      * 竞赛新建接口
      * @param compCreatePO 创建竞赛参数
      */
+
+
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
-
         Ssh.exec("python manage.py empty_data");
-
-
-
-        // TODO 根据参数初始化数据库的marketSetting
-        // TODO Ssh.exec(""); 初始化脚本
+        Ssh.exec("python manage.py init_data");
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
