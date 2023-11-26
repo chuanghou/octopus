@@ -115,8 +115,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
     private void doClose() {
 
         buyPriorityQueue.forEach(bid -> {
-            bid.setBidStatus(BidStatus.CANCELLED);
             bid.setCloseBalance(bid.getTransit());
+            bid.setBidStatus(BidStatus.CANCELLED);
         });
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
         buyPriorityQueue.forEach(bid -> {
@@ -126,8 +126,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         buyPriorityQueue.clear();
 
         sellPriorityQueue.forEach(bid -> {
-            bid.setBidStatus(BidStatus.CANCELLED);
             bid.setCloseBalance(bid.getTransit());
+            bid.setBidStatus(BidStatus.CANCELLED);
         });
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
         sellPriorityQueue.forEach(bid -> {
