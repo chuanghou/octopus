@@ -31,7 +31,7 @@ public class BidPO {
     /**
      * 申报价格
      */
-    @Positive @Digits(integer = 10, fraction = 0, message = "格式不满足要求")
+    @Digits(integer = 10, fraction = 0, message = "格式不满足要求")
     Double price;
 
     /**

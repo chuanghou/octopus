@@ -192,20 +192,27 @@ public class CompFacade {
 
             cDeals = cDeals.stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList());
 
-
-            int baseSize = cDeals.size() / 10;
-            int leftSize = cDeals.size() - 10 * baseSize;
-            int begin = 0;
             List<List<Pair<Double, Double>>> cDealss = new ArrayList<>();
-            int extendSize = baseSize + 1;
-            for (int i = 0; i < leftSize; i++) {
-                List<Pair<Double, Double>> subDeals = cDeals.subList(i * extendSize, (i + 1) * extendSize);
-                cDealss.add(subDeals);
-            }
-            int beginIndex = leftSize * extendSize;
-            for (int i = 0; i < 10 - leftSize; i++) {
-                List<Pair<Double, Double>> subDeals = cDeals.subList(beginIndex + i * baseSize, beginIndex + (i + 1) * baseSize);
-                cDealss.add(subDeals);
+            if (!cDeals.isEmpty()) {
+                if (cDeals.size() == 1) {
+                    cDealss = cDeals.stream().map(Collect::asList).collect(Collectors.toList());
+                } else {
+                    Double min = cDeals.stream().min(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
+                    Double max = cDeals.stream().max(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
+                    double v = (max - min) / 10;
+                    for (int i = 0; i < 10; i++) {
+                        Double left = min + i * v;
+                        Double right = min + (i + 1) * v;
+                        List<Pair<Double, Double>> collectDeals = cDeals.stream()
+                                .filter(cDeal -> cDeal.getLeft() >= left && cDeal.getLeft() < right)
+                                .collect(Collectors.toList());
+                        if (Math.abs(right - max) < 1e8) {
+                            collectDeals = new ArrayList<>(collectDeals);
+                            collectDeals.addAll(cDeals.stream().filter(cD -> cD.getLeft().equals(max)).collect(Collectors.toList()));
+                        }
+                        cDealss.add(collectDeals);
+                    }
+                }
             }
 
             List<DealHist> dealHists = cDealss.stream().filter(ds -> ds.size() > 0).map(ds -> {
