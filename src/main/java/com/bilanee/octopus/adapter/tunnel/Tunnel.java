@@ -72,7 +72,7 @@ public class Tunnel {
                } else if (metaUnit.getUnitType() == UnitType.LOAD) {
                    LambdaQueryWrapper<LoadResult> eq = new LambdaQueryWrapper<LoadResult>()
                            .eq(LoadResult::getRoundId, roundId + 1)
-                           .eq(LoadResult::getLoadId, metaUnit.getSourceId() + 1);
+                           .eq(LoadResult::getLoadId, metaUnit.getSourceId());
                    LoadResult loadResult = loadResultMapper.selectOne(eq);
                    loadResult.setTraderId(userId);
                    loadResultMapper.updateById(loadResult);

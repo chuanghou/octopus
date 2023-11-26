@@ -6,10 +6,7 @@ import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.BasicConvertor;
-import com.bilanee.octopus.basic.ErrorEnums;
-import com.bilanee.octopus.basic.GridLimit;
-import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
@@ -26,8 +23,10 @@ import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
@@ -75,6 +74,7 @@ public class ManageFacade {
      */
 
 
+    @SneakyThrows
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
         Ssh.exec("python manage.py empty_data");
@@ -89,6 +89,7 @@ public class ManageFacade {
             LambdaQueryWrapper<MetaUnitDO> eq = new LambdaQueryWrapper<MetaUnitDO>().eq(MetaUnitDO::getSourceId, metaUnitDO.getSourceId());
             metaUnitDOMapper.delete(eq);
         }
+
         generatorBasics.forEach(g -> {
             Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitPositionInterest();
             Double maxP = g.getMaxP();
@@ -166,7 +167,7 @@ public class ManageFacade {
                 .startTimeStamp(compCreatePO.getStartTimeStamp() == null ? Clock.currentTimeMillis() + 30_000L : compCreatePO.getStartTimeStamp())
                 .delayConfig(delayConfig)
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
-                .dt(DateFormatUtils.format(Long.parseLong(marketSettingDO.getDt()), "yyyyMMdd"))
+                .dt(marketSettingDO.getDt())
                 .build();
 
         CommandBus.accept(command, new HashMap<>());

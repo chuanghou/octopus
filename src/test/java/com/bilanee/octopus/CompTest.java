@@ -9,6 +9,7 @@ import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
@@ -70,9 +71,12 @@ public class CompTest {
     Comp.DelayExecutor delayExecutor;
 
 
-
-
     @Test
+    public void clearTest() {
+        CompCreatePO compCreatePO = CompCreatePO.builder().build();
+        manageFacade.createComp(compCreatePO);
+
+    }
 
     @AfterEach
     public void clear() {
