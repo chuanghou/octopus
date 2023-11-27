@@ -3,6 +3,7 @@ package com.bilanee.octopus.adapter.facade;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.vo.UnitVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -11,9 +12,11 @@ import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.CompCmd;
 import com.bilanee.octopus.domain.DelayConfig;
+import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
+import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
@@ -31,10 +34,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,10 +68,33 @@ public class ManageFacade {
     final MarketSettingMapper marketSettingMapper;
     final MetaUnitDOMapper metaUnitDOMapper;
     final MinOutputCostDOMapper minOutputCostDOMapper;
+
+
     /**
-     * 竞赛新建接口
-     * @param compCreatePO 创建竞赛参数
+     * 管理员页面RunningVO接口，当data为null时候，表示当前没有竞赛
      */
+    @GetMapping("runningCompVO")
+    public Result<CompVO> runningCompVO() {
+        Comp comp = tunnel.runningComp();
+        if (comp == null || comp.getCompStage() == CompStage.END) {
+            return Result.success(null);
+        }
+        return Result.success(CompFacade.Convertor.INST.to(comp));
+    }
+
+    /**
+     * 管理员页面查看机组负荷分配结果
+     */
+    @GetMapping("listUnits")
+    @SuppressWarnings("unchecked")
+    public Result<List<Unit>> listUnits() {
+        CompVO compVO = runningCompVO().getData();
+        if (compVO == null) {
+            return Result.success(Collections.EMPTY_LIST);
+        }
+        List<Unit> units = tunnel.listUnits(compVO.getCompId(), null, null);
+        return Result.success(units);
+    }
 
 
     @SneakyThrows

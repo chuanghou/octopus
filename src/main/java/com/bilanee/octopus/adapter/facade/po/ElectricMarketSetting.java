@@ -1,6 +1,9 @@
 package com.bilanee.octopus.adapter.facade.po;
 
 import com.bilanee.octopus.basic.GridLimit;
+import com.stellariver.milky.common.base.AfterValidation;
+import com.stellariver.milky.common.base.BizEx;
+import com.stellariver.milky.common.base.ErrorEnumsBase;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -73,6 +76,12 @@ public class ElectricMarketSetting {
      */
     @NotNull(message = "中长期负荷持仓量上限比例不可为空")
     Double maxForwardLoadPositionInterest;
+
+
+    @AfterValidation
+    public void afterValidation() {
+        BizEx.trueThrow(coalPriceMultiple < 0.1 || coalPriceMultiple > 10, ErrorEnumsBase.PARAM_FORMAT_WRONG.message("煤价系数不合法"));
+    }
 
 
 }
