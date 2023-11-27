@@ -712,7 +712,7 @@ public class CompTest {
         MetaUnit metaUnit = classicGenerator.getMetaUnit();
         Double minCapacity = metaUnit.getMinCapacity();
         Double maxCapacity = metaUnit.getMaxCapacity();
-        double cost = unitFacade.calculateDaCost(classicGenerator.getUnitId(), minCapacity, minCapacity + 280);
+        double cost = unitFacade.calculateDaCost(classicGenerator.getUnitId(), minCapacity, minCapacity + 280).getData();
         compFacade.listSpotMarketVOs(stageId.toString(), Province.RECEIVER.name(), TokenUtils.sign("10000"));
         compFacade.listSpotMarketVOs(stageId.toString(), Province.TRANSFER.name(), TokenUtils.sign("10000"));
 

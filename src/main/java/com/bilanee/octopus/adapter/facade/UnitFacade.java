@@ -536,13 +536,13 @@ public class UnitFacade {
      * @param end 待计算报价段终点
      */
     @GetMapping("calculateDaCost")
-    public double calculateDaCost(@NotNull @Positive Long unitId,
+    public Result<Double> calculateDaCost(@NotNull @Positive Long unitId,
                                   @NotNull @Positive Double start,
                                   @NotNull @Positive Double end) {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
-            return -400;
+            return Result.success(-400D);
         }
         Double minCapacity = unit.getMetaUnit().getMinCapacity();
         LambdaQueryWrapper<ThermalCostDO> eq = new LambdaQueryWrapper<ThermalCostDO>().eq(ThermalCostDO::getUnitId, unit.getMetaUnit().getSourceId());
@@ -561,7 +561,7 @@ public class UnitFacade {
                 accumulate += (segment.getEnd() - segment.getStart()) * segment.getPrice();
             }
         }
-        return accumulate/(end - start);
+        return Result.success(accumulate/(end - start));
     }
 
     private List<Segment> buildCostSegments(List<ThermalCostDO> thermalCostDOs, Double start) {
