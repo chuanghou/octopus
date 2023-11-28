@@ -62,8 +62,9 @@ public class WsHandler {
     public void onClose(Session session) {
         String sessionId = session.getId();
         String userId = idMap.remove(sessionId);
-        if (sessions.get(userId) != null) {
-            sessions.get(userId).remove(sessionId);
+        Map<String, Session> map = sessions.get(userId);
+        if (map != null) {
+           map.remove(sessionId);
         }
     }
 
@@ -71,8 +72,9 @@ public class WsHandler {
     public void onError(Session session, Throwable error) {
         String sessionId = session.getId();
         String userId = idMap.remove(sessionId);
-        if (sessions.get(userId) != null) {
-            sessions.get(userId).remove(sessionId);
+        Map<String, Session> map = sessions.get(userId);
+        if (map != null) {
+            map.remove(sessionId);
         }
         log.error(session.toString(), error);
     }
