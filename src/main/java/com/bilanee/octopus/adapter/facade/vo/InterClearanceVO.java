@@ -79,6 +79,16 @@ public class InterClearanceVO {
      */
     List<UnitDealVO> unitDealVOS;
 
+    /**
+     * 出清曲线起点
+     */
+    Point<Double> start;
+
+    /**
+     * 出清曲线终点
+     */
+    Point<Double> end;
+
 
 
 

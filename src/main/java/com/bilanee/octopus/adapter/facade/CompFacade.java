@@ -1037,7 +1037,10 @@ public class CompFacade {
 
         @AfterMapping
         default void after(InterClearance interClearance, @MappingTarget InterClearanceVO interClearanceVO) {
-            interClearanceVO.setDealQuantity(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
+            interClearanceVO.setDealQuantity(interClearance.getMarketQuantity());
+            double quantity = interClearance.getNonMarketQuantity() + interClearance.getMarketQuantity();
+            interClearanceVO.setStart(Point.<Double>builder().x(0D).y(interClearance.getDealPrice()).build());
+            interClearanceVO.setEnd(Point.<Double>builder().x(quantity).y(interClearance.getDealPrice()).build());
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
