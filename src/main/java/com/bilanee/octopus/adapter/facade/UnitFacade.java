@@ -175,7 +175,7 @@ public class UnitFacade {
             return Result.success();
         }
 
-        Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();;
+        Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         bidPOs.forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
@@ -229,7 +229,7 @@ public class UnitFacade {
         List<Unit> units = future2.get();
 
         StepRecord stepRecord = tunnel.runningComp().getStepRecords().stream()
-                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(null);
+                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElse(null);
 
         List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
