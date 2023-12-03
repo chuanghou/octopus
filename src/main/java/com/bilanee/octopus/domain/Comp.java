@@ -225,7 +225,7 @@ public class Comp extends AggregateRoot {
 
         StepRecord stepRecord = StepRecord.builder().stageId(getStageId().toString())
                 .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
-        this.getStepRecords().add(stepRecord);
+        stepRecords.add(stepRecord);
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);
