@@ -230,7 +230,7 @@ public class ManageFacade {
      */
     @GetMapping("getExampleSetting")
     public Result<ExampleSetting> getExampleSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         String caseSetting = marketSettingDO.getCaseSetting();
         ExampleSetting.ExampleSettingBuilder builder = ExampleSetting.builder();
         if (Kit.notBlank(caseSetting)) {
@@ -280,7 +280,7 @@ public class ManageFacade {
      */
     @GetMapping("updateExampleSetting")
     public Result<Void> updateExampleSetting(@RequestBody ExampleSetting exampleSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         String caseSetting = (exampleSetting.getTransferDiffer() ? "1" : "0") +
                 (exampleSetting.getTransferLoadPeak() ? "1" : "0") +
                 (exampleSetting.getReceiverDiffer() ? "1" : "0") +
@@ -320,7 +320,7 @@ public class ManageFacade {
      */
     @GetMapping("getQuizSetting")
     public Result<QuizSetting> getQuizSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         QuizSetting quizSetting = QuizSetting.builder().quizId(marketSettingDO.getPaperId())
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
                 .quizCompeteDuration(marketSettingDO.getQuizCompeteDuration())
@@ -335,7 +335,7 @@ public class ManageFacade {
      */
     @GetMapping("updateQuizSetting")
     public Result<Void> updateQuizSetting(@RequestBody QuizSetting quizSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         marketSettingDO.setIsConductingQAndAModule(quizSetting.getEnableQuiz());
         marketSettingDO.setPaperId(quizSetting.getQuizId());
         marketSettingDO.setQuizCompeteDuration(quizSetting.getQuizCompeteDuration());
@@ -351,7 +351,7 @@ public class ManageFacade {
      */
     @GetMapping("getElectricMarketSetting")
     public Result<ElectricMarketSettingVO> getElectricMarketSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         ElectricMarketSettingVO electricMarketSettingVO = ElectricMarketSettingVO.builder()
                 .generatorPriceLimit(GridLimit.builder().high(marketSettingDO.getOfferPriceCap()).low(marketSettingDO.getOfferPriceFloor()).build())
                 .loadPriceLimit(GridLimit.builder().high(marketSettingDO.getBidPriceCap()).low(marketSettingDO.getBidPriceFloor()).build())
@@ -390,7 +390,7 @@ public class ManageFacade {
      */
     @GetMapping("updateElectricMarketSetting")
     public Result<Void> updateElectricMarketSetting(@RequestBody ElectricMarketSetting electricMarketSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         marketSettingDO.setOfferPriceCap(electricMarketSetting.getGeneratorPriceLimit().getHigh());
         marketSettingDO.setOfferPriceFloor(electricMarketSetting.getGeneratorPriceLimit().getLow());
         marketSettingDO.setBidPriceCap(electricMarketSetting.getLoadPriceLimit().getHigh());
@@ -412,7 +412,7 @@ public class ManageFacade {
      */
     @GetMapping("getSimulateSetting")
     public Result<SimulateSetting> getSimulateSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         SimulateSetting simulateSetting = Convertor.INST.to(marketSettingDO);
         return Result.success(simulateSetting);
     }
@@ -423,7 +423,7 @@ public class ManageFacade {
      */
     @PostMapping("updateSimulateSetting")
     public Result<Void> updateSimulateSetting(@RequestBody SimulateSetting simulateSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         marketSettingDO.setIntraprovincialAnnualBidDuration(simulateSetting.getIntraprovincialAnnualBidDuration());
         marketSettingDO.setIntraprovincialMonthlyBidDuration(simulateSetting.getIntraprovincialMonthlyBidDuration());
         marketSettingDO.setIntraprovincialSpotBidDuration(simulateSetting.getIntraprovincialSpotBidDuration());
