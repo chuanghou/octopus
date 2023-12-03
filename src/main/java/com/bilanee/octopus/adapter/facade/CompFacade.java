@@ -148,19 +148,17 @@ public class CompFacade {
 
         Comp comp = tunnel.runningComp();
         StageId parsed = StageId.parse(stageId);
-        boolean equals = tunnel.review();
+        boolean review = tunnel.review();
+
+        String userId = TokenUtils.getUserId(token);
 
         BidQuery bidQuery = BidQuery.builder().compId(parsed.getCompId())
                 .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
                 .build();
-        if (!equals) {
-            bidQuery.setUserId(TokenUtils.getUserId(token));
-        }
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsed.getCompId())
-                .eq(UnitDO::getRoundId, parsed.getRoundId())
-                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+                .eq(UnitDO::getRoundId, parsed.getRoundId());
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
 
 
@@ -180,9 +178,6 @@ public class CompFacade {
             Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
                     .map(Bid::getCloseBalance).filter(Objects::nonNull).reduce(0D, Double::sum);
 
-            List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
-                    .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
-            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
 
             List<Pair<Double, Double>> cDeals = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).flatMap(bid -> bid.getDeals().stream())
                     .collect(Collectors.groupingBy(Deal::getPrice)).entrySet().stream()
@@ -219,20 +214,26 @@ public class CompFacade {
                 return DealHist.builder().left(minSubPrice).right(maxSubPrice).value(sum).build();
             }).collect(Collectors.toList());
 
-            Map<Long, Collection<Bid>> bidMap = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
-            List<UnitDealVO> unitDealVOs = bidMap.entrySet().stream().map(ee -> {
-                Long unitId = ee.getKey();
-                Collection<Bid> unitBids = ee.getValue();
-                List<Deal> unitDeals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
-                Double unitTotalVolume = unitDeals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
-                Double unitTotalQuantity = unitDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-                return UnitDealVO.builder()
-                        .unitId(unitId)
-                        .averagePrice(unitTotalVolume / unitTotalQuantity)
-                        .totalQuantity(unitTotalQuantity)
-                        .deals(unitDeals)
-                        .build();
-            }).collect(Collectors.toList());
+
+            List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                    .filter(unit -> review || unit.getUserId().equals(userId))
+                    .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
+            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+
+            List<UnitDealVO> unitDealVOs = bids.stream().filter(unit -> review || unit.getUserId().equals(userId))
+                    .collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(ee -> {
+                        Long unitId = ee.getKey();
+                        Collection<Bid> unitBids = ee.getValue();
+                        List<Deal> unitDeals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+                        Double unitTotalVolume = unitDeals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
+                        Double unitTotalQuantity = unitDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                        return UnitDealVO.builder()
+                                .unitId(unitId)
+                                .averagePrice(unitTotalVolume / unitTotalQuantity)
+                                .totalQuantity(unitTotalQuantity)
+                                .deals(unitDeals)
+                                .build();
+                    }).collect(Collectors.toList());
 
 
             return IntraClearanceVO.builder()

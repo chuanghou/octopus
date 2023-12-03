@@ -168,7 +168,8 @@ public class Unit extends AggregateRoot {
     public void handle(UnitCmd.IntraBidCancelled command, Context context) {
         Bid bid = tunnel.getByBidId(command.getCancelBidId());
         Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance + bid.getTransit());
+        double returnBalance = bid.getQuantity() - bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance + returnBalance);
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
