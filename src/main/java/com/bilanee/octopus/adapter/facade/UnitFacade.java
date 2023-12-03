@@ -229,7 +229,7 @@ public class UnitFacade {
         List<Unit> units = future2.get();
 
         StepRecord stepRecord = tunnel.runningComp().getStepRecords().stream()
-                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
+                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(null);
 
         List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
