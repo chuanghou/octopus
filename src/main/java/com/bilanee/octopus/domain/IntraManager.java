@@ -41,6 +41,10 @@ public class IntraManager implements ApplicationRunner {
         intraProcessors.values().forEach(IntraProcessor::close);
     }
 
+    public void clear() {
+        intraProcessors.values().forEach(IntraProcessor::clear);
+    }
+
     @Override
     public void run(ApplicationArguments args) {
 

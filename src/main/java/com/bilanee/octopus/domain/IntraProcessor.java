@@ -89,6 +89,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         disruptor.publishEvent((rtBidContainer, sequence) -> rtBidContainer.setOperation(Operation.CLOSE));
     }
 
+    public void clear() {
+        buyPriorityQueue.clear();
+        sellPriorityQueue.clear();
+    }
 
     @Override
     public void onEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {

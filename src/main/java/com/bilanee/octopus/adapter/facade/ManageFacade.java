@@ -11,10 +11,7 @@ import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.*;
-import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.CompCmd;
-import com.bilanee.octopus.domain.DelayConfig;
-import com.bilanee.octopus.domain.Unit;
+import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
@@ -52,6 +49,7 @@ public class ManageFacade {
     final UserDOMapper userDOMapper;
     final Tunnel tunnel;
     final Comp.DelayExecutor delayExecutor;
+    final IntraManager intraManager;
 
     /**
      * 获取所有用户信息
@@ -99,6 +97,8 @@ public class ManageFacade {
     @SneakyThrows
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
+        intraManager.clear();
+
         Ssh.exec("python manage.py empty_data");
         Ssh.exec("python manage.py init_data");
 
