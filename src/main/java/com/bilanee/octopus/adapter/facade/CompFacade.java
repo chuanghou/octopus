@@ -186,7 +186,7 @@ public class CompFacade {
 
             cDeals = cDeals.stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList());
 
-            List<List<Pair<Double, Double>>> cDealss = new ArrayList<>();
+            List<DealHist> dealHists = new ArrayList<>();
             if (!cDeals.isEmpty()) {
                 Double min = cDeals.stream().min(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
                 Double max = cDeals.stream().max(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
@@ -201,19 +201,11 @@ public class CompFacade {
                         collectDeals = new ArrayList<>(collectDeals);
                         collectDeals.addAll(cDeals.stream().filter(cD -> cD.getLeft().equals(max)).collect(Collectors.toList()));
                     }
-                    if (Collect.isNotEmpty(collectDeals)) {
-                        cDealss.add(collectDeals);
-                    }
+                    double sum = collectDeals.stream().collect(Collectors.summarizingDouble(Pair::getRight)).getSum();
+                    DealHist dealHist = DealHist.builder().left(left).right(right).value(sum).build();
+                    dealHists.add(dealHist);
                 }
             }
-
-            List<DealHist> dealHists = cDealss.stream().filter(ds -> ds.size() > 0).map(ds -> {
-                Double minSubPrice = ds.stream().min(Comparator.comparing(Pair::getLeft)).orElseThrow(SysEx::unreachable).getKey();
-                Double maxSubPrice = ds.stream().max(Comparator.comparing(Pair::getLeft)).orElseThrow(SysEx::unreachable).getKey();
-                double sum = ds.stream().collect(Collectors.summarizingDouble(Pair::getRight)).getSum();
-                return DealHist.builder().left(minSubPrice).right(maxSubPrice).value(sum).build();
-            }).collect(Collectors.toList());
-
 
             List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                     .filter(unit -> review || unit.getUserId().equals(userId))
