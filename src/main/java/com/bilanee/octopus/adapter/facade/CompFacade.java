@@ -197,7 +197,7 @@ public class CompFacade {
                     List<Pair<Double, Double>> collectDeals = cDeals.stream()
                             .filter(cDeal -> cDeal.getLeft() >= left && cDeal.getLeft() < right)
                             .collect(Collectors.toList());
-                    if (Math.abs(right - max) < 1e8) {
+                    if (Math.abs(right - max) < 1e-8) {
                         collectDeals = new ArrayList<>(collectDeals);
                         collectDeals.addAll(cDeals.stream().filter(cD -> cD.getLeft().equals(max)).collect(Collectors.toList()));
                     }
