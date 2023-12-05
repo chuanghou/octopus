@@ -50,7 +50,16 @@ public class ManageFacade {
     final Tunnel tunnel;
     final Comp.DelayExecutor delayExecutor;
     final IntraManager intraManager;
-
+    final UnitBasicMapper unitBasicMapper;
+    final LoadBasicMapper loadBasicMapper;
+    final MarketSettingMapper marketSettingMapper;
+    final MetaUnitDOMapper metaUnitDOMapper;
+    final MinOutputCostDOMapper minOutputCostDOMapper;
+    final BidDOMapper bidDOMapper;
+    final ClearanceDOMapper clearanceDOMapper;
+    final IntraInstantDOMapper intraInstantDOMapper;
+    final IntraQuotationDOMapper intraQuotationDOMapper;
+    final UnitDOMapper unitDOMapper;
     /**
      * 获取所有用户信息
      */
@@ -60,11 +69,7 @@ public class ManageFacade {
         return Collect.transfer(userDOs, userDO -> new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait(), userDO.getPassword()));
     }
 
-    final UnitBasicMapper unitBasicMapper;
-    final LoadBasicMapper loadBasicMapper;
-    final MarketSettingMapper marketSettingMapper;
-    final MetaUnitDOMapper metaUnitDOMapper;
-    final MinOutputCostDOMapper minOutputCostDOMapper;
+
 
 
     /**
@@ -100,7 +105,16 @@ public class ManageFacade {
         intraManager.clear();
 
         Ssh.exec("python manage.py empty_data");
+
+        bidDOMapper.selectList(null).forEach(c -> bidDOMapper.deleteById(c.getBidId()));
+        compDOMapper.selectList(null).forEach(c -> compDOMapper.deleteById(c.getCompId()));
+        clearanceDOMapper.selectList(null).forEach(c -> clearanceDOMapper.deleteById(c.getId()));
+        intraInstantDOMapper.selectList(null).forEach(c -> intraInstantDOMapper.deleteById(c.getId()));
+        intraQuotationDOMapper.selectList(null).forEach(c -> intraQuotationDOMapper.deleteById(c.getId()));
+        unitDOMapper.selectList(null).forEach(c -> unitDOMapper.deleteById(c.getUnitId()));
+
         Ssh.exec("python manage.py init_data");
+
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
@@ -150,6 +164,8 @@ public class ManageFacade {
             metaUnitDOMapper.insert(metaUnitDO);
 
         });
+
+
 
         delayExecutor.removeStepCommand();
 
