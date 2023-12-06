@@ -552,16 +552,28 @@ public class UnitFacade {
         List<Segment> segments = buildCostSegments(thermalCostDOs, minCapacity);
 
         double accumulate = 0D;
-        for (Segment segment : segments) {
-            if (start >= segment.getStart() && start < segment.getEnd())
-                accumulate += (segment.getEnd() - start) * segment.getPrice();
-            else if (end > segment.getStart() && end <= segment.getEnd()) {
-                accumulate += (end - segment.getStart()) * segment.getPrice();
-            } else if (start <= segment.getStart() && end >= segment.getEnd()){
+        int segStart = IntStream.range(0, segments.size()).filter(i -> {
+            Segment segment = segments.get(i);
+            return segment.getStart() <= start && segment.getEnd() >= start;
+        }).findFirst().orElseThrow(SysEx::unreachable);
+
+        int segEnd = IntStream.range(0, segments.size()).filter(i -> {
+            Segment segment = segments.get(i);
+            return segment.getStart() <= end && segment.getEnd() >= end;
+        }).findFirst().orElseThrow(SysEx::unreachable);
+
+        if (segStart == segEnd) {
+            return Result.success(segments.get(segEnd).getPrice());
+        } else {
+            accumulate += (segments.get(segStart).getEnd() - start) * segments.get(segStart).getPrice();
+            accumulate += (end - segments.get(segEnd).getStart()) * segments.get(segEnd).getPrice();
+            for (int i = segStart + 1; i < segEnd; i++) {
+                Segment segment = segments.get(i);
                 accumulate += (segment.getEnd() - segment.getStart()) * segment.getPrice();
             }
+            return Result.success(accumulate/(end - start));
         }
-        return Result.success(accumulate/(end - start));
+
     }
 
     private List<Segment> buildCostSegments(List<ThermalCostDO> thermalCostDOs, Double start) {
