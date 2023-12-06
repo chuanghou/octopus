@@ -1,7 +1,7 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.adapter.ws.WsHandler;
+import com.bilanee.octopus.adapter.ws.WebSocket;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.*;
@@ -109,10 +109,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         TradeStage tradeStage = tunnel.runningComp().getTradeStage();
         if (tradeStage == TradeStage.AN_INTRA) {
             wsTopic = WsTopic.AN_INTRA_BID;
-            WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
         } else if (tradeStage == TradeStage.MO_INTRA) {
             wsTopic = WsTopic.MO_INTRA_BID;
-            WsHandler.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
         }
     }
 

@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.adapter.ws.WsHandler;
+import com.bilanee.octopus.adapter.ws.WebSocket;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.Bid;
@@ -215,7 +215,7 @@ public class Routers implements EventRouters {
 
     @EventRouter
     public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
-        WsHandler.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
+        WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;

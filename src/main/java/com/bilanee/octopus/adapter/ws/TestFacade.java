@@ -29,7 +29,7 @@ public class TestFacade {
     public Result<Void> testWebSocket(@NotBlank String wsTopic, String body) {
         WsTopic topic = Kit.enumOf(WsTopic::name, wsTopic).orElse(null);
         BizEx.nullThrow(wsTopic, ErrorEnums.PARAM_IS_NULL.message(wsTopic +"不是有效的Topic"));
-        WsHandler.cast(WsMessage.builder().wsTopic(topic).body(body).build());
+        WebSocket.cast(WsMessage.builder().wsTopic(topic).body(body).build());
         return Result.success();
     }
 }

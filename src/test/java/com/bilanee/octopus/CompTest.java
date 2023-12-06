@@ -72,8 +72,7 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        String sign = TokenUtils.sign("1001");
-        Result<List<IntraClearanceVO>> listResult = compFacade.intraClearanceVO("71401.TRADE.0.AN_INTRA.CLEAR", sign);
+        unitFacade.calculateDaCost(75097L, 440D, 545D);
     }
 
     @AfterEach
