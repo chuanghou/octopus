@@ -16,6 +16,7 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.stellariver.milky.common.base.BizEx;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -270,15 +271,25 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
     }
 
     private List<Volume> extractVolumes(Collection<Bid> bids) {
-        List<Predicate<Bid>> predicates = IntStream.range(0, 10).mapToObj(i -> Pair.of(i * 200, (i + 1) * 200))
-                .map(p -> (Predicate<Bid>) bid -> bid.getPrice() > p.getLeft() && bid.getPrice() <= p.getRight())
-                .collect(Collectors.toList());
-        List<Double> volumeQuantity = bids.stream().collect(Collect.select(predicates))
-                .stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum))
-                .collect(Collectors.toList());
-        return IntStream.range(0, 10)
-                .mapToObj(i -> new Volume(String.format("%s-%s", i * 200, (i + 1) * 200), volumeQuantity.get(i)))
-                .collect(Collectors.toList());
+        long count = bids.stream().map(Bid::getPrice).distinct().count();
+        if (count <= 10) {
+            return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream()
+                    .map(e -> new Volume(e.getKey().toString(), e.getValue().stream().collect(Collectors.summarizingDouble(Bid::getTransit)).getSum())).collect(Collectors.toList());
+        } else {
+            double maxPrice = bids.stream().max(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) + 1;
+            double minPrice = bids.stream().min(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) - 1;
+            double v = (maxPrice - minPrice) / 10;
+            List<Predicate<Bid>> predicates = IntStream.range(0, 10).mapToObj(i -> Pair.of(i * v + minPrice, (i + 1) * v + minPrice))
+                    .map(p -> (Predicate<Bid>) bid -> bid.getPrice() >= p.getLeft() && bid.getPrice() < p.getRight())
+                    .collect(Collectors.toList());
+            List<Double> volumeQuantity = bids.stream().collect(Collect.select(predicates))
+                    .stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum))
+                    .collect(Collectors.toList());
+            return IntStream.range(0, 10)
+                    .mapToObj(i -> new Volume(String.format("%.2f-%.2f", i * v + minPrice, (i + 1) * v + minPrice), volumeQuantity.get(i)))
+                    .collect(Collectors.toList());
+        }
+
     }
 
 

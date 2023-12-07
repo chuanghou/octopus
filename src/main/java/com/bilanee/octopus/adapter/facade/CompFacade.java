@@ -164,9 +164,8 @@ public class CompFacade {
 
         ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream()
                 .collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
-        List<IntraClearanceVO> intraClearanceVOs = groupedBids.asMap().entrySet().stream().map(e -> {
-            IntraSymbol intraSymbol = e.getKey();
-            Collection<Bid> bids = e.getValue();
+        List<IntraClearanceVO> intraClearanceVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
+            List<Bid> bids = groupedBids.get(intraSymbol);
             List<Deal> deals = bids.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
             Double maxPrice = deals.stream().max(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
             Double minPrice = deals.stream().min(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
@@ -187,9 +186,9 @@ public class CompFacade {
             cDeals = cDeals.stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList());
 
             List<DealHist> dealHists = new ArrayList<>();
-            if (!cDeals.isEmpty()) {
-                Double min = cDeals.stream().min(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
-                Double max = cDeals.stream().max(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft();
+            if (cDeals.size() > 10) {
+                double min = cDeals.stream().min(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft() - 1;
+                double max = cDeals.stream().max(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft() + 1;
                 double v = (max - min) / 10;
                 for (int i = 0; i < 10; i++) {
                     Double left = min + i * v;
@@ -197,14 +196,13 @@ public class CompFacade {
                     List<Pair<Double, Double>> collectDeals = cDeals.stream()
                             .filter(cDeal -> cDeal.getLeft() >= left && cDeal.getLeft() < right)
                             .collect(Collectors.toList());
-                    if (Math.abs(right - max) < 1e-8) {
-                        collectDeals = new ArrayList<>(collectDeals);
-                        collectDeals.addAll(cDeals.stream().filter(cD -> cD.getLeft().equals(max)).collect(Collectors.toList()));
-                    }
                     double sum = collectDeals.stream().collect(Collectors.summarizingDouble(Pair::getRight)).getSum();
                     DealHist dealHist = DealHist.builder().left(left).right(right).value(sum).build();
                     dealHists.add(dealHist);
                 }
+            } else {
+                dealHists = cDeals.stream().sorted(Map.Entry.comparingByKey())
+                        .map(d -> DealHist.builder().left(d.getLeft()).right(d.getLeft()).value(d.getLeft()).build()).collect(Collectors.toList());
             }
 
             List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
