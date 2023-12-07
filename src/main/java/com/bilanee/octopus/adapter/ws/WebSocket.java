@@ -37,24 +37,24 @@ public class WebSocket {
         this.userId = TokenUtils.getUserId(session.getRequestParameterMap().get("token").get(0));
         String sessionId = session.getId();
         sessions.computeIfAbsent(userId, k -> new ConcurrentHashMap<>()).put(session.getId(), this);
-        log.info("OnOpen sessions \n\n {}\n\n {} \n\n {}", Json.toJson(sessions), Json.toJson(this), session );
+        log.info("OnOpen sessions \n\n {}\n\n {} \n\n {}", Json.toJson(sessions.keySet()), this, session);
     }
 
     @OnClose
     public void OnClose(){
-        log.info("prepare close {}, {}, {}", userId, session, Json.toJson(sessions));
+        log.info("prepare close {}, {}, {}", userId, session, sessions);
         Map<String, WebSocket> map = sessions.get(userId);
         if (map == null) {
             log.error(Objects.toString(this));
             return;
         }
         WebSocket remove = map.remove(session.getId());
-        log.info("finish close \n\n {} \n\n {} \n\n {} \n\n {}", userId, session, remove, Json.toJson(sessions));
+        log.info("finish close \n\n {} \n\n {} \n\n {} \n\n {} \n\n {}", userId, session, remove, Json.toJson(sessions.keySet()), map.size());
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
-        log.error("sessions \n\n {} \n\n {}", Json.toJson(sessions), session, error);
+        log.error("sessions \n\n {} \n\n {}", sessions.size(), session, error);
     }
 
     @SneakyThrows
