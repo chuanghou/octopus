@@ -224,6 +224,7 @@ public class Routers implements EventRouters {
      * 省内现货之后预出清
      */
     @EventRouter
+    @SneakyThrows
     public void routeBeforeAfterIntraSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
@@ -233,7 +234,7 @@ public class Routers implements EventRouters {
             Ssh.exec("python manage.py intra_pre_clearing 1");
             Ssh.exec("python manage.py intra_pre_clearing 2");
             log.info("结束执行省内现货预出清");
-
+            Thread.sleep(5000);
             log.info("开始执行执行省间现货默认报价填充");
             Ssh.exec("python manage.py inter_spot_default_bid");
             log.info("结束执行执行省间现货默认报价填充");
