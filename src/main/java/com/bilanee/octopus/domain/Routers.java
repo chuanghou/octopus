@@ -362,7 +362,7 @@ public class Routers implements EventRouters {
     @EventRouter
     public void routerAfterIntraSpotBid(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.DA_INTRA;
+        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.CLEAR;
         if (b0 && b1) {
             log.info("开始执行正式出清");

@@ -72,7 +72,7 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        unitFacade.calculateDaCost(75097L, 440D, 545D);
+        manageFacade.step();
     }
 
     @AfterEach
