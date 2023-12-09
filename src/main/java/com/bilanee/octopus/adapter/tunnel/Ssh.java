@@ -9,6 +9,7 @@ import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 
@@ -35,7 +36,7 @@ public class Ssh {
                     session.close();
                 }
             } catch (IOException e) {
-                // Do Nothing   
+                log.error(Objects.toString(e), e);
             }
             ssh.disconnect();
         }
