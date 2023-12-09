@@ -113,8 +113,10 @@ public class ManageFacade {
         intraQuotationDOMapper.selectList(null).forEach(c -> intraQuotationDOMapper.deleteById(c.getId()));
         unitDOMapper.selectList(null).forEach(c -> unitDOMapper.deleteById(c.getUnitId()));
 
-        Ssh.exec("python manage.py init_data");
 
+        Ssh.exec("python manage.py init_data");
+        Ssh.exec("python manage.py intra_spot_default_bid");
+        Ssh.exec("python manage.py forward_default_bid");
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);

@@ -228,11 +228,18 @@ public class Routers implements EventRouters {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.BID;
-        if (!(b0 && b1)) {
-            return;
+        if (b0 && b1) {
+            log.info("开始执行省内现货预出清");
+            Ssh.exec("python manage.py intra_pre_clearing 1");
+            Ssh.exec("python manage.py intra_pre_clearing 2");
+            log.info("结束执行省内现货预出清");
+            log.info("开始执行执行省间现货默认报价填充");
+            Ssh.exec("python manage.py inter_spot_default_bid");
+            log.info("结束执行执行省间现货默认报价填充");
         }
-        Ssh.exec("python manage.py intra_pre_clearing 1");
-        Ssh.exec("python manage.py intra_pre_clearing 2");
+
+
+
     }
 
 
@@ -359,16 +366,18 @@ public class Routers implements EventRouters {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTRA;
         boolean b1 = now.getMarketStatus() == MarketStatus.CLEAR;
-        if (!(b0 && b1)) {
-            return;
+        if (b0 && b1) {
+            log.info("开始执行正式出清");
+            Ssh.exec("python manage.py intra_da_market_clearing 2 1");
+            Ssh.exec("python manage.py intra_da_ruc 1");
+            Ssh.exec("python manage.py intra_rt_ed 1");
+            Ssh.exec("python manage.py intra_da_market_clearing 2 2");
+            Ssh.exec("python manage.py intra_da_ruc 2");
+            Ssh.exec("python manage.py intra_rt_ed 2");
+            log.info("结束执行正式出清");
         }
 
-        Ssh.exec("python manage.py intra_da_market_clearing 2 1");
-        Ssh.exec("python manage.py intra_da_ruc 1");
-        Ssh.exec("python manage.py intra_rt_ed 1");
-        Ssh.exec("python manage.py intra_da_market_clearing 2 2");
-        Ssh.exec("python manage.py intra_da_ruc 2");
-        Ssh.exec("python manage.py intra_rt_ed 2");
+
     }
 
 
