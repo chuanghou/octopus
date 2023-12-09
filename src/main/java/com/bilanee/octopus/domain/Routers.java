@@ -29,6 +29,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @CustomLog
@@ -233,8 +234,8 @@ public class Routers implements EventRouters {
             log.info("开始执行省内现货预出清");
             Ssh.exec("python manage.py intra_pre_clearing 1");
             Ssh.exec("python manage.py intra_pre_clearing 2");
-            Thread.sleep(30_000);
-            Ssh.exec("python manage.py inter_spot_default_bid");
+            Thread.sleep(1000);
+            CompletableFuture.runAsync(() -> Ssh.exec("python manage.py inter_spot_default_bid"));
             log.info("结束执行省内现货预出清");
         }
 
