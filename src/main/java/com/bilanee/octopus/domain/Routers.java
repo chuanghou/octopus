@@ -238,8 +238,6 @@ public class Routers implements EventRouters {
             log.info("结束执行执行省间现货默认报价填充");
         }
 
-
-
     }
 
 
