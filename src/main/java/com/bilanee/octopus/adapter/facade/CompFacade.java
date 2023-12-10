@@ -830,7 +830,8 @@ public class CompFacade {
 
 
         LambdaQueryWrapper<InterSpotTransactionDO> last = new LambdaQueryWrapper<InterSpotTransactionDO>()
-                .eq(InterSpotTransactionDO::getRoundId, roundId + 1);
+                .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
+                .eq(InterSpotTransactionDO::getPrd, instant);
 
         List<InterSpotTransactionDO> transactionDOs = interSpotTransactionDOMapper
                 .selectList(last).stream().filter(i -> i.getClearedMw() > 0).collect(Collectors.toList());
