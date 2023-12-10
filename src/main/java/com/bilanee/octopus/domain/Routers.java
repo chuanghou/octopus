@@ -90,12 +90,6 @@ public class Routers implements EventRouters {
             CommandBus.driveByEvent(interDeduct, stepped);
         } );
 
-
-        // 清空 上一次的
-        LambdaQueryWrapper<InterDealDO> eq = new LambdaQueryWrapper<InterDealDO>().eq(InterDealDO::getRoundId, now.getRoundId() + 1)
-                .eq(InterDealDO::getMarketType, now.getTradeStage().getMarketType());
-        interDealDOMapper.delete(eq);
-
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
         String dt = tunnel.runningComp().getDt();
@@ -239,35 +233,6 @@ public class Routers implements EventRouters {
             log.info("结束执行省内现货预出清");
         }
 
-    }
-
-    public static void main(String[] args) {
-        Ssh.exec("python manage.py inter_spot_default_bid");
-    }
-
-
-    /**
-     * 省间现货之前清空报价表
-     */
-    @EventRouter
-    public void routeBeforeInterSpotBid(CompEvent.Stepped stepped, Context context) {
-        StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
-        boolean b1 = now.getMarketStatus() == MarketStatus.BID;
-        if (!(b0 && b1)) {
-            return;
-        }
-        Integer roundId = now.getRoundId();
-        LambdaQueryWrapper<InterSpotUnitOfferDO> eq = new LambdaQueryWrapper<InterSpotUnitOfferDO>().eq(InterSpotUnitOfferDO::getRoundId, roundId + 1);
-        interSpotUnitOfferDOMapper.selectList(eq).forEach(interSpotUnitOfferDO -> {
-            interSpotUnitOfferDO.setSpotOfferMw1(0D);
-            interSpotUnitOfferDO.setSpotOfferMw2(0D);
-            interSpotUnitOfferDO.setSpotOfferMw3(0D);
-            interSpotUnitOfferDO.setSpotOfferPrice1(0D);
-            interSpotUnitOfferDO.setSpotOfferPrice2(0D);
-            interSpotUnitOfferDO.setSpotOfferPrice3(0D);
-            interSpotUnitOfferDOMapper.updateById(interSpotUnitOfferDO);
-        });
     }
 
     final UnmetDemandMapper unmetDemandMapper;

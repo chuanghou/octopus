@@ -72,7 +72,7 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        manageFacade.step();
+        unitFacade.listGeneratorClearances("105225.TRADE.0.DA_INTRA.CLEAR", 105230L);
     }
 
     @AfterEach
