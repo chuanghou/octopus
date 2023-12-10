@@ -260,11 +260,11 @@ public class Tunnel {
             if (stageId.getTradeStage() == TradeStage.AN_INTER) {
                 tieLinePowerDO.setAnnualMarketTielinePower(interClearance.getMarketQuantity());
                 tieLinePowerDO.setAnnualNonmarketTielinePower(interClearance.getNonMarketQuantity());
-                tieLinePowerDO.setAnnualTielinePower(interClearance.getDealQuantity());
+                tieLinePowerDO.setAnnualTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
             } else if (stageId.getTradeStage() == TradeStage.MO_INTER){
                 tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getMarketQuantity());
                 tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getNonMarketQuantity());
-                tieLinePowerDO.setMonthlyTielinePower(interClearance.getDealQuantity());
+                tieLinePowerDO.setMonthlyTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
             } else {
                 throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
             }
