@@ -1,6 +1,7 @@
 package com.bilanee.octopus.domain;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -214,6 +215,7 @@ public class Routers implements EventRouters {
     }
 
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
+    final ManageFacade manageFacade;
 
     /**
      * 省内现货之后预出清
@@ -233,8 +235,24 @@ public class Routers implements EventRouters {
             log.info("结束执行省内现货预出清");
         }
 
+        LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
+                .eq(StackDiagramDO::getRoundId, stepped.getNow().getRoundId() + 1);
+        Boolean reduce = stackDiagramDOMapper.selectList(eq).stream()
+                .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget()).reduce(false, (a, b) -> a || b);
+        if (!reduce) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    Thread.sleep(5_000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                manageFacade.step();
+            });
+        }
+
     }
 
+    final StackDiagramDOMapper stackDiagramDOMapper;
     final UnmetDemandMapper unmetDemandMapper;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final InterSpotTransactionDOMapper interSpotTransactionDOMapper;

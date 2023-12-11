@@ -769,6 +769,7 @@ public class UnitFacade {
 
     final UnmetDemandMapper unmetDemandMapper;
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
+    final StackDiagramDOMapper stackDiagramDOMapper;
 
     /**
      *  省间现货回填接口
@@ -781,7 +782,7 @@ public class UnitFacade {
         Integer roundId = parsedStageId.getRoundId();
         LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         List<TieLinePowerDO> tieLinePowerDOS = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
-        List<UnmetDemand> unmetDemands = unmetDemandMapper.selectList(null);
+        List<UnmetDemand> unmetDemands = unmetDemandMapper.selectList(null).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
         List<Double> availablePrds = IntStream.range(0, 24).mapToObj(i -> {
             TieLinePowerDO tieLinePowerDO = tieLinePowerDOS.get(i);
             double v = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
@@ -806,6 +807,13 @@ public class UnitFacade {
         ListMultimap<Integer, InterSpotUnitOfferDO> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collect.listMultiMap(InterSpotUnitOfferDO::getUnitId));
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
+
+        LambdaQueryWrapper<StackDiagramDO> eq1 = new LambdaQueryWrapper<StackDiagramDO>()
+                .eq(StackDiagramDO::getRoundId, parsedStageId.getRoundId() + 1);
+        List<StackDiagramDO> stackDiagramDOS = stackDiagramDOMapper.selectList(eq1)
+                .stream().sorted(Comparator.comparing(StackDiagramDO::getPrd)).collect(Collectors.toList());
+
+
         List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
             Integer sourceId = unitDO.getMetaUnit().getSourceId();
             SpotInterBidVO.SpotInterBidVOBuilder builder = SpotInterBidVO.builder().sourceId(sourceId)
@@ -816,7 +824,9 @@ public class UnitFacade {
             List<InstantSpotBidVO> instantSpotBidVOs = IntStream.range(0, 24).mapToObj(i -> {
                 Double available = availablePrds.get(i);
                 SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
-                if (available > 0 && capacities.get(i) - spotUnitCleared.getPreclearClearedMw() > 0) {
+
+                boolean b = stackDiagramDOS.get(i).getIntraprovincialMonthlyTielinePower() < stackDiagramDOS.get(i).getDaReceivingTarget();
+                if (b) {
                     InterSpotUnitOfferDO interSpotUnitOfferDO = collect.get(i);
                     if (interSpotUnitOfferDO != null) {
                         InterSpotBid interSpotBid1 = InterSpotBid.builder()
