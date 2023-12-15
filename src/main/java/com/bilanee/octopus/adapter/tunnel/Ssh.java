@@ -25,7 +25,7 @@ public class Ssh {
         Session session = null;
         long s;
         try {
-            ssh.connect("118.184.179.116");
+            ssh.connect("118.184.179.113");
             ssh.authPassword("administrator", "co188.com");
             session = ssh.startSession();
             final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperiment & " + command);

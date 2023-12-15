@@ -24,7 +24,7 @@ import java.util.List;
 @WebFilter(urlPatterns = "/transfer/*", filterName = "httpProxyFilter")
 public class HttpProxyFilter implements Filter {
  
-    private String host = "http://118.184.179.116:8002";
+    private String host = "http://118.184.179.113:8002";
  
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
