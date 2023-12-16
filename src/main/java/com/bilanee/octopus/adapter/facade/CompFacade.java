@@ -800,6 +800,31 @@ public class CompFacade {
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
     final UnmetDemandMapper unmetDemandMapper;
 
+
+    /**
+     * 省间现货分时供需曲线:可选择的时刻
+     * @param stageId : 阶段id
+     */
+    @GetMapping("interSpotMarketVOAvailableInstants")
+    public Result<List<Integer>> interSpotMarketVOAvailableInstants(String stageId) {
+        Integer roundId = StageId.parse(stageId).getRoundId();
+        Long compId = StageId.parse(stageId).getCompId();
+        LambdaQueryWrapper<TieLinePowerDO> eqx
+                = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
+        List<TieLinePowerDO> tieLinePowerDOs = tieLinePowerDOMapper.selectList(eqx)
+                .stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
+
+        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>();
+        List<UnmetDemand> collect = unmetDemandMapper.selectList(eq1).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
+        List<Integer> instants = IntStream.range(0, 24).mapToObj(i -> {
+            TieLinePowerDO tieLinePowerDO = tieLinePowerDOs.get(i);
+            double already = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
+            UnmetDemand unmetDemand = collect.get(i);
+            return unmetDemand.getDaReceivingMw() - already > 0 ? i : null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+        return Result.success(instants);
+    }
+
     /**
      * 省间现货分时供需曲线
      * @param stageId 阶段id
@@ -828,8 +853,6 @@ public class CompFacade {
         LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getPrd, instant);
         Double receiverDeclaredTotal = unmetDemandMapper.selectOne(eq1).getDaReceivingMw() - already;
 
-
-
         LambdaQueryWrapper<InterSpotTransactionDO> last = new LambdaQueryWrapper<InterSpotTransactionDO>()
                 .eq(InterSpotTransactionDO::getRoundId, roundId + 1)
                 .eq(InterSpotTransactionDO::getPrd, instant);
@@ -841,12 +864,20 @@ public class CompFacade {
 
 
         Double lx = 0D;
-        List<SpotSection> spotSections = new ArrayList<>();
+        List<SpotSection> supplySections = new ArrayList<>();
         for (Pair<Double, Double> pair : pairs) {
             SpotSection spotSection = new SpotSection(lx, lx + pair.getLeft(), pair.getRight());
-            spotSections.add(spotSection);
+            supplySections.add(spotSection);
             lx += pair.getLeft();
         }
+
+        GridLimit generatorLimit = tunnel.priceLimit(UnitType.GENERATOR);
+        GridLimit loadLimit = tunnel.priceLimit(UnitType.LOAD);
+        Point<Double> supplyTerminus = Collect.isEmpty(supplySections) ? null : new Point<Double>(supplySections.get(supplySections.size() - 1).getRx(), generatorLimit.getHigh());
+
+        List<SpotSection> requireSections = Collect.asList(new SpotSection(0D, receiverDeclaredTotal, loadLimit.getHigh()));
+        Point<Double> requireTerminus = new Point<>(receiverDeclaredTotal, loadLimit.getLow());
+
         InterSpotMarketVO interSpotMarketVO = InterSpotMarketVO.builder()
                 .sellDeclaredTotal(sellDeclaredTotal)
                 .receiverDeclaredTotal(receiverDeclaredTotal)
@@ -854,7 +885,10 @@ public class CompFacade {
                 .dealAveragePrice(dealAveragePrice)
                 .requireQuantity(receiverDeclaredTotal)
                 .clearPrice(dealAveragePrice)
-                .spotSections(spotSections)
+                .supplySections(supplySections)
+                .supplyTerminus(supplyTerminus)
+                .requireSections(requireSections)
+                .requireTerminus(requireTerminus)
                 .build();
          return Result.success(interSpotMarketVO);
     }

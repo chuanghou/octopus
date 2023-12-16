@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.basic.Point;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -38,7 +39,6 @@ public class InterSpotMarketVO {
      */
     Double requireQuantity;
 
-
     /**
      * 分时供需曲线：出清价格
      */
@@ -47,5 +47,21 @@ public class InterSpotMarketVO {
     /**
      * 分时供需曲线：供给曲线
      */
-    List<SpotSection> spotSections;
+    List<SpotSection> supplySections;
+
+    /**
+     * 分时供需曲线：供给曲线终点
+     */
+    Point<Double> supplyTerminus;
+
+    /**
+     * 分时供需曲线：需求曲线
+     */
+    List<SpotSection> requireSections;
+
+    /**
+     * 分时供需曲线：需求曲线终点
+     */
+    Point<Double> requireTerminus;
+    
 }
