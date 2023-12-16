@@ -273,10 +273,11 @@ public class Routers implements EventRouters {
                 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         Map<Integer, Double> already = tieLinePowerDOMapper.selectList(eq).stream()
                 .collect(Collectors.toMap(TieLinePowerDO::getPrd, t -> t.getAnnualTielinePower() + t.getMonthlyTielinePower()));
-        Map<Integer, Double> demand = unmetDemandMapper.selectList(null).stream()
+        Map<Integer, Double> demands = unmetDemandMapper.selectList(null).stream()
                 .collect(Collectors.toMap(UnmetDemand::getPrd, u -> u.getDaReceivingMw() - already.get(u.getPrd())));
-        for (int instant = 0; instant < 24; instant++) {
-            double require = demand.get(instant) - already.get(instant);
+        demands.entrySet().stream().filter(e -> e.getValue() > 0).forEach(e -> {
+            Integer instant = e.getKey();
+            double require = e.getValue();
             LambdaQueryWrapper<InterSpotUnitOfferDO> eq1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
                     .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1).eq(InterSpotUnitOfferDO::getPrd, instant);
             List<Section> sections = interSpotUnitOfferDOMapper.selectList(eq1)
@@ -310,11 +311,14 @@ public class Routers implements EventRouters {
                 marketQuantity = accumulate;
                 nonMarketQuantity = require - marketQuantity;
             }
+
             LambdaQueryWrapper<TieLinePowerDO> eq2 = new LambdaQueryWrapper<TieLinePowerDO>()
                     .eq(TieLinePowerDO::getRoundId, roundId + 1).eq(TieLinePowerDO::getPrd, instant);
             TieLinePowerDO tieLinePowerDO = tieLinePowerDOMapper.selectOne(eq2);
             tieLinePowerDO.setDaNonmarketTielinePower(nonMarketQuantity);
             tieLinePowerDO.setDaMarketTielinePower(marketQuantity);
+            tieLinePowerDO.setDaTielinePower(nonMarketQuantity + marketQuantity);
+
             tieLinePowerDOMapper.updateById(tieLinePowerDO);
 
             Map<Integer, Collection<Section>> map = sections.stream().collect(Collect.listMultiMap(Section::getSourceId)).asMap();
@@ -340,7 +344,7 @@ public class Routers implements EventRouters {
                     interSpotTransactionDOMapper.updateById(interSpotTransactionDO);
                 }
             }
-        }
+        });
     }
 
 
