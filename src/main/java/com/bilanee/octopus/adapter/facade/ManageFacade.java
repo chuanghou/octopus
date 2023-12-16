@@ -15,6 +15,7 @@ import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
+import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
@@ -31,6 +32,8 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,9 +102,26 @@ public class ManageFacade {
     }
 
 
+    static private final Lock lock = new ReentrantLock();
+
+
     @SneakyThrows
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
+
+        boolean b = lock.tryLock();
+        if (!b) {
+            return Result.error(ErrorEnums.CONCURRENCY_VIOLATION.message("不可同时由两个管理员建立比赛"), ExceptionType.BIZ);
+        }
+        try {
+            doCreateComp(compCreatePO);
+        } finally {
+            lock.unlock();
+        }
+        return Result.success();
+    }
+    private void doCreateComp(CompCreatePO compCreatePO) {
+
         intraManager.clear();
 
         Ssh.exec("python manage.py empty_data");
@@ -211,7 +231,6 @@ public class ManageFacade {
                 .build();
 
         CommandBus.accept(command, new HashMap<>());
-        return Result.success();
     }
 
     /**
