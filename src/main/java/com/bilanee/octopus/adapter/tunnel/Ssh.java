@@ -26,7 +26,7 @@ public class Ssh {
         long s;
         try {
             ssh.connect("118.184.179.113");
-            ssh.authPassword("administrator", "co188.com");
+            ssh.authPassword("administrator", "gjdtsjtu@public0313");
             session = ssh.startSession();
             final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperiment & " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), "GBK"));
@@ -43,7 +43,7 @@ public class Ssh {
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        exec("python manage.py intra_da_market_clearing 2 1");
+        exec("python --version");
     }
 
 }
