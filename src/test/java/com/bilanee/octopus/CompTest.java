@@ -72,7 +72,8 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        unitFacade.listGeneratorClearances("105225.TRADE.0.DA_INTRA.CLEAR", 105230L);
+        Result<List<Integer>> listResult = compFacade.interSpotMarketVOAvailableInstants("110001.TRADE.0.DA_INTER.CLEAR");
+        System.out.println(listResult);
     }
 
     @AfterEach
