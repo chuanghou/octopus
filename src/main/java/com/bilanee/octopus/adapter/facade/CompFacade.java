@@ -724,23 +724,24 @@ public class CompFacade {
             }
             generatorDaSegmentBidDOs.forEach(gDO -> qps.add(Pair.of(gDO.getOfferMw(), gDO.getOfferPrice())));
             List<Pair<Double, Double>> clearedQps = new ArrayList<>();
-            if (spotUnitCleared.getDaClearedMw().equals(0D)) {
+            if (da && spotUnitCleared.getDaClearedMw().equals(0D)) {
+                return clearedQps;
+            } else if ((!da) && spotUnitCleared.getRtClearedMw().equals(0D)) {
                 return clearedQps;
             }
+
             double accumulate = 0D;
-            for (GeneratorDaSegmentBidDO generatorDaSegmentBidDO : generatorDaSegmentBidDOs) {
-                Double q = generatorDaSegmentBidDO.getOfferMw();
-                Double p = generatorDaSegmentBidDO.getOfferPrice();
-                Double clear = da ? spotUnitCleared.getDaClearedMw() : spotUnitCleared.getRtClearedMw();
-                if (accumulate + q >= clear) {
-                    double v = accumulate + q - clear;
-                    Pair<Double, Double> qp = Pair.of(v, p);
-                    qps.add(qp);
-                    return qps;
+            double clear = da ? spotUnitCleared.getDaClearedMw() : spotUnitCleared.getRtClearedMw();
+            for (int i = 0; i < qps.size(); i++) {
+                accumulate += qps.get(i).getLeft();
+                if (accumulate >= clear) {
+                    double v = clear - (accumulate - (qps.get(i).getLeft()));
+                    qps.add(Pair.of(v, qps.get(i).getRight()));
+                } else {
+                    clearedQps.add(qps.get(i));
                 }
-                qps.add(Pair.of(p, q));
             }
-            return qps;
+            return clearedQps;
         }).flatMap(Collection::stream).collect(Collectors.toList());
 
         return collectQps.stream().collect(Collect.select(
