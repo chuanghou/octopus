@@ -260,7 +260,7 @@ public class Routers implements EventRouters {
     /**
      * 填充省间现货报价
      */
-    @EventRouter
+    @EventRouter(order = 0)
     public void routerAfterInterSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
