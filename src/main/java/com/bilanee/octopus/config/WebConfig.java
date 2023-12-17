@@ -74,7 +74,7 @@ public class WebConfig implements WebMvcConfigurer{
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**").addResourceLocations("file:/root/octopus/static/");
+        registry.addResourceHandler("/**").addResourceLocations("file:/root/octopus/static/").addResourceLocations("classpath:static/");
     }
 
 
