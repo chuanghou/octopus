@@ -690,8 +690,9 @@ public class UnitFacade {
             Double daAccumulate = 0D;
             if (!daTotal.equals(0D)) {
                 for (Double bid : bids) {
-                    if (daAccumulate + bid >= daTotal) {
-                        double v = (daAccumulate + bid) - daTotal;
+                    daAccumulate += bid;
+                    if (daAccumulate >= daTotal) {
+                        double v = daTotal - (daAccumulate - bid);
                         das.add(v);
                         break;
                     }
@@ -707,8 +708,9 @@ public class UnitFacade {
             }
             if (!rtTotal.equals(0D)) {
                 for (Double bid : bids) {
-                    if (rtAccumulate + bid >= rtTotal) {
-                        double v = (rtAccumulate + bid) - rtTotal;
+                    rtAccumulate += bid;
+                    if (rtAccumulate >= rtTotal) {
+                        double v = rtTotal - (rtAccumulate - bid);
                         rts.add(v);
                         break;
                     }
