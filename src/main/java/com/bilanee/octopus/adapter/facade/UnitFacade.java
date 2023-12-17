@@ -678,22 +678,30 @@ public class UnitFacade {
 
         List<Double> rtCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getRtClearedMw);
 
-        List<Pair<List<Double>, List<Double>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
-            List<Double> bids = new ArrayList<>();
-            List<Double> das = new ArrayList<>();
+        List<Pair<List<ClearedVO>, List<ClearedVO>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
+            List<ClearedVO> bids = new ArrayList<>();
+            List<ClearedVO> das = new ArrayList<>();
             Double daTotal = daCleared.get(i);
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                das.add(unit.getMetaUnit().getMinCapacity());
+                ClearedVO clearedVO = ClearedVO.builder().cost(unit.getMetaUnit().getMinOutputPrice())
+                        .quantity(unit.getMetaUnit().getMinCapacity())
+                        .quantity(unit.getMetaUnit().getMinOutputPrice())
+                        .build();
+                das.add(clearedVO);
                 daTotal = daTotal - unit.getMetaUnit().getMinCapacity();
             }
-            generatorDaSegmentBidDOs.forEach(gDO -> bids.add(gDO.getOfferMw()));
+            generatorDaSegmentBidDOs.forEach(gDO -> {
+                ClearedVO clearedVO = new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice());
+                bids.add(clearedVO);
+            });
             Double daAccumulate = 0D;
             if (!daTotal.equals(0D)) {
-                for (Double bid : bids) {
-                    daAccumulate += bid;
+                for (ClearedVO bid : bids) {
+                    daAccumulate += bid.getQuantity();
                     if (daAccumulate >= daTotal) {
-                        double v = daTotal - (daAccumulate - bid);
-                        das.add(v);
+                        double v = daTotal - (daAccumulate - bid.getQuantity());
+
+                        das.add(new ClearedVO(bid.getCost(), v, bid.getPrice()));
                         break;
                     }
                     das.add(bid);
@@ -701,17 +709,18 @@ public class UnitFacade {
             }
             Double rtAccumulate = 0D;
             Double rtTotal = rtCleared.get(i);
-            List<Double> rts = new ArrayList<>();
+            List<ClearedVO> rts = new ArrayList<>();
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                rts.add(unit.getMetaUnit().getMinCapacity());
+                ClearedVO clearedVO = new ClearedVO(unit.getMetaUnit().getMinOutputPrice(), unit.getMetaUnit().getMinCapacity(), unit.getMetaUnit().getMinOutputPrice());
+                rts.add(clearedVO);
                 rtTotal = rtTotal - unit.getMetaUnit().getMinCapacity();
             }
             if (!rtTotal.equals(0D)) {
-                for (Double bid : bids) {
-                    rtAccumulate += bid;
+                for (ClearedVO bid : bids) {
+                    rtAccumulate += bid.getQuantity();
                     if (rtAccumulate >= rtTotal) {
-                        double v = rtTotal - (rtAccumulate - bid);
-                        rts.add(v);
+                        double v = rtTotal - (rtAccumulate - bid.getQuantity());
+                        rts.add(new ClearedVO(bid.getCost(), v, bid.getPrice()));
                         break;
                     }
                     rts.add(bid);
@@ -720,11 +729,11 @@ public class UnitFacade {
             return Pair.of(das, rts);
         }).collect(Collectors.toList());
 
-        List<List<Double>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
-        List<List<Double>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
+        List<List<ClearedVO>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
+        List<List<ClearedVO>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
         if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-            List<Pair<Double, List<Double>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
-            List<Pair<Double, List<Double>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            List<Pair<ClearedVO, List<ClearedVO>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            List<Pair<ClearedVO, List<ClearedVO>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
             builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
             builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
             builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
@@ -736,7 +745,6 @@ public class UnitFacade {
         GeneratorClearVO generatorClearVO = builder.build();
         return Result.success(generatorClearVO);
     }
-
 
     /**
      * 现货中标量量价曲线-分负荷

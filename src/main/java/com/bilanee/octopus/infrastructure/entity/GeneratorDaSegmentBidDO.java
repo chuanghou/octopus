@@ -23,6 +23,7 @@ public class GeneratorDaSegmentBidDO {
   Integer offerId;
   Double offerMw;
   Double offerPrice;
+  Double offerCost;
   Integer unitId;
 
 }
