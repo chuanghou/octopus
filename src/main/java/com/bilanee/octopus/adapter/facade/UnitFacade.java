@@ -758,15 +758,22 @@ public class UnitFacade {
                 .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getRtP).collect(Collectors.toList());
         builder.rtCleared(rtCleared);
 
-        //TODO update 之后负责结算部分的同学会说明计算方法
-        builder.daPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
-        builder.rtPrice(IntStream.range(0, 24).mapToObj(i -> i * 0D).collect(Collectors.toList()));
+
+        Integer nodeId = loadBasicMapper.selectById(sourceId).getNodeId();
+        LambdaQueryWrapper<NodalPriceVoltage> eqx = new LambdaQueryWrapper<NodalPriceVoltage>()
+                .eq(NodalPriceVoltage::getRoundId, roundId + 1)
+                .eq(NodalPriceVoltage::getNodeId, nodeId);
+        List<NodalPriceVoltage> nodalPriceVoltages = nodalPriceVoltageMapper.selectList(eqx)
+                .stream().sorted(Comparator.comparing(NodalPriceVoltage::getPrd)).collect(Collectors.toList());
+        builder.daPrice(Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp));
+        builder.rtPrice(Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getRtLmp));
 
         LoadClearVO loadClearVO = builder.build();
 
         return Result.success(loadClearVO);
     }
 
+    final LoadBasicMapper loadBasicMapper;
     final UnmetDemandMapper unmetDemandMapper;
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
     final StackDiagramDOMapper stackDiagramDOMapper;

@@ -13,7 +13,7 @@ import java.util.List;
 public class LoadClearVO {
 
     /**
-     *  日前统一结算点电价曲线
+     *  日前节点点电价曲线
      */
     List<Double> daPrice;
 
@@ -23,7 +23,7 @@ public class LoadClearVO {
     List<Double> daCleared;
 
     /**
-     *  实时统一结算点电价曲线
+     *  实时节点点电价曲线
      */
     List<Double> rtPrice;
 
