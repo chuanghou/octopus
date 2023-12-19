@@ -257,6 +257,7 @@ public class CompFacade {
         return sections;
     }
 
+    final SubRegionBasicMapper subRegionBasicMapper;
     final SubregionPriceMapper subregionPriceMapper;
 
 
@@ -270,13 +271,18 @@ public class CompFacade {
     public Result<SpotMarketVO> listSpotMarketVOs(String stageId, String province, @RequestHeader String token) {
         StageId parsed = StageId.parse(stageId);
         Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
-        Comp comp = tunnel.runningComp();
 
         SpotMarketVO.SpotMarketVOBuilder builder = SpotMarketVO.builder();
 
+        LambdaQueryWrapper<SubRegionBasic> eq1 =
+                new LambdaQueryWrapper<SubRegionBasic>().eq(SubRegionBasic::getProv, parsedProvince.getDbCode());
+
+        List<Integer> subRegionIds = subRegionBasicMapper.selectList(eq1).stream().map(SubRegionBasic::getSubregionId).collect(Collectors.toList());
+
         //  表头的4个值
         LambdaQueryWrapper<SubregionPrice> eq = new LambdaQueryWrapper<SubregionPrice>()
-                .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1).eq(SubregionPrice::getSubregionId, parsedProvince.getDbCode());
+                .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1)
+                .in(SubregionPrice::getSubregionId, subRegionIds);
         List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq);
         Double maxDaPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
         Double minDaPrice = subregionPrices.stream().min(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
