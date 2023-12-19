@@ -517,7 +517,7 @@ public class CompFacade {
             LambdaQueryWrapper<TieLinePowerDO> eq1 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1);
             tielineQps = tieLinePowerDOMapper.selectList(eq1).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
-                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getBidPriceFloor());
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getBidPriceCap());
             }).collect(Collectors.toList());
         }
 
