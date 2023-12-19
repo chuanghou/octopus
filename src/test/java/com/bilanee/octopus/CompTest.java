@@ -72,8 +72,8 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        Result<List<Integer>> listResult = compFacade.interSpotMarketVOAvailableInstants("110001.TRADE.0.DA_INTER.CLEAR");
-        System.out.println(listResult);
+        String sign = TokenUtils.sign("1000");
+        Result<SpotMarketVO> transfer = compFacade.listSpotMarketVOs("118476.TRADE.0.DA_INTRA.CLEAR", "TRANSFER", sign);
     }
 
     @AfterEach
