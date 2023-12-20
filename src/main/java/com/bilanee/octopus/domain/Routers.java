@@ -105,7 +105,7 @@ public class Routers implements EventRouters {
                         .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
                         .dt(dt)
                         .pfvPrd(tf.getDbCode())
-                        .marketType(now.getTradeStage().getMarketType())
+                        .marketType(now.getTradeStage().getMarketType2())
                         .clearedMw(deals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
                         .clearedPrice(deals.get(0).getPrice())
                         .build();
@@ -129,11 +129,6 @@ public class Routers implements EventRouters {
             return;
         }
 
-        // 清空 上一次的
-        LambdaQueryWrapper<IntraDealDO> eq = new LambdaQueryWrapper<IntraDealDO>().eq(IntraDealDO::getRoundId, now.getRoundId() + 1)
-                .eq(IntraDealDO::getMarketType, now.getTradeStage().getMarketType());
-        intraDealDOMapper.delete(eq);
-
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
@@ -149,7 +144,7 @@ public class Routers implements EventRouters {
                     .sellerType(sellUnit.getMetaUnit().getUnitType().getDbCode())
                     .dt(dt)
                     .pfvPrd(deal.getTimeFrame().getDbCode())
-                    .marketType(now.getTradeStage().getMarketType())
+                    .marketType(now.getTradeStage().getMarketType2())
                     .transTime(new Date(deal.getTimeStamp()))
                     .clearedMw(deal.getQuantity())
                     .clearedPrice(deal.getPrice())
