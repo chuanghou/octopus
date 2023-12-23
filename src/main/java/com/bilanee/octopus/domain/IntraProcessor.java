@@ -167,8 +167,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue);
-        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue);
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.<Double, List<Bid>>comparingByKey().reversed());
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
 
         StageId stageId = tunnel.runningComp().getStageId();
 
@@ -259,8 +259,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue);
-        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue);
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.<Double, List<Bid>>comparingByKey().reversed());
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
 
         IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
@@ -270,10 +270,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     }
 
-    private List<Volume> extractVolumes(Collection<Bid> bids) {
+    private List<Volume> extractVolumes(Collection<Bid> bids, Comparator<Map.Entry<Double, List<Bid>>> comparator) {
         long count = bids.stream().map(Bid::getPrice).distinct().count();
         if (count <= 10) {
-            return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream().sorted(Map.Entry.comparingByKey())
+            return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream().sorted(comparator)
                     .map(e -> new Volume(e.getKey().toString(), e.getValue().stream().collect(Collectors.summarizingDouble(Bid::getTransit)).getSum())).collect(Collectors.toList());
         } else {
             double maxPrice = bids.stream().max(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) + 1;
