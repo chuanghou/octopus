@@ -842,8 +842,7 @@ public class UnitFacade {
                 Double available = availablePrds.get(i);
                 SpotUnitCleared spotUnitCleared = unitClearedMap.get(i);
 
-                boolean b = stackDiagramDOS.get(i).getIntraprovincialMonthlyTielinePower() < stackDiagramDOS.get(i).getDaReceivingTarget();
-                if (b) {
+                if (available > 0) {
                     InterSpotUnitOfferDO interSpotUnitOfferDO = collect.get(i);
                     if (interSpotUnitOfferDO != null) {
                         InterSpotBid interSpotBid1 = InterSpotBid.builder()

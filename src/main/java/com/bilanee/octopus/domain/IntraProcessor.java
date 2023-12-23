@@ -273,7 +273,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
     private List<Volume> extractVolumes(Collection<Bid> bids) {
         long count = bids.stream().map(Bid::getPrice).distinct().count();
         if (count <= 10) {
-            return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream()
+            return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream().sorted(Map.Entry.comparingByKey())
                     .map(e -> new Volume(e.getKey().toString(), e.getValue().stream().collect(Collectors.summarizingDouble(Bid::getTransit)).getSum())).collect(Collectors.toList());
         } else {
             double maxPrice = bids.stream().max(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) + 1;
