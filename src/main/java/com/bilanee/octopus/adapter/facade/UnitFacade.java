@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -537,7 +538,7 @@ public class UnitFacade {
      */
     @GetMapping("calculateDaCost")
     public Result<Double> calculateDaCost(@NotNull @Positive Long unitId,
-                                  @NotNull @Positive Double start,
+                                  @NotNull @PositiveOrZero Double start,
                                   @NotNull @Positive Double end) {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);

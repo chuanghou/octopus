@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -96,18 +97,22 @@ public class GeneratorResult {
     /**
      * 机组所分摊的实时现货阻塞费用支出（元）
      **/
+    @JsonProperty("rRtCongestionShare")
     Double rRtCongestionShare;
     /**
      * 机组运行补偿费用（元）
      **/
+    @JsonProperty("rUnitCompensation")
     Double rUnitCompensation;
     /**
      * 返还给机组的省间双轨制不平衡资金收入（元）
      **/
+    @JsonProperty("rInterImbalanceShare")
     Double rInterImbalanceShare;
     /**
      * 返还给机组的省内双轨制不平衡资金收入（元）
      **/
+    @JsonProperty("rIntraImbalanceShare")
     Double rIntraImbalanceShare;
 
 }
