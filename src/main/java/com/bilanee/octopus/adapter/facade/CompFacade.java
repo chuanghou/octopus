@@ -743,6 +743,7 @@ public class CompFacade {
                 if (accumulate >= clear) {
                     double v = clear - (accumulate - (qps.get(i).getLeft()));
                     clearedQps.add(Pair.of(v, qps.get(i).getRight()));
+                    break;
                 } else {
                     clearedQps.add(qps.get(i));
                 }
