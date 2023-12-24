@@ -72,7 +72,7 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        Result<SpotBiddenVO> spotBiddenVOResult = compFacade.listSpotBiddenEntityVOs("128901.TRADE.0.DA_INTRA.CLEAR", "TRANSFER", TokenUtils.sign("1000"));
+        Result<SpotBiddenVO> spotBiddenVOResult = compFacade.listSpotBiddenEntityVOs("131049.TRADE.0.DA_INTRA.CLEAR", "TRANSFER", TokenUtils.sign("1000"));
         System.out.println(spotBiddenVOResult);
     }
 

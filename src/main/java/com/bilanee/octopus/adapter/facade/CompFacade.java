@@ -703,14 +703,11 @@ public class CompFacade {
                 .in(GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = generatorDaSegmentMapper.selectList(in);
 
-        ListMultimap<Integer, GeneratorDaSegmentBidDO> collect = generatorDaSegmentBidDOs.stream().collect(Collect.listMultiMap(GeneratorDaSegmentBidDO::getPrd));
-
-
         List<List<SpotUnitCleared>> indexedSpotUnitCleared = spotUnitCleareds.stream().collect(Collectors.groupingBy(SpotUnitCleared::getPrd))
                 .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
 
         List<List<Double>> priceStatistics = IntStream.range(0, 24)
-                .mapToObj(i -> process(collect.get(i), indexedSpotUnitCleared.get(i), unitDOs, da)).collect(Collectors.toList());
+                .mapToObj(i -> process(generatorDaSegmentBidDOs, indexedSpotUnitCleared.get(i), unitDOs, da)).collect(Collectors.toList());
         builder.priceStatistics(priceStatistics);
 
         return builder.build();
