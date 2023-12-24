@@ -72,8 +72,8 @@ public class CompTest {
 
     @Test
     public void clearTest() {
-        String sign = TokenUtils.sign("1000");
-        Result<SpotMarketVO> transfer = compFacade.listSpotMarketVOs("118476.TRADE.0.DA_INTRA.CLEAR", "TRANSFER", sign);
+        Result<SpotBiddenVO> spotBiddenVOResult = compFacade.listSpotBiddenEntityVOs("128901.TRADE.0.DA_INTRA.CLEAR", "TRANSFER", TokenUtils.sign("1000"));
+        System.out.println(spotBiddenVOResult);
     }
 
     @AfterEach
