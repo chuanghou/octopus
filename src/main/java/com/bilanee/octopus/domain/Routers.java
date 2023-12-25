@@ -30,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -397,10 +398,11 @@ public class Routers implements EventRouters {
         boolean b1 = now.getMarketStatus() == MarketStatus.CLEAR;
         if (b0 && b1) {
             log.info("开始执行正式出清");
-            Ssh.exec("python manage.py intra_da_market_clearing 2 1");
-            Ssh.exec("python manage.py intra_da_ruc 1");
-            Ssh.exec("python manage.py intra_rt_ed 1");
-            Ssh.exec("python manage.py intra_da_market_clearing 2 2");
+            CompletableFuture<Void> future0 = CompletableFuture.runAsync(() -> Ssh.exec("python manage.py intra_da_market_clearing 2 1"));
+            CompletableFuture<Void> future1 = CompletableFuture.runAsync(() -> Ssh.exec("python manage.py intra_da_ruc 1"));
+            CompletableFuture<Void> future2 = CompletableFuture.runAsync(() -> Ssh.exec("python manage.py intra_rt_ed 1"));
+            CompletableFuture<Void> future3 = CompletableFuture.runAsync(() -> Ssh.exec("python manage.py intra_da_market_clearing 2 2"));
+            Stream.of(future0, future1, future2, future3).forEach(CompletableFuture::join);
             Ssh.exec("python manage.py intra_da_ruc 2");
             Ssh.exec("python manage.py intra_rt_ed 2");
             log.info("结束执行正式出清");
