@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -72,22 +73,27 @@ public class LoadResult {
     /**
      * 用户分摊的省内双轨制不平衡资金支出（元）
      **/
+    @JsonProperty("rIntraImbalanceShare")
     Double rIntraImbalanceShare;
     /**
      * 用户分摊的省间双轨制不平衡资金支出（元）
      **/
+    @JsonProperty("rInterImbalanceShare")
     Double rInterImbalanceShare;
     /**
      * 用户分摊的机组运行补偿费用支出（元）
      **/
+    @JsonProperty("rUnitCompensationShare")
     Double rUnitCompensationShare;
     /**
      * 用户侧偏差收益回收资金（元）
      **/
+    @JsonProperty("rDeviationOutgoing")
     Double rDeviationOutgoing;
     /**
      * 用户侧偏差收益返还资金（元）
      **/
+    @JsonProperty("rDeviationIncoming")
     Double rDeviationIncoming;
 
 
