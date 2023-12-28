@@ -26,6 +26,7 @@ import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -69,6 +70,8 @@ public class Comp extends AggregateRoot {
     static private Tunnel tunnel;
     @StaticWire
     static private UniqueIdGetter uniqueIdGetter;
+    @StaticWire
+    static private RestTemplate restTemplate;
 
     @Override
     public String getAggregateId() {
