@@ -48,11 +48,11 @@ public class Routers implements EventRouters {
     @EventRouter
     public void route(CompEvent.Created created, Context context) {
         Comp comp = created.getComp();
-        List<Map<String, List<MetaUnit>>> roundMetaUnits = created.getRoundMetaUnits();
+        List<Map<String, Collection<MetaUnit>>> roundMetaUnits = created.getRoundMetaUnits();
         for (int roundId = 0; roundId < roundMetaUnits.size(); roundId++) {
-            Map<String, List<MetaUnit>> groupMetaUnits = roundMetaUnits.get(roundId);
+            Map<String, Collection<MetaUnit>> groupMetaUnits = roundMetaUnits.get(roundId);
             for (String userId : groupMetaUnits.keySet()) {
-                List<MetaUnit> metaUnits = groupMetaUnits.get(userId);
+                Collection<MetaUnit> metaUnits = groupMetaUnits.get(userId);
                 for (MetaUnit metaUnit : metaUnits) {
                     UnitCmd.Create command = UnitCmd.Create.builder().unitId(uniqueIdGetter.get())
                             .compId(comp.getCompId())

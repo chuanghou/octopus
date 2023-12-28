@@ -12,20 +12,32 @@ import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.*;
+import org.mapstruct.Builder;
 import org.mapstruct.factory.Mappers;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component
 @RequiredArgsConstructor
@@ -45,44 +57,62 @@ public class Tunnel {
     final StackDiagramDOMapper stackDiagramDOMapper;
     final GeneratorResultMapper generatorResultMapper;
     final LoadResultMapper loadResultMapper;
+    final RestTemplate restTemplate;
 
     public boolean review() {
         return marketSettingMapper.selectById(1).getIsEnteringReviewStage() && runningComp() != null && CompStage.RANKING.equals(runningComp().getCompStage());
     }
 
-    public Map<String, List<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds) {
-        Map<String, List<MetaUnit>> metaUnitMap = new HashMap<>();
+    @Data
+    @lombok.Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class Message {
+        Integer code;
+        String message;
+    }
 
-        for (int i = 0; i < userIds.size(); i++) {
-            List<Integer> sourceIds = AssignUtils.assignSourceId(roundId, userIds.size(), 30, i);
-            LambdaQueryWrapper<MetaUnitDO> in = new LambdaQueryWrapper<MetaUnitDO>().in(MetaUnitDO::getSourceId, sourceIds);
-            List<MetaUnitDO> metaUnitDOs = metaUnitDOMapper.selectList(in);
-            metaUnitMap.put(userIds.get(i), Collect.transfer(metaUnitDOs, Convertor.INST::to));
-        }
+    @SneakyThrows
+    public Map<String, Collection<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds, Comp comp) {
 
-        metaUnitMap.forEach((userId, metaUnits) -> {
-            metaUnits.forEach(metaUnit -> {
-               if (metaUnit.getUnitType() == UnitType.GENERATOR) {
-                   LambdaQueryWrapper<GeneratorResult> eq = new LambdaQueryWrapper<GeneratorResult>()
-                           .eq(GeneratorResult::getRoundId, roundId + 1)
-                           .eq(GeneratorResult::getUnitId, metaUnit.getSourceId());
-                   GeneratorResult generatorResult = generatorResultMapper.selectOne(eq);
-                   generatorResult.setTraderId(userId);
-                   generatorResultMapper.updateById(generatorResult);
-               } else if (metaUnit.getUnitType() == UnitType.LOAD) {
-                   LambdaQueryWrapper<LoadResult> eq = new LambdaQueryWrapper<LoadResult>()
-                           .eq(LoadResult::getRoundId, roundId + 1)
-                           .eq(LoadResult::getLoadId, metaUnit.getSourceId());
-                   LoadResult loadResult = loadResultMapper.selectOne(eq);
-                   loadResult.setTraderId(userId);
-                   loadResultMapper.updateById(loadResult);
-               } else {
-                   throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
-               }
+        String queryString = "trader_id_list=[" + String.join(",", userIds) + "]";
+        URI uri = new URI("http", null, "118.184.179.113", 8002, "/automatic_assigned/", queryString, null);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
+        Message parse = Json.parse(responseEntity.getBody(), Message.class);
+        BizEx.falseThrow(Integer.valueOf(0).equals(parse.getCode()), ErrorEnums.SYS_EX.message("静态接口异常"));
+
+        ListMultimap<String, MetaUnit> metaUnitMap = ArrayListMultimap.create();
+
+        IntStream.range(0, comp.getRoundTotal()).forEach(i -> {
+
+            LambdaQueryWrapper<GeneratorResult> eq0 = new LambdaQueryWrapper<GeneratorResult>()
+                    .eq(GeneratorResult::getRoundId, roundId + 1)
+                    .in(GeneratorResult::getTraderId, userIds);
+            List<GeneratorResult> generatorResults = generatorResultMapper.selectList(eq0);
+            generatorResults.forEach(gR -> {
+                LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
+                        .eq(MetaUnitDO::getSourceId, gR.getUnitId()).eq(MetaUnitDO::getUnitType, UnitType.GENERATOR);
+                MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
+                MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
+                metaUnitMap.put(gR.getTraderId(), metaUnit);
+            });
+
+            LambdaQueryWrapper<LoadResult> eq1 = new LambdaQueryWrapper<LoadResult>()
+                    .eq(LoadResult::getRoundId, roundId + 1)
+                    .in(LoadResult::getTraderId, userIds);
+            List<LoadResult> loadResults = loadResultMapper.selectList(eq1);
+            loadResults.forEach(lR -> {
+                LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
+                        .eq(MetaUnitDO::getSourceId, lR.getLoadId()).eq(MetaUnitDO::getUnitType, UnitType.LOAD);
+                MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
+                MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
+                metaUnitMap.put(lR.getTraderId(), metaUnit);
             });
         });
 
-        return metaUnitMap;
+
+        return metaUnitMap.asMap();
     }
 
     public MetaUnit getMetaUnitById(Long id) {

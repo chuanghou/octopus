@@ -94,8 +94,8 @@ public class Comp extends AggregateRoot {
         comp.setDt(command.getDt());
 
         // assign metaUnit
-        List<Map<String, List<MetaUnit>>> roundMetaUnits = IntStream.range(0, comp.getRoundTotal())
-                .mapToObj(roundId -> tunnel.assignMetaUnits(roundId, command.getUserIds())).collect(Collectors.toList());
+        List<Map<String, Collection<MetaUnit>>> roundMetaUnits = IntStream.range(0, comp.getRoundTotal())
+                .mapToObj(roundId -> tunnel.assignMetaUnits(roundId, command.getUserIds(), comp)).collect(Collectors.toList());
 
         Map<UnitType, GridLimit> priceLimits = tunnel.priceLimits();
 

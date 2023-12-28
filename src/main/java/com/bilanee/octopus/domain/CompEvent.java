@@ -6,6 +6,7 @@ import com.stellariver.milky.domain.support.event.Event;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +21,7 @@ public class CompEvent {
     static public class Created extends Event {
 
         Comp comp;
-        List<Map<String, List<MetaUnit>>> roundMetaUnits;
+        List<Map<String, Collection<MetaUnit>>> roundMetaUnits;
 
         @Override
         public String getAggregateId() {
