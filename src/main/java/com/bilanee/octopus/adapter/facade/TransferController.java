@@ -20,7 +20,8 @@ public class TransferController {
 
     @RequestMapping("/transfer/**")
     public String mirrorRest(HttpMethod method, HttpServletRequest request) throws URISyntaxException {
-        URI uri = new URI("http", null, "118.184.179", 8002, request.getRequestURI(), request.getQueryString(), null);
+        String requestUri = request.getRequestURI().substring("/transfer".length());
+        URI uri = new URI("http", null, "118.184.179.113", 8002, requestUri, request.getQueryString(), null);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, method, null, String.class);
         return responseEntity.getBody();
     }
