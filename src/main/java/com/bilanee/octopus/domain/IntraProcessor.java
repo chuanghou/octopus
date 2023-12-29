@@ -167,8 +167,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.comparingByKey());
-        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, false);
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
 
         StageId stageId = tunnel.runningComp().getStageId();
 
@@ -259,8 +259,8 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.comparingByKey());
-        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, false);
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
 
         IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
                 .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
@@ -270,9 +270,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     }
 
-    private List<Volume> extractVolumes(Collection<Bid> bids, Comparator<Map.Entry<Double, List<Bid>>> comparator) {
+    private List<Volume> extractVolumes(Collection<Bid> bids, boolean natural) {
         long count = bids.stream().map(Bid::getPrice).distinct().count();
         if (count <= 10) {
+            Comparator<Map.Entry<Double, List<Bid>>> comparator = natural ? Map.Entry.comparingByKey() : Map.Entry.<Double, List<Bid>>comparingByKey().reversed();
             return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream().sorted(comparator)
                     .map(e -> new Volume(e.getKey().toString(), e.getValue().stream().collect(Collectors.summarizingDouble(Bid::getTransit)).getSum())).collect(Collectors.toList());
         } else {
@@ -285,9 +286,14 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             List<Double> volumeQuantity = bids.stream().collect(Collect.select(predicates))
                     .stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum))
                     .collect(Collectors.toList());
-            return IntStream.range(0, 10)
+            List<Volume> volumes = IntStream.range(0, 10)
                     .mapToObj(i -> new Volume(String.format("%.2f-%.2f", i * v + minPrice, (i + 1) * v + minPrice), volumeQuantity.get(i)))
                     .collect(Collectors.toList());
+            if (!natural) {
+                Collections.reverse(volumes);
+            }
+            return volumes;
+
         }
 
     }
