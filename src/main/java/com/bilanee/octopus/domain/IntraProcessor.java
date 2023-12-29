@@ -167,7 +167,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.<Double, List<Bid>>comparingByKey().reversed());
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.comparingByKey());
         List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
 
         StageId stageId = tunnel.runningComp().getStageId();
@@ -259,7 +259,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
         List<Ask> sellAsks = extractAsks(sortedSellBids);
 
-        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.<Double, List<Bid>>comparingByKey().reversed());
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, Map.Entry.comparingByKey());
         List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, Map.Entry.comparingByKey());
 
         IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
