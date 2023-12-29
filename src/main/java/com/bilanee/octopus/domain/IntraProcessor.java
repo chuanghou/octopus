@@ -191,8 +191,12 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         } else {
             throw new RuntimeException();
         }
-        Deal deal;
+
+        StageId stageId = tunnel.runningComp().getStageId();
+
         while (true) {
+
+            Deal deal;
             Bid buyBid = buyPriorityQueue.peek();
             Bid sellBid = sellPriorityQueue.peek();
 
@@ -233,9 +237,6 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
             latestPrice = dealPrice;
 
-            StageId stageId = tunnel.runningComp().getStageId();
-
-            IntraQuotationDO intraQuotationDO = null;
             if (deal != null) {
                 IntraQuotationDO.IntraQuotationDOBuilder builder = IntraQuotationDO.builder()
                         .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
@@ -246,29 +247,27 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
                 } else {
                     builder.sellQuantity(deal.getQuantity()).buyQuantity(0D);
                 }
-                intraQuotationDO = builder.build();
+                tunnel.recordIntraQuotationDO(builder.build());
             }
-
-            // 实时
-            List<Bid> sortedBuyBids = buyPriorityQueue.stream()
-                    .sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList());
-            List<Ask> buyAsks = extractAsks(sortedBuyBids);
-
-            List<Bid> sortedSellBids = sellPriorityQueue.stream()
-                    .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
-            List<Ask> sellAsks = extractAsks(sortedSellBids);
-
-            List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, false);
-            List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
-
-            IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
-                    .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                    .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
-                    .build();
-            tunnel.record(intraQuotationDO, intraInstantDO);
-
         }
 
+        // 实时
+        List<Bid> sortedBuyBids = buyPriorityQueue.stream()
+                .sorted(Comparator.comparing(Bid::getPrice).reversed()).collect(Collectors.toList());
+        List<Ask> buyAsks = extractAsks(sortedBuyBids);
+
+        List<Bid> sortedSellBids = sellPriorityQueue.stream()
+                .sorted(Comparator.comparing(Bid::getPrice)).collect(Collectors.toList());
+        List<Ask> sellAsks = extractAsks(sortedSellBids);
+
+        List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, false);
+        List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
+
+        IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
+                .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
+                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
+                .build();
+        tunnel.recordIntraInstantDO(intraInstantDO);
 
 
     }

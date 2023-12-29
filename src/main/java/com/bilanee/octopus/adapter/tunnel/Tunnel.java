@@ -186,6 +186,25 @@ public class Tunnel {
     }
 
 
+
+    public void recordIntraQuotationDO(IntraQuotationDO intraQuotationDO) {
+        intraQuotationDOMapper.insert(intraQuotationDO);
+    }
+
+
+    public void recordIntraInstantDO(IntraInstantDO intraInstantDO) {
+        LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
+                .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
+                .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())
+                .eq(IntraInstantDO::getTimeFrame, intraInstantDO.getTimeFrame());
+        if (intraInstantDOMapper.selectOne(eq) == null) {
+            intraInstantDOMapper.insert(intraInstantDO);
+        } else {
+            intraInstantDOMapper.update(intraInstantDO, eq);
+        }
+    }
+
+
     public Comp runningComp() {
         LambdaQueryWrapper<CompDO> queryWrapper = new LambdaQueryWrapper<CompDO>().orderByDesc(CompDO::getGmtCreate).last("LIMIT 1");
         CompDO compDO = compDOMapper.selectOne(queryWrapper);
