@@ -31,6 +31,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -484,6 +485,37 @@ public class ManageFacade {
         return Result.success();
     }
 
+
+    final PaperDOMapper paperDOMapper;
+
+    /**
+     * 导入试卷
+     */
+    @PostMapping("importPaper")
+    public Result<Void> importPaper(@RequestBody List<PaperDO.Question> questions) {
+        if (Collect.size(questions) != 5) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("题目数量需要是50"));
+        }
+        PaperDO paperDO = PaperDO.builder().questions(questions).build();
+        paperDOMapper.insert(paperDO);
+        return Result.success();
+    }
+
+    /**
+     * 删除试卷
+     * @param paperId 试卷Id
+     */
+    @PostMapping("deletePaper")
+    public Result<Void> deletePaper(@NotNull Long paperId) {
+        paperDOMapper.deleteById(paperId);
+        return Result.success();
+    }
+
+    @GetMapping("listPapers")
+    public Result<List<PaperDO>> listPapers() {
+        List<PaperDO> paperDOs = paperDOMapper.selectList(null);
+        return Result.success(paperDOs);
+    }
 
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
