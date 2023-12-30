@@ -24,8 +24,10 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class PaperDO {
 
-    @TableId(type = IdType.AUTO)
+    @TableId(type = IdType.INPUT)
     Integer id;
+
+    String name;
 
     @TableField(typeHandler = ListQuestionHandler.class)
     List<Question> questions;

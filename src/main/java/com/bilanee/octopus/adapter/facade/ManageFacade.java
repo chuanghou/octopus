@@ -3,6 +3,7 @@ package com.bilanee.octopus.adapter.facade;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
+import com.bilanee.octopus.adapter.facade.vo.PaperVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -316,7 +317,7 @@ public class ManageFacade {
     /**
      * 更新算例参数
      */
-    @GetMapping("updateExampleSetting")
+    @PostMapping("updateExampleSetting")
     public Result<Void> updateExampleSetting(@RequestBody ExampleSetting exampleSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         String caseSetting = (exampleSetting.getTransferDiffer() ? "1" : "0") +
@@ -331,7 +332,8 @@ public class ManageFacade {
         marketSettingDO.setRenewableAnnualMaxForecastErr(exampleSetting.getRenewableAnnualMaxForecastErr().getForecastError());
         marketSettingDO.setRenewableMonthlyMaxForecastErr(exampleSetting.getRenewableMonthlyMaxForecastErr().getForecastError());
         marketSettingDO.setRenewableDaMaxForecastErr(exampleSetting.getRenewableDaMaxForecastErr().getForecastError());
-        String forecastDeviation = Stream.of(exampleSetting.getLoadAnnualMaxForecastErr().getTransfer(),
+        String forecastDeviation = Stream.of(
+                exampleSetting.getLoadAnnualMaxForecastErr().getTransfer(),
                 exampleSetting.getLoadMonthlyMaxForecastErr().getTransfer(),
                 exampleSetting.getLoadDaMaxForecastErr().getTransfer(),
 
@@ -371,7 +373,7 @@ public class ManageFacade {
     /**
      * 修改知识竞答参数
      */
-    @GetMapping("updateQuizSetting")
+    @PostMapping("updateQuizSetting")
     public Result<Void> updateQuizSetting(@RequestBody QuizSetting quizSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         marketSettingDO.setIsConductingQAndAModule(quizSetting.getEnableQuiz());
@@ -426,7 +428,7 @@ public class ManageFacade {
     /**
      * 修改电力市场参数设定
      */
-    @GetMapping("updateElectricMarketSetting")
+    @PostMapping("updateElectricMarketSetting")
     public Result<Void> updateElectricMarketSetting(@RequestBody ElectricMarketSetting electricMarketSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
         marketSettingDO.setOfferPriceCap(electricMarketSetting.getGeneratorPriceLimit().getHigh());
@@ -487,20 +489,6 @@ public class ManageFacade {
 
 
     final PaperDOMapper paperDOMapper;
-
-    /**
-     * 导入试卷
-     */
-    @PostMapping("importPaper")
-    public Result<Void> importPaper(@RequestBody List<PaperDO.Question> questions) {
-        if (Collect.size(questions) != 5) {
-            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("题目数量需要是50"));
-        }
-        PaperDO paperDO = PaperDO.builder().questions(questions).build();
-        paperDOMapper.insert(paperDO);
-        return Result.success();
-    }
-
     /**
      * 删除试卷
      * @param paperId 试卷Id
@@ -511,10 +499,13 @@ public class ManageFacade {
         return Result.success();
     }
 
+    /**
+     * 试卷列表
+     */
     @GetMapping("listPapers")
-    public Result<List<PaperDO>> listPapers() {
+    public Result<List<PaperVO>> listPapers() {
         List<PaperDO> paperDOs = paperDOMapper.selectList(null);
-        return Result.success(paperDOs);
+        return Result.success(paperDOs.stream().map(p -> new PaperVO(p.getId(), p.getName())).collect(Collectors.toList()));
     }
 
 
