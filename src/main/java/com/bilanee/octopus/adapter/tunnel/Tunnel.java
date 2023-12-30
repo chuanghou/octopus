@@ -84,31 +84,29 @@ public class Tunnel {
 
         ListMultimap<String, MetaUnit> metaUnitMap = ArrayListMultimap.create();
 
-        IntStream.range(0, comp.getRoundTotal()).forEach(i -> {
+        LambdaQueryWrapper<GeneratorResult> eq0 = new LambdaQueryWrapper<GeneratorResult>()
+                .eq(GeneratorResult::getRoundId, roundId + 1)
+                .in(GeneratorResult::getTraderId, userIds);
 
-            LambdaQueryWrapper<GeneratorResult> eq0 = new LambdaQueryWrapper<GeneratorResult>()
-                    .eq(GeneratorResult::getRoundId, roundId + 1)
-                    .in(GeneratorResult::getTraderId, userIds);
-            List<GeneratorResult> generatorResults = generatorResultMapper.selectList(eq0);
-            generatorResults.forEach(gR -> {
-                LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
-                        .eq(MetaUnitDO::getSourceId, gR.getUnitId()).eq(MetaUnitDO::getUnitType, UnitType.GENERATOR);
-                MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
-                MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
-                metaUnitMap.put(gR.getTraderId(), metaUnit);
-            });
+        List<GeneratorResult> generatorResults = generatorResultMapper.selectList(eq0);
+        generatorResults.forEach(gR -> {
+            LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
+                    .eq(MetaUnitDO::getSourceId, gR.getUnitId()).eq(MetaUnitDO::getUnitType, UnitType.GENERATOR);
+            MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
+            MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
+            metaUnitMap.put(gR.getTraderId(), metaUnit);
+        });
 
-            LambdaQueryWrapper<LoadResult> eq1 = new LambdaQueryWrapper<LoadResult>()
-                    .eq(LoadResult::getRoundId, roundId + 1)
-                    .in(LoadResult::getTraderId, userIds);
-            List<LoadResult> loadResults = loadResultMapper.selectList(eq1);
-            loadResults.forEach(lR -> {
-                LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
-                        .eq(MetaUnitDO::getSourceId, lR.getLoadId()).eq(MetaUnitDO::getUnitType, UnitType.LOAD);
-                MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
-                MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
-                metaUnitMap.put(lR.getTraderId(), metaUnit);
-            });
+        LambdaQueryWrapper<LoadResult> eq1 = new LambdaQueryWrapper<LoadResult>()
+                .eq(LoadResult::getRoundId, roundId + 1)
+                .in(LoadResult::getTraderId, userIds);
+        List<LoadResult> loadResults = loadResultMapper.selectList(eq1);
+        loadResults.forEach(lR -> {
+            LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
+                    .eq(MetaUnitDO::getSourceId, lR.getLoadId()).eq(MetaUnitDO::getUnitType, UnitType.LOAD);
+            MetaUnitDO metaUnitDO = metaUnitDOMapper.selectOne(metaUnitDOEq);
+            MetaUnit metaUnit = Convertor.INST.to(metaUnitDO);
+            metaUnitMap.put(lR.getTraderId(), metaUnit);
         });
 
 
@@ -176,6 +174,25 @@ public class Tunnel {
         if (intraQuotationDO != null) {
             intraQuotationDOMapper.insert(intraQuotationDO);
         }
+        LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
+                .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
+                .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())
+                .eq(IntraInstantDO::getTimeFrame, intraInstantDO.getTimeFrame());
+        if (intraInstantDOMapper.selectOne(eq) == null) {
+            intraInstantDOMapper.insert(intraInstantDO);
+        } else {
+            intraInstantDOMapper.update(intraInstantDO, eq);
+        }
+    }
+
+
+
+    public void recordIntraQuotationDO(IntraQuotationDO intraQuotationDO) {
+        intraQuotationDOMapper.insert(intraQuotationDO);
+    }
+
+
+    public void recordIntraInstantDO(IntraInstantDO intraInstantDO) {
         LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
                 .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
                 .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())
