@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("octopus_answer")
+@TableName(value = "octopus_answer_do", autoResultMap = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AnswerDO {
 

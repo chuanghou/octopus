@@ -3,7 +3,7 @@
 <mapper namespace="com.bilanee.octopus.infrastructure.mapper.AnswerDOMapper">
     
     <parameterMap id="parameterMap" type="com.bilanee.octopus.infrastructure.entity.AnswerDO">
-        <parameter property="choices" jdbcType="VARCHAR"
+        <parameter property="choices" javaType="String" jdbcType="VARCHAR"
                     typeHandler="com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler"/>
     </parameterMap>
     

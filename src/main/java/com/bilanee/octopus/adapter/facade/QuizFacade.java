@@ -18,9 +18,7 @@ import com.stellariver.milky.common.base.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +37,7 @@ public class QuizFacade {
      * @return 试卷详情
      */
     @GetMapping("/listQuestionVOs")
+    @SuppressWarnings("unchecked")
     public Result<List<QuestionVO>> listQuestionVOs(String stageId, @RequestHeader String token) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         PaperDO paperDO = paperDOMapper.selectById(marketSettingDO.getPaperId());
@@ -56,7 +55,7 @@ public class QuizFacade {
                     .questionContent(q.getText())
                     .questionType(q.getType())
                     .options(options)
-                    .submitChoices(answerMap.get(q.getId()))
+                    .submitChoices(Optional.ofNullable(answerMap.get(q.getId())).orElse(Collections.EMPTY_LIST))
                     .rightChoices(q.getAnswers())
                     .build();
         }).collect(Collectors.toList());
