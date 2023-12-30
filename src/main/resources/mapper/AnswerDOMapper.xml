@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.bilanee.octopus.infrastructure.mapper.AnswerDOMapper">
+
     
-    <parameterMap id="parameterMap" type="com.bilanee.octopus.infrastructure.entity.AnswerDO">
-        <parameter property="choices" javaType="String" jdbcType="VARCHAR"
-                    typeHandler="com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler"/>
-    </parameterMap>
-    
-    <insert id="insertOrUpdateOnDuplicate" parameterMap="parameterMap">
+    <insert id="insertOrUpdateOnDuplicate">
         INSERT INTO octopus_answer_do(comp_id, user_id, question_id, choices)
-        SET comp_id = #{compId}, user_id = #{userId}, question_id = #{questionId}, choices=#{choices}
-        ON DUPLICATE KEY UPDATE choices=#{choices}
+        VALUES (#{compId}, #{userId}, #{questionId}, #{choices, typeHandler=com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler})
+        ON DUPLICATE KEY UPDATE choices = #{choices, typeHandler=com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler}
     </insert>
 
 
