@@ -1,21 +1,20 @@
 package com.bilanee.octopus.adapter.ws;
- 
- 
+
+
 import com.bilanee.octopus.basic.TokenUtils;
 import com.google.common.collect.Sets;
-import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import lombok.Data;
-import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
-import java.io.IOException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
