@@ -38,8 +38,7 @@ public class MyBatisPlusConfiguration {
         sqlSessionFactoryBean.setDataSource(dataSource);
 
         sqlSessionFactoryBean.setTypeAliasesPackage("com.bilanee.octopus.infrastructure.entity");
-        sqlSessionFactoryBean.setTypeEnumsPackage("com.bilanee.octopus.common.enums");
-
+        sqlSessionFactoryBean.setTypeHandlersPackage("com.bilanee.octopus.infrastructure.handlers");
         //驼峰转化开启
         MybatisConfiguration configuration = new MybatisConfiguration();
         configuration.setMapUnderscoreToCamelCase(true);

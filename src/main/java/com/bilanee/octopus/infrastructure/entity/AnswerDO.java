@@ -4,7 +4,7 @@ package com.bilanee.octopus.infrastructure.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bilanee.octopus.basic.enums.Choice;
-import com.stellariver.milky.infrastructure.base.database.ListJsonHandler;
+import com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -24,5 +24,4 @@ public class AnswerDO {
     @TableField(typeHandler = ListChoiceHandler.class)
     List<Choice> choices;
 
-    static public class ListChoiceHandler extends ListJsonHandler<Choice> {}
 }

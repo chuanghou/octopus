@@ -3,8 +3,8 @@
 <mapper namespace="com.bilanee.octopus.infrastructure.mapper.AnswerDOMapper">
     
     <parameterMap id="parameterMap" type="com.bilanee.octopus.infrastructure.entity.AnswerDO">
-        <parameter property="choices" javaType="VARCHAR"
-                    typeHandler="com.bilanee.octopus.infrastructure.entity.AnswerDO.ListChoiceHandler"/>
+        <parameter property="choices" jdbcType="VARCHAR"
+                    typeHandler="com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler"/>
     </parameterMap>
     
     <insert id="insertOrUpdateOnDuplicate" parameterMap="parameterMap">
