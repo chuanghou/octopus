@@ -41,6 +41,9 @@ public class WebSocket {
     @OnClose
     public void OnClose(){
         log.info("close session, userId: {}, session : {}", userId, session);
+        if (userId == null) {
+            return;
+        }
         Optional.ofNullable(sessions.get(userId)).ifPresent(ss -> ss.remove(session));
     }
 
