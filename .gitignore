@@ -5,6 +5,8 @@ application.log
 
 backup/
 
+*.jar
+
 ### STS ###
 .apt_generated
 .classpath

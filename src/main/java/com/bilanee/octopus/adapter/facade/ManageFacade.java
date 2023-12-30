@@ -505,7 +505,8 @@ public class ManageFacade {
     @GetMapping("listPapers")
     public Result<List<PaperVO>> listPapers() {
         List<PaperDO> paperDOs = paperDOMapper.selectList(null);
-        return Result.success(paperDOs.stream().map(p -> new PaperVO(p.getId(), p.getName())).collect(Collectors.toList()));
+        List<PaperVO> paperVOs = paperDOs.stream().map(p -> new PaperVO(p.getId(), p.getName(), p.getQuestions())).collect(Collectors.toList());
+        return Result.success(paperVOs);
     }
 
 

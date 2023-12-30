@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Question {
+public class RawQuestion {
 
     Integer id;
     Integer type;

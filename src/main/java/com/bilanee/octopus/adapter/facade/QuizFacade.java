@@ -10,6 +10,7 @@ import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.infrastructure.entity.AnswerDO;
 import com.bilanee.octopus.infrastructure.entity.MarketSettingDO;
 import com.bilanee.octopus.infrastructure.entity.PaperDO;
+import com.bilanee.octopus.infrastructure.entity.Question;
 import com.bilanee.octopus.infrastructure.mapper.AnswerDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
 import com.bilanee.octopus.infrastructure.mapper.PaperDOMapper;
@@ -41,7 +42,7 @@ public class QuizFacade {
     public Result<List<QuestionVO>> listQuestionVOs(String stageId, @RequestHeader String token) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         PaperDO paperDO = paperDOMapper.selectById(marketSettingDO.getPaperId());
-        List<PaperDO.Question> questions = paperDO.getQuestions();
+        List<Question> questions = paperDO.getQuestions();
         StageId parsed = StageId.parse(stageId);
         Long compId = parsed.getCompId();
         String userId = TokenUtils.getUserId(token);
