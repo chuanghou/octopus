@@ -2,6 +2,7 @@ package com.bilanee.octopus.domain;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
+import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
@@ -9,10 +10,7 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.adapter.ws.WebSocket;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
-import com.bilanee.octopus.basic.Bid;
-import com.bilanee.octopus.basic.Deal;
-import com.bilanee.octopus.basic.MetaUnit;
-import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
@@ -435,6 +433,28 @@ public class Routers implements EventRouters {
             return;
         }
         Ssh.exec("python manage.py game_ranking");
+    }
+
+    final QuizResultDOMapper quizResultDOMapper;
+    final QuizFacade quizFacade;
+
+
+    @EventRouter
+    public void writeScore(CompEvent.Stepped stepped, Context context) {
+
+        StageId now = stepped.getNow();
+        boolean b = now.getCompStage() == CompStage.QUIT_RESULT;
+        if (!b) {
+            return;
+        }
+        List<String> userIds = tunnel.runningComp().getUserIds();
+        quizResultDOMapper.selectList(null).forEach(quizResultDOMapper::deleteById);
+        StageId stageId = tunnel.runningComp().getStageId();
+        userIds.forEach(userId -> {
+            Integer score = quizFacade.getScore(stageId.toString(), TokenUtils.sign(userId)).getData();
+            QuizResultDO quizResultDO = QuizResultDO.builder().userId(userId).score(score).build();
+            quizResultDOMapper.insert(quizResultDO);
+        });
     }
 
 
