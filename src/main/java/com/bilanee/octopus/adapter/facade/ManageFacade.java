@@ -296,15 +296,15 @@ public class ManageFacade {
                     .transfer(Double.valueOf(split[2])).receiver(Double.valueOf(split[5])).build();
             builder.loadDaMaxForecastErr(loadDa);
 
-            ForecastError generatorAnnual = ForecastError.builder().forecastError(marketSettingDO.getLoadAnnualMaxForecastErr())
+            ForecastError generatorAnnual = ForecastError.builder().forecastError(marketSettingDO.getRenewableAnnualMaxForecastErr())
                     .transfer(Double.valueOf(split[6])).receiver(Double.valueOf(split[9])).build();
             builder.renewableAnnualMaxForecastErr(generatorAnnual);
 
-            ForecastError generatorMonthly = ForecastError.builder().forecastError(marketSettingDO.getLoadMonthlyMaxForecastErr())
+            ForecastError generatorMonthly = ForecastError.builder().forecastError(marketSettingDO.getRenewableMonthlyMaxForecastErr())
                     .transfer(Double.valueOf(split[7])).receiver(Double.valueOf(split[10])).build();
             builder.renewableMonthlyMaxForecastErr(generatorMonthly);
 
-            ForecastError generatorDa = ForecastError.builder().forecastError(marketSettingDO.getLoadDaMaxForecastErr())
+            ForecastError generatorDa = ForecastError.builder().forecastError(marketSettingDO.getRenewableDaMaxForecastErr())
                     .transfer(Double.valueOf(split[8])).receiver(Double.valueOf(split[11])).build();
             builder.renewableDaMaxForecastErr(generatorDa);
 
