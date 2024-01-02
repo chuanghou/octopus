@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("octopus_quiz_result_do")
+@TableName("octopus_quiz_result")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class QuizResultDO {
 

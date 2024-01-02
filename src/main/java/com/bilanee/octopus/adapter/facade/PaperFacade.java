@@ -52,11 +52,10 @@ public class PaperFacade {
             String sheetName = readSheet.getSheetName();
             QuestionListener questionListener = new QuestionListener();
             EasyExcel.read(file.getInputStream(), RawQuestion.class, questionListener).sheet().doRead();
-            if (Collect.size(questionListener.getRawQuestions()) != 50) {
-                throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("试卷试题限制必须为50道"));
-            }
-            List<RawQuestion> rawQuestions = questionListener.getRawQuestions().subList(0, 50);
-            List<Question> questions = rawQuestions.stream().map(r -> {
+//            if (Collect.size(questionListener.getRawQuestions()) != 50) {
+//                throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("试卷试题限制必须为50道"));
+//            }
+            List<Question> questions = questionListener.getRawQuestions().stream().map(r -> {
                 List<String> options = Stream.of(r.getOptionA(), r.getOptionB(), r.getOptionC(), r.getOptionD()).filter(Kit::notBlank).collect(Collectors.toList());
                 List<Choice> choices = new ArrayList<>();
                 for (char c : r.getAnswers().toCharArray()) {
