@@ -11,6 +11,8 @@ import com.stellariver.milky.common.tool.common.Kit;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.bouncycastle.util.Integers;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.NullValuePropertyMappingStrategy;
@@ -40,7 +42,7 @@ public class StageId {
         return StageId.builder()
                 .compId(Long.parseLong(split[0]))
                 .compStage(Kit.enumOfMightEx(CompStage::name, split[1]))
-                .roundId(Integer.parseInt(split[2]))
+                .roundId(NumberUtils.isParsable(split[2]) ? Integer.parseInt(split[2]) : null)
                 .tradeStage(Kit.enumOf(TradeStage::name, split[3]).orElse(null))
                 .marketStatus(Kit.enumOf(MarketStatus::name, split[4]).orElse(null))
                 .build();
