@@ -278,7 +278,7 @@ public class UnitFacade {
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
             Double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
-            builder.position(general - opposite);
+            builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
 
             bids = bids.stream().filter(bid -> bid.getTradeStage().equals(stageId.getTradeStage())).collect(Collectors.toList());
             Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
