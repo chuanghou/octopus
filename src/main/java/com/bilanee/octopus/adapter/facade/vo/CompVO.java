@@ -3,7 +3,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 import com.bilanee.octopus.basic.enums.CompStage;
 import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.domain.Comp;
+import com.bilanee.octopus.domain.DelayCommandWrapper;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -63,6 +63,6 @@ public class CompVO {
     List<String> userIds;
 
 
-    List<Comp.DelayCommandWrapper> delayCommandWrappers;
+    List<DelayCommandWrapper> delayCommandWrappers;
 
 }

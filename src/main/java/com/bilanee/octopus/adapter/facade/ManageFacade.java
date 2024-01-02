@@ -53,7 +53,7 @@ public class ManageFacade {
     final CompDOMapper compDOMapper;
     final UserDOMapper userDOMapper;
     final Tunnel tunnel;
-    final Comp.DelayExecutor delayExecutor;
+    final DelayExecutor delayExecutor;
     final IntraManager intraManager;
     final UnitBasicMapper unitBasicMapper;
     final LoadBasicMapper loadBasicMapper;

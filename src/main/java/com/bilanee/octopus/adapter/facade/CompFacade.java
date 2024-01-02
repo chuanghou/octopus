@@ -8,9 +8,7 @@ import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
-import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.IntraSymbol;
-import com.bilanee.octopus.domain.Unit;
+import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.collect.ListMultimap;
@@ -736,14 +734,14 @@ public class CompFacade {
 
             double accumulate = 0D;
             double clear = da ? spotUnitCleared.getDaClearedMw() : spotUnitCleared.getRtClearedMw();
-            for (int i = 0; i < qps.size(); i++) {
-                accumulate += qps.get(i).getLeft();
+            for (Pair<Double, Double> qp : qps) {
+                accumulate += qp.getLeft();
                 if (accumulate >= clear) {
-                    double v = clear - (accumulate - (qps.get(i).getLeft()));
-                    clearedQps.add(Pair.of(v, qps.get(i).getRight()));
+                    double v = clear - (accumulate - (qp.getLeft()));
+                    clearedQps.add(Pair.of(v, qp.getRight()));
                     break;
                 } else {
-                    clearedQps.add(qps.get(i));
+                    clearedQps.add(qp);
                 }
             }
             return clearedQps;
@@ -820,7 +818,7 @@ public class CompFacade {
         List<TieLinePowerDO> tieLinePowerDOs = tieLinePowerDOMapper.selectList(eqx)
                 .stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
 
-        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>();
+        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<>();
         List<UnmetDemand> collect = unmetDemandMapper.selectList(eq1).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
         List<Integer> instants = IntStream.range(0, 24).mapToObj(i -> {
             TieLinePowerDO tieLinePowerDO = tieLinePowerDOs.get(i);
@@ -879,7 +877,7 @@ public class CompFacade {
 
         GridLimit generatorLimit = tunnel.priceLimit(UnitType.GENERATOR);
         GridLimit loadLimit = tunnel.priceLimit(UnitType.LOAD);
-        Point<Double> supplyTerminus = Collect.isEmpty(supplySections) ? null : new Point<Double>(supplySections.get(supplySections.size() - 1).getRx(), generatorLimit.getHigh());
+        Point<Double> supplyTerminus = Collect.isEmpty(supplySections) ? null : new Point<>(supplySections.get(supplySections.size() - 1).getRx(), generatorLimit.getHigh());
 
         List<SpotSection> requireSections = Collect.asList(new SpotSection(0D, receiverDeclaredTotal, loadLimit.getHigh()));
         Point<Double> requireTerminus = new Point<>(receiverDeclaredTotal, loadLimit.getLow());
@@ -1063,8 +1061,8 @@ public class CompFacade {
                     .marketStatus(comp.getMarketStatus())
                     .build();
             compVO.setStageId(stageId.toString());
-            Comp.DelayExecutor delayExecutor = BeanUtil.getBean(Comp.DelayExecutor.class);
-            List<Comp.DelayCommandWrapper> wrappers = new ArrayList<>(delayExecutor.getDelayQueue());
+            DelayExecutor delayExecutor = BeanUtil.getBean(DelayExecutor.class);
+            List<DelayCommandWrapper> wrappers = new ArrayList<>(delayExecutor.getDelayQueue());
             compVO.setDelayCommandWrappers(wrappers);
         }
 

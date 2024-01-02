@@ -17,20 +17,15 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
 import com.stellariver.milky.domain.support.ErrorEnums;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
-import com.stellariver.milky.domain.support.command.Command;
-import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.command.ConstructorHandler;
 import com.stellariver.milky.domain.support.command.MethodHandler;
 import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -107,7 +102,6 @@ public class Comp extends AggregateRoot {
         StageId stageId = comp.getStageId();
         CompCmd.Step stepCommand = CompCmd.Step.builder().stageId(stageId.next(comp)).build();
         pushDelayCommand(stepCommand, comp.endingTimeStamp);
-        delayExecutor.start();
         CompEvent.Created event = CompEvent.Created.builder().comp(comp).roundMetaUnits(roundMetaUnits).build();
         context.publish(event);
         return comp;
@@ -239,7 +233,7 @@ public class Comp extends AggregateRoot {
 
     static private void pushDelayCommand(CompCmd.Step command, long executeTime) {
         DelayCommandWrapper delayCommandWrapper = new DelayCommandWrapper(command, new Date(executeTime));
-        delayExecutor.delayQueue.add(delayCommandWrapper);
+        delayExecutor.getDelayQueue().add(delayCommandWrapper);
     }
 
     public StageId getStageId() {
@@ -250,75 +244,6 @@ public class Comp extends AggregateRoot {
                 .tradeStage(tradeStage)
                 .marketStatus(marketStatus)
                 .build();
-    }
-
-    @Data
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class DelayCommandWrapper implements Delayed {
-
-        private Command command;
-        private Date executeDate;
-
-        public DelayCommandWrapper(Command command, Date executeDate) {
-            this.command = command;
-            this.executeDate = executeDate;
-        }
-
-        @Override
-        public long getDelay(TimeUnit timeUnit) {
-            return timeUnit.convert(executeDate.getTime() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
-        }
-
-        @Override
-        public int compareTo(@NonNull Delayed o) {
-            return Long.compare(executeDate.getTime(), ((DelayCommandWrapper) o).getExecuteDate().getTime());
-        }
-
-    }
-
-
-    @Component
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class DelayExecutor implements Runnable{
-
-        @Getter
-        final DelayQueue<DelayCommandWrapper> delayQueue = new DelayQueue<>();
-        final ExecutorService executorService = Executors.newFixedThreadPool(1);
-        final AtomicBoolean started = new AtomicBoolean(false);
-        public void start() {
-            boolean b = started.compareAndSet(false, true);
-            if (b) {
-                executorService.execute(this);
-            }
-        }
-
-        @Override
-        @SuppressWarnings("all")
-        public void run() {
-
-            while (true) {
-                DelayCommandWrapper delayCommandWrapper;
-                try {
-                    delayCommandWrapper = delayQueue.poll(3, TimeUnit.SECONDS);
-                    if (delayCommandWrapper != null) {
-                        log.info("poll result is null");
-                    } else {
-                        log.info("poll result {}", delayCommandWrapper);
-                    }
-                } catch (InterruptedException e) {
-                    throw new SysEx(e);
-                }
-                if (delayCommandWrapper != null) {
-                    CommandBus.accept(delayCommandWrapper.getCommand(), new HashMap<>());
-                }
-            }
-
-        }
-
-        public void removeStepCommand() {
-            delayQueue.clear();
-        }
-
     }
 
 
