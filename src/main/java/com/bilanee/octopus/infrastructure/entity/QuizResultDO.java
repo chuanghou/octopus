@@ -3,7 +3,6 @@ package com.bilanee.octopus.infrastructure.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.bilanee.octopus.basic.TokenUtils;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class QuizResultDO {
 
     @TableId(type = IdType.INPUT)
-    String userId;
+    String traderId;
     Integer score;
 
 }

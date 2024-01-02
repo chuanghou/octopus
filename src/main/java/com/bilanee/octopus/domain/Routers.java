@@ -452,7 +452,7 @@ public class Routers implements EventRouters {
         StageId stageId = tunnel.runningComp().getStageId();
         userIds.forEach(userId -> {
             Integer score = quizFacade.getScore(stageId.toString(), TokenUtils.sign(userId)).getData();
-            QuizResultDO quizResultDO = QuizResultDO.builder().userId(userId).score(score).build();
+            QuizResultDO quizResultDO = QuizResultDO.builder().traderId(userId).score(score).build();
             quizResultDOMapper.insert(quizResultDO);
         });
     }
