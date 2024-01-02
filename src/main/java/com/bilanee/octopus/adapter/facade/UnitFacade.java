@@ -139,7 +139,8 @@ public class UnitFacade {
                 TimeFrame timeFrame = ee.getKey();
                 Double capacity = unit.getMetaUnit().getCapacity().get(timeFrame).get(unit.getMetaUnit().getUnitType().generalDirection());
                 List<BalanceVO> balanceVOs = unit.getBalance().get(timeFrame).entrySet().stream()
-                        .map(eee -> new BalanceVO(eee.getKey(), eee.getValue())).filter(b -> b.getBalance() > 0).collect(Collectors.toList());
+                        .map(eee -> new BalanceVO(eee.getKey(), Double.parseDouble(String.format("%.2f", eee.getValue()))))
+                        .filter(b -> b.getBalance() > 0).collect(Collectors.toList());
                 return InterBidVO.builder().timeFrame(timeFrame)
                         .capacity(capacity)
                         .bidVOs(Collect.transfer(ee.getValue(), Convertor.INST::to))
@@ -286,17 +287,21 @@ public class UnitFacade {
             // 持仓限制
             if (stageId.getTradeStage() != TradeStage.MO_INTRA) {
                 Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
+                balance = Double.parseDouble(String.format("%.2f", balance));
                 BalanceVO balanceVO = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance).build();
                 builder.balanceVOs(Collect.asList(balanceVO));
             } else {
                 if (unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()) == null) {
                     Double balance0 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
+                    balance0 = Double.parseDouble(String.format("%.2f", balance0));
                     BalanceVO balanceVO0 = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance0).build();
                     Double balance1 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection().opposite());
+                    balance1 = Double.parseDouble(String.format("%.2f", balance1));
                     BalanceVO balanceVO1 = BalanceVO.builder().direction(unitType.generalDirection().opposite()).balance(balance1).build();
                     builder.balanceVOs(Collect.asList(balanceVO0, balanceVO1));
                 } else {
                     Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()));
+                    balance = Double.parseDouble(String.format("%.2f", balance));
                     BalanceVO balanceVO = BalanceVO.builder().direction(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame())).balance(balance).build();
                     builder.balanceVOs(Collect.asList(balanceVO));
                 }
