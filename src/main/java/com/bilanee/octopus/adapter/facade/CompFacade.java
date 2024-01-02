@@ -14,6 +14,7 @@ import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
@@ -1062,6 +1063,9 @@ public class CompFacade {
                     .marketStatus(comp.getMarketStatus())
                     .build();
             compVO.setStageId(stageId.toString());
+            Comp.DelayExecutor delayExecutor = BeanUtil.getBean(Comp.DelayExecutor.class);
+            List<Comp.DelayCommandWrapper> wrappers = new ArrayList<>(delayExecutor.getDelayQueue());
+            compVO.setDelayCommandWrappers(wrappers);
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))

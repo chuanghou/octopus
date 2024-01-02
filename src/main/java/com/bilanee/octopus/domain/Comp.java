@@ -254,7 +254,7 @@ public class Comp extends AggregateRoot {
 
     @Data
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    static class DelayCommandWrapper implements Delayed {
+    static public class DelayCommandWrapper implements Delayed {
 
         private Command command;
         private Date executeDate;
@@ -281,6 +281,7 @@ public class Comp extends AggregateRoot {
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class DelayExecutor implements Runnable{
 
+        @Getter
         final DelayQueue<DelayCommandWrapper> delayQueue = new DelayQueue<>();
         final ExecutorService executorService = Executors.newFixedThreadPool(1);
         final AtomicBoolean started = new AtomicBoolean(false);
@@ -298,13 +299,18 @@ public class Comp extends AggregateRoot {
             while (true) {
                 DelayCommandWrapper delayCommandWrapper;
                 try {
-                    delayCommandWrapper = delayQueue.take();
+                    delayCommandWrapper = delayQueue.poll(3, TimeUnit.SECONDS);
+                    if (delayCommandWrapper != null) {
+                        log.info("poll result is null");
+                    } else {
+                        log.info("poll result {}", delayCommandWrapper);
+                    }
                 } catch (InterruptedException e) {
                     throw new SysEx(e);
                 }
-                Command command = delayCommandWrapper.getCommand();
-                log.arg0(command).info("DELAY_WORK");
-                CommandBus.accept(command, new HashMap<>());
+                if (delayCommandWrapper != null) {
+                    CommandBus.accept(delayCommandWrapper.getCommand(), new HashMap<>());
+                }
             }
 
         }
