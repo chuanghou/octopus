@@ -272,7 +272,14 @@ public class Routers implements EventRouters {
                     .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
                     .reduce(false, (a, b) -> a || b);
             if (!required) {
-                CompletableFuture.runAsync(manageFacade::step);
+                CompletableFuture.runAsync(() -> {
+                    try {
+                        Thread.sleep(1_000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    manageFacade.step();
+                });
             } else {
                 Ssh.exec("python manage.py inter_spot_default_bid");
             }
