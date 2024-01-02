@@ -259,34 +259,27 @@ public class Routers implements EventRouters {
      * 省内现货之后预出清
      */
     @EventRouter(order = 0)
-    @SneakyThrows
     public void routeBeforeAfterIntraSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.BID;
         if (b0 && b1) {
-            log.info("开始执行省内现货预出清");
             Ssh.exec("python manage.py intra_pre_clearing 1");
             Ssh.exec("python manage.py intra_pre_clearing 2");
-            Thread.sleep(1000);
-            CompletableFuture.runAsync(() -> Ssh.exec("python manage.py inter_spot_default_bid")).get();
-            log.info("结束执行省内现货预出清");
+            LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
+                    .eq(StackDiagramDO::getRoundId, stepped.getNow().getRoundId() + 1);
+            Boolean required = stackDiagramDOMapper.selectList(eq).stream()
+                    .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
+                    .reduce(false, (a, b) -> a || b);
+            if (!required) {
+                CompletableFuture.runAsync(manageFacade::step);
+            } else {
+                Ssh.exec("python manage.py inter_spot_default_bid");
+            }
         }
 
-        LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
-                .eq(StackDiagramDO::getRoundId, stepped.getNow().getRoundId() + 1);
-        Boolean reduce = stackDiagramDOMapper.selectList(eq).stream()
-                .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget()).reduce(false, (a, b) -> a || b);
-        if (!reduce) {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    Thread.sleep(5_000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                manageFacade.step();
-            });
-        }
+
+
 
     }
 
