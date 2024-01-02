@@ -38,6 +38,11 @@ public class IntraBidVO {
     Double transit;
 
     /**
+     * 已撤电力
+     */
+    Double cancelled;
+
+    /**
      * 挂牌价格
      */
     Double price;

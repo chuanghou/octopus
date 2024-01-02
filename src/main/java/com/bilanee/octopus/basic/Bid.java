@@ -41,4 +41,13 @@ public class Bid {
         }
     }
 
+    public Double getCancelled() {
+        if (bidStatus != BidStatus.CANCELLED) {
+            return 0D;
+        } else {
+            return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        }
+    }
+
+
 }

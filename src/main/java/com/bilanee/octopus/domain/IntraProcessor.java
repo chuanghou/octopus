@@ -274,21 +274,21 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     private List<Volume> extractVolumes(Collection<Bid> bids, boolean natural) {
         long count = bids.stream().map(Bid::getPrice).distinct().count();
-        if (count <= 10) {
+        if (count <= 5) {
             Comparator<Map.Entry<Double, List<Bid>>> comparator = natural ? Map.Entry.comparingByKey() : Map.Entry.<Double, List<Bid>>comparingByKey().reversed();
             return bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet().stream().sorted(comparator)
                     .map(e -> new Volume(e.getKey().toString(), e.getValue().stream().collect(Collectors.summarizingDouble(Bid::getTransit)).getSum())).collect(Collectors.toList());
         } else {
             double maxPrice = bids.stream().max(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) + 1;
             double minPrice = bids.stream().min(Comparator.comparing(Bid::getPrice)).map(Bid::getPrice).orElseThrow(SysEx::unreachable) - 1;
-            double v = (maxPrice - minPrice) / 10;
-            List<Predicate<Bid>> predicates = IntStream.range(0, 10).mapToObj(i -> Pair.of(i * v + minPrice, (i + 1) * v + minPrice))
+            double v = (maxPrice - minPrice) / 5;
+            List<Predicate<Bid>> predicates = IntStream.range(0, 5).mapToObj(i -> Pair.of(i * v + minPrice, (i + 1) * v + minPrice))
                     .map(p -> (Predicate<Bid>) bid -> bid.getPrice() >= p.getLeft() && bid.getPrice() < p.getRight())
                     .collect(Collectors.toList());
             List<Double> volumeQuantity = bids.stream().collect(Collect.select(predicates))
                     .stream().map(bs -> bs.stream().map(Bid::getTransit).reduce(0D, Double::sum))
                     .collect(Collectors.toList());
-            List<Volume> volumes = IntStream.range(0, 10)
+            List<Volume> volumes = IntStream.range(0, 5)
                     .mapToObj(i -> new Volume(String.format("%.2f-%.2f", i * v + minPrice, (i + 1) * v + minPrice), volumeQuantity.get(i)))
                     .collect(Collectors.toList());
             if (!natural) {
