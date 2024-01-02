@@ -111,6 +111,14 @@ public class ManageFacade {
     @PostMapping("/createComp")
     public Result<Void> createComp(@RequestBody CompCreatePO compCreatePO) {
 
+        if (compCreatePO.getStartTimeStamp() == null) {
+            compCreatePO.setStartTimeStamp(System.currentTimeMillis() + 60_000);
+        } else {
+            if (compCreatePO.getStartTimeStamp() - System.currentTimeMillis() < 60L * 1000L) {
+                throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("至少设置一分钟以后开始比赛"));
+            }
+        }
+
         boolean b = lock.tryLock();
         if (!b) {
             return Result.error(ErrorEnums.CONCURRENCY_VIOLATION.message("不可同时由两个管理员建立比赛"), ExceptionType.BIZ);
@@ -269,7 +277,7 @@ public class ManageFacade {
      */
     @GetMapping("getExampleSetting")
     public Result<ExampleSetting> getExampleSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         String caseSetting = marketSettingDO.getCaseSetting();
         ExampleSetting.ExampleSettingBuilder builder = ExampleSetting.builder();
         if (Kit.notBlank(caseSetting)) {
@@ -319,7 +327,7 @@ public class ManageFacade {
      */
     @PostMapping("updateExampleSetting")
     public Result<Void> updateExampleSetting(@RequestBody ExampleSetting exampleSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         String caseSetting = (exampleSetting.getTransferDiffer() ? "1" : "0") +
                 (exampleSetting.getTransferLoadPeak() ? "1" : "0") +
                 (exampleSetting.getReceiverDiffer() ? "1" : "0") +
@@ -360,7 +368,7 @@ public class ManageFacade {
      */
     @GetMapping("getQuizSetting")
     public Result<QuizSetting> getQuizSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         QuizSetting quizSetting = QuizSetting.builder().quizId(marketSettingDO.getPaperId())
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
                 .quizCompeteDuration(marketSettingDO.getQuizCompeteDuration())
@@ -375,7 +383,7 @@ public class ManageFacade {
      */
     @PostMapping("updateQuizSetting")
     public Result<Void> updateQuizSetting(@RequestBody QuizSetting quizSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         marketSettingDO.setIsConductingQAndAModule(quizSetting.getEnableQuiz());
         marketSettingDO.setPaperId(quizSetting.getQuizId());
         marketSettingDO.setQuizCompeteDuration(quizSetting.getQuizCompeteDuration());
@@ -391,7 +399,7 @@ public class ManageFacade {
      */
     @GetMapping("getElectricMarketSetting")
     public Result<ElectricMarketSettingVO> getElectricMarketSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         ElectricMarketSettingVO electricMarketSettingVO = ElectricMarketSettingVO.builder()
                 .generatorPriceLimit(GridLimit.builder().high(marketSettingDO.getOfferPriceCap()).low(marketSettingDO.getOfferPriceFloor()).build())
                 .loadPriceLimit(GridLimit.builder().high(marketSettingDO.getBidPriceCap()).low(marketSettingDO.getBidPriceFloor()).build())
@@ -430,7 +438,7 @@ public class ManageFacade {
      */
     @PostMapping("updateElectricMarketSetting")
     public Result<Void> updateElectricMarketSetting(@RequestBody ElectricMarketSetting electricMarketSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         marketSettingDO.setOfferPriceCap(electricMarketSetting.getGeneratorPriceLimit().getHigh());
         marketSettingDO.setOfferPriceFloor(electricMarketSetting.getGeneratorPriceLimit().getLow());
         marketSettingDO.setBidPriceCap(electricMarketSetting.getLoadPriceLimit().getHigh());
@@ -452,7 +460,7 @@ public class ManageFacade {
      */
     @GetMapping("getSimulateSetting")
     public Result<SimulateSetting> getSimulateSetting() {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         SimulateSetting simulateSetting = Convertor.INST.to(marketSettingDO);
         return Result.success(simulateSetting);
     }
@@ -463,7 +471,7 @@ public class ManageFacade {
      */
     @PostMapping("updateSimulateSetting")
     public Result<Void> updateSimulateSetting(@RequestBody SimulateSetting simulateSetting) {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(2);
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         marketSettingDO.setIntraprovincialAnnualBidDuration(simulateSetting.getIntraprovincialAnnualBidDuration());
         marketSettingDO.setIntraprovincialMonthlyBidDuration(simulateSetting.getIntraprovincialMonthlyBidDuration());
         marketSettingDO.setIntraprovincialSpotBidDuration(simulateSetting.getIntraprovincialSpotBidDuration());
