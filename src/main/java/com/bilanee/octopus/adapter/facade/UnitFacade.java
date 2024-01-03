@@ -516,7 +516,8 @@ public class UnitFacade {
                         .eq(GeneratorDaForecastBidDO::getUnitId, unit.getMetaUnit().getSourceId());
                 List<GeneratorDaForecastBidDO> gForecastDOs = generatorDaForecastBidMapper.selectList(eq2).stream()
                         .sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd)).collect(Collectors.toList());
-                List<Double> declares = intraDaBidPO.getDeclares();
+                Double maxCapacity = unit.getMetaUnit().getMaxCapacity();
+                List<Double> declares = intraDaBidPO.getDeclares().stream().map(dec -> Math.min(dec, maxCapacity)).collect(Collectors.toList());
                 IntStream.range(0, gForecastDOs.size()).forEach(i -> gForecastDOs.get(i).setForecastMw(declares.get(i)));
                 gForecastDOs.forEach(generatorDaForecastBidMapper::updateById);
             }
@@ -526,7 +527,9 @@ public class UnitFacade {
                     .eq(LoadDaForecastBidDO::getLoadId, unit.getMetaUnit().getSourceId());
             List<LoadDaForecastBidDO> lForecastBidDOs = loadDaForecastBidMapper.selectList(eq1).stream()
                     .sorted(Comparator.comparing(LoadDaForecastBidDO::getPrd)).collect(Collectors.toList());
-            IntStream.range(0, lForecastBidDOs.size()).forEach(i -> lForecastBidDOs.get(i).setBidMw(intraDaBidPO.getDeclares().get(i)));
+            Double maxCapacity = unit.getMetaUnit().getMaxCapacity();
+            List<Double> declares = intraDaBidPO.getDeclares().stream().map(dec -> Math.min(dec, maxCapacity)).collect(Collectors.toList());
+            IntStream.range(0, lForecastBidDOs.size()).forEach(i -> lForecastBidDOs.get(i).setBidMw(declares.get(i)));
             lForecastBidDOs.forEach(loadDaForecastBidMapper::updateById);
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
@@ -690,9 +693,9 @@ public class UnitFacade {
             List<ClearedVO> das = new ArrayList<>();
             Double daTotal = daCleared.get(i);
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                ClearedVO clearedVO = ClearedVO.builder().cost(unit.getMetaUnit().getMinOutputPrice())
+                ClearedVO clearedVO = ClearedVO.builder()
+                        .cost(unit.getMetaUnit().getMinOutputPrice())
                         .quantity(unit.getMetaUnit().getMinCapacity())
-                        .quantity(unit.getMetaUnit().getMinOutputPrice())
                         .build();
                 das.add(clearedVO);
                 daTotal = daTotal - unit.getMetaUnit().getMinCapacity();

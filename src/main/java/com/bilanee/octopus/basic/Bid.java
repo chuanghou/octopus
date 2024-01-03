@@ -34,7 +34,7 @@ public class Bid {
     Double closeBalance;
 
     public Double getTransit() {
-        if (bidStatus != BidStatus.CANCELLED) {
+        if ((bidStatus != BidStatus.MANUAL_CANCELLED) && (bidStatus != BidStatus.SYSTEM_CANCELLED)) {
             return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
         } else {
             return 0D;
@@ -42,7 +42,7 @@ public class Bid {
     }
 
     public Double getCancelled() {
-        if (bidStatus != BidStatus.CANCELLED) {
+        if ((bidStatus != BidStatus.MANUAL_CANCELLED) && (bidStatus != BidStatus.SYSTEM_CANCELLED)) {
             return 0D;
         } else {
             return quantity - deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);

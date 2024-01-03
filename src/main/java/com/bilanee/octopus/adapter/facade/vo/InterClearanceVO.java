@@ -1,9 +1,12 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.adapter.CustomerDoubleSerialize;
+import com.bilanee.octopus.adapter.CustomerPointSerialize;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.Section;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -24,22 +27,26 @@ public class InterClearanceVO {
     /**
      *  市场成交情况：卖方总申报电力
      */
+    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double sellDeclaredQuantity;
 
     /**
      *  市场成交情况：买方总申报电力
      */
+    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double buyDeclaredQuantity;
 
     /**
      *  市场成交情况：成交电力
      */
+    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double dealQuantity;
 
 
     /**
      *  市场成交情况：成交价格
      */
+    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double dealPrice;
 
     /**
@@ -61,6 +68,7 @@ public class InterClearanceVO {
     /**
      * 市场供需曲线：需求曲线终点
      */
+    @JsonSerialize(using = CustomerPointSerialize.class)
     Point<Double> buyTerminus;
 
     /**
@@ -71,6 +79,7 @@ public class InterClearanceVO {
     /**
      * 市场供需曲线：供给曲线终点
      */
+    @JsonSerialize(using = CustomerPointSerialize.class)
     Point<Double> sellTerminus;
 
 
@@ -82,11 +91,13 @@ public class InterClearanceVO {
     /**
      * 出清曲线起点
      */
+    @JsonSerialize(using = CustomerPointSerialize.class)
     Point<Double> start;
 
     /**
      * 出清曲线终点
      */
+    @JsonSerialize(using = CustomerPointSerialize.class)
     Point<Double> end;
 
 

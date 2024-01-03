@@ -234,7 +234,7 @@ public class CompFacade {
                     .minDealPrice(minPrice)
                     .buyTotalTransit(buyTransit)
                     .sellTotalTransit(sellTransit)
-                    .totalDealQuantity(totalQuantity)
+                    .totalDealQuantity(totalQuantity/2)
                     .unitVOs(unitVOs)
                     .unitDealVOS(unitDealVOs)
                     .dealHists(dealHists)

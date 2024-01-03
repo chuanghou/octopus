@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public enum BidStatus {
 
-    NEW_DECELERATED("新单已报") {
+    NEW_DECELERATED("尚未成交") {
         @Override
         public List<Operation> operations() {
             return Collect.asList(Operation.CANCEL);
@@ -24,7 +24,8 @@ public enum BidStatus {
         }
     },
     COMPLETE_DEAL("全部成交"),
-    CANCELLED("撤单");
+    MANUAL_CANCELLED("手动撤单"),
+    SYSTEM_CANCELLED("系统撤单");
 
     final String desc;
 

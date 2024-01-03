@@ -121,7 +121,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
         buyPriorityQueue.forEach(bid -> {
             bid.setCloseBalance(bid.getTransit());
-            bid.setBidStatus(BidStatus.CANCELLED);
+            bid.setBidStatus(BidStatus.SYSTEM_CANCELLED);
         });
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
         buyPriorityQueue.forEach(bid -> {
@@ -132,7 +132,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
         sellPriorityQueue.forEach(bid -> {
             bid.setCloseBalance(bid.getTransit());
-            bid.setBidStatus(BidStatus.CANCELLED);
+            bid.setBidStatus(BidStatus.SYSTEM_CANCELLED);
         });
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
         sellPriorityQueue.forEach(bid -> {
@@ -147,7 +147,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         boolean b = bids.removeIf(bid -> {
             if (bid.getBidId().equals(cancelBidId)) {
                 bid.setCancelledTimeStamp(Clock.currentTimeMillis());
-                bid.setBidStatus(BidStatus.CANCELLED);
+                bid.setBidStatus(BidStatus.MANUAL_CANCELLED);
                 tunnel.updateBids(Collect.asList(bid));
                 UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
                         .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
