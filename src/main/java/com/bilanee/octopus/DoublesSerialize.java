@@ -26,6 +26,8 @@ public class DoublesSerialize extends JsonSerializer<List<Double>> {
             double[] vs = new double[doubles.size()];
             IntStream.range(0, doubles.size()).forEach(i -> vs[i] = doubles.get(i));
             jsonGenerator.writeArray(vs, 0, vs.length);
+        } else {
+            jsonGenerator.writeNull();
         }
     }
 

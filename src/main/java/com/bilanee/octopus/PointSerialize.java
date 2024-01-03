@@ -23,6 +23,8 @@ public class PointSerialize extends JsonSerializer<Point<Double>> {
                     .y(BigDecimal.valueOf(value.y).setScale(2, RoundingMode.HALF_UP).doubleValue())
                     .build();
             jsonGenerator.writeRaw(Json.toJson(point));
+        } else {
+            jsonGenerator.writeNull();
         }
     }
 
