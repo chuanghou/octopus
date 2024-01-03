@@ -1,5 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,11 +16,13 @@ public class IntraDealVO {
     /**
      * 成交量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
 
     /**
      * 成交价格
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double price;
 
     /**

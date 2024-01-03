@@ -1,5 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,16 +15,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ClearedVO {
 
+    @JsonSerialize(using = DoubleSerialize.class)
     Double cost;
+    @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
+    @JsonSerialize(using = DoubleSerialize.class)
     Double price;
 
-
-    public ClearedVO point2() {
-        return ClearedVO.builder()
-                .cost(Double.parseDouble(String.format("%.2f", cost)))
-                .quantity(Double.parseDouble(String.format("%.2f", quantity)))
-                .price(Double.parseDouble(String.format("%.2f", price)))
-                .build();
-    }
 }

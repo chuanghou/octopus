@@ -1,7 +1,9 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.PointSerialize;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.Section;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -22,6 +24,7 @@ public class SpotMarketEntityVO {
     /**
      * 市场供需曲线：供给曲线终点
      */
+    @JsonSerialize(using = PointSerialize.class)
     Point<Double> supplyTerminus;
 
     /**
@@ -32,6 +35,7 @@ public class SpotMarketEntityVO {
     /**
      * 市场供需曲线：需求曲线终点
      */
+    @JsonSerialize(using = PointSerialize.class)
     Point<Double> demandTerminus;
 
 

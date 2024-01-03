@@ -174,7 +174,7 @@ public class Routers implements EventRouters {
                         .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
                         .eq(TransactionDO::getMarketType, now.getTradeStage().getMarketType());
 
-                Double quantity = tBids.stream()
+                double quantity = tBids.stream()
                         .flatMap(uBid -> uBid.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
                 if (quantity > 0) {
                     List<Direction> directions = tBids.stream().map(Bid::getDirection).distinct().collect(Collectors.toList());

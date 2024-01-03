@@ -1,6 +1,8 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -22,6 +24,7 @@ public class InterBidVO {
     /**
      * 系统容量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double capacity;
 
     /**

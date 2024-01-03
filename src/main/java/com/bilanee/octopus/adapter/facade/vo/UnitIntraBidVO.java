@@ -1,7 +1,9 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.enums.UnitType;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -43,11 +45,13 @@ public class UnitIntraBidVO {
     /**
      * 已持仓电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double position;
 
     /**
      * 在挂待成交电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double transit;
 
     /**

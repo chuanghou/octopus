@@ -1,8 +1,10 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.Operation;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -24,6 +26,7 @@ public class IntraBidVO {
     /**
      * 初始挂牌电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
 
     /**
@@ -35,16 +38,19 @@ public class IntraBidVO {
     /**
      * 剩余挂牌电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double transit;
 
     /**
      * 已撤电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double cancelled;
 
     /**
      * 挂牌价格
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double price;
 
     /**

@@ -1,5 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,17 +21,20 @@ public class QuotationVO {
     /**
      * 成交价格
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double price;
 
     /**
      * 买单总量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double buyQuantity;
 
 
     /**
      * 卖单总量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double sellQuantity;
 
 }

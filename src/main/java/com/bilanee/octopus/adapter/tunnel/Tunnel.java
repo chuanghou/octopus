@@ -307,7 +307,7 @@ public class Tunnel {
                 tieLinePowerDO.setAnnualNonmarketTielinePower(interClearance.getNonMarketQuantity());
                 tieLinePowerDO.setAnnualTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
             } else if (stageId.getTradeStage() == TradeStage.MO_INTER){
-                tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getMarketQuantity());
+                tieLinePowerDO.setMonthlyMarketTielinePower(interClearance.getMarketQuantity());
                 tieLinePowerDO.setMonthlyNonmarketTielinePower(interClearance.getNonMarketQuantity());
                 tieLinePowerDO.setMonthlyTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
             } else {

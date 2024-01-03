@@ -1,5 +1,7 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.ErrorEnumsBase;
 import lombok.*;
@@ -15,9 +17,11 @@ import javax.validation.constraints.NotNull;
 public class GridLimit {
 
     @NotNull(message = "最大值不为空")
+    @JsonSerialize(using = DoubleSerialize.class)
     Double high;
 
     @NotNull(message = "最小值不为空")
+    @JsonSerialize(using = DoubleSerialize.class)
     Double low;
 
     public void check(Double price) {

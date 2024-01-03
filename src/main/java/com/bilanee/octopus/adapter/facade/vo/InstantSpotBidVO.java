@@ -1,5 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -20,11 +22,13 @@ public class InstantSpotBidVO {
     /**
      * 发电能力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double maxCapacity;
 
     /**
      * 预出清中标量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double preCleared;
 
     /**

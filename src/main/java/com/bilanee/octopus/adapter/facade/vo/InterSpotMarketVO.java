@@ -1,6 +1,9 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.bilanee.octopus.PointSerialize;
 import com.bilanee.octopus.basic.Point;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -16,32 +19,38 @@ public class InterSpotMarketVO {
     /**
      * 卖方申报总量
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double sellDeclaredTotal;
 
     /**
      * 受电省电网申报电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double receiverDeclaredTotal;
 
     /**
      * 成交电力
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double dealTotal;
 
     /**
      * 成交均价
      */
-     Double dealAveragePrice;
+    @JsonSerialize(using = DoubleSerialize.class)
+    Double dealAveragePrice;
 
 
     /**
      * 分时供需曲线：需求曲线
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double requireQuantity;
 
     /**
      * 分时供需曲线：出清价格
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double clearPrice;
 
     /**
@@ -52,6 +61,7 @@ public class InterSpotMarketVO {
     /**
      * 分时供需曲线：供给曲线终点
      */
+    @JsonSerialize(using = PointSerialize.class)
     Point<Double> supplyTerminus;
 
     /**
@@ -62,6 +72,7 @@ public class InterSpotMarketVO {
     /**
      * 分时供需曲线：需求曲线终点
      */
+    @JsonSerialize(using = PointSerialize.class)
     Point<Double> requireTerminus;
     
 }

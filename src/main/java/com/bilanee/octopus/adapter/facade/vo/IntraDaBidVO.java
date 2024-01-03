@@ -1,9 +1,12 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.bilanee.octopus.DoublesSerialize;
 import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.enums.GeneratorType;
 import com.bilanee.octopus.basic.enums.UnitType;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -68,11 +71,13 @@ public class IntraDaBidVO {
     /**
      * 预测值，当机组类型为新能源类型或者单元类型为负载的时候，存在根据预测进行申报的界面
      */
+    @JsonSerialize(using = DoublesSerialize.class)
     List<Double> forecasts;
 
     /**
      * 基于预测的申报值，当机组类型为新能源类型或者单元类型为负载的时候，存在根据预测进行申报的界面
      */
+    @JsonSerialize(using = DoublesSerialize.class)
     List<Double> declares;
 
 

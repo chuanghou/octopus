@@ -1,5 +1,7 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -12,6 +14,7 @@ import lombok.experimental.FieldDefaults;
 public class Volume {
 
     String label;
+    @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
 
 }

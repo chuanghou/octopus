@@ -1,5 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -29,7 +31,9 @@ public class InterSpotUnitDealVO {
     @AllArgsConstructor
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class Deal {
+        @JsonSerialize(using = DoubleSerialize.class)
         Double quantity;
+        @JsonSerialize(using = DoubleSerialize.class)
         Double price;
     }
 }

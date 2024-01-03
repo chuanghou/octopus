@@ -1,10 +1,12 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
+import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.Volume;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.infrastructure.entity.Ask;
 import com.bilanee.octopus.infrastructure.entity.StepRecord;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -31,6 +33,7 @@ public class IntraSymbolBidVO {
     /**
      * 分省分时段最新成交价
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double latestPrice;
 
     /**
