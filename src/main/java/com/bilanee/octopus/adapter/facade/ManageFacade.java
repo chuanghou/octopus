@@ -158,6 +158,12 @@ public class ManageFacade {
             metaUnitDOMapper.delete(eq);
         }
 
+        Integer paperId = marketSettingDO.getPaperId();
+        PaperDO paperDO = paperDOMapper.selectById(paperId);
+        if (paperDO == null) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("试卷ID:" + paperId + "不存在!"));
+        }
+
         generatorBasics.forEach(g -> {
             Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitPositionInterest();
             Double maxP = g.getMaxP();
