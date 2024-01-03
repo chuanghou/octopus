@@ -20,19 +20,16 @@ public class Section {
     /**
      * 线段左x轴坐标
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double lx;
 
     /**
      * 线段右x轴坐标
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double rx;
 
     /**
      * 线段y轴坐标
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double y;
 
 }

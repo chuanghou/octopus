@@ -25,6 +25,9 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -200,9 +203,17 @@ public class Comp extends AggregateRoot {
             x += sortedBid.getQuantity();
             sections.add(section);
         }
-        return sections;
+        return sections.stream().map(s -> new Section(s.getUnitId(), point2(s.getLx()), point2(s.getRx()), point2(s.getY()))).collect(Collectors.toList());
     }
 
+    static private final DecimalFormat df = new DecimalFormat("0.00");
+
+    private Double point2(Double value) {
+        BigDecimal bigDecimal = new BigDecimal(String.valueOf(value));
+        df.setRoundingMode(RoundingMode.HALF_UP);
+        String format = df.format(bigDecimal);
+        return Double.parseDouble(format);
+    }
 
     @MethodHandler
     public void step(CompCmd.Step command, Context context) {
