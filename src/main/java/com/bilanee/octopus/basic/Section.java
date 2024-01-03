@@ -1,7 +1,5 @@
 package com.bilanee.octopus.basic;
 
-import com.bilanee.octopus.adapter.CustomerDoubleSerialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

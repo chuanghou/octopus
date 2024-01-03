@@ -1,9 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.adapter.CustomerDoubleSerialize;
 import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.TimeFrame;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -34,13 +32,11 @@ public class IntraClearanceVO {
     /**
      *  最高成交价格
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double maxDealPrice;
 
     /**
      *  最低成交价格
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double minDealPrice;
 
 
@@ -48,21 +44,18 @@ public class IntraClearanceVO {
     /**
      *  总成交电力
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double totalDealQuantity;
 
 
     /**
      *  卖方剩余未成交电力
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double sellTotalTransit;
 
 
     /**
      *  买方剩余未成交电力
      */
-    @JsonSerialize(using = CustomerDoubleSerialize.class)
     Double buyTotalTransit;
 
     /**
