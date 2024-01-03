@@ -18,11 +18,10 @@ public class PointSerialize extends JsonSerializer<Point<Double>> {
     @Override
     public void serialize(Point<Double> value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         if(value != null) {
-            Point<Double> point = Point.<Double>builder()
-                    .x(BigDecimal.valueOf(value.x).setScale(2, RoundingMode.HALF_UP).doubleValue())
-                    .y(BigDecimal.valueOf(value.y).setScale(2, RoundingMode.HALF_UP).doubleValue())
-                    .build();
-            jsonGenerator.writeRaw(Json.toJson(point));
+            jsonGenerator.writeStartObject();
+            jsonGenerator.writeNumberField("x", BigDecimal.valueOf(value.x).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            jsonGenerator.writeNumberField("y", BigDecimal.valueOf(value.y).setScale(2, RoundingMode.HALF_UP).doubleValue());
+            jsonGenerator.writeEndObject();
         } else {
             jsonGenerator.writeNull();
         }

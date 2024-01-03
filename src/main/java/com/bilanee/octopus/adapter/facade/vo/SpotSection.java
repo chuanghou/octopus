@@ -15,11 +15,13 @@ public class SpotSection {
     /**
      * 线段左x轴坐标
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double lx;
 
     /**
      * 线段右x轴坐标
      */
+    @JsonSerialize(using = DoubleSerialize.class)
     Double rx;
 
     /**
