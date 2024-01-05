@@ -25,7 +25,7 @@ public class TokenUtils {
     }
 
     public static void main(String[] args) {
-        System.out.println(TokenUtils.sign("1000"));
+        System.out.println(TokenUtils.sign("1001"));
     }
 
     @SneakyThrows

@@ -126,7 +126,7 @@ public class CompFacade {
                 Double totalVolume = deals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
                 return UnitDealVO.builder()
                         .unitId(unitId)
-                        .averagePrice(totalVolume / totalQuantity)
+                        .averagePrice(totalVolume.equals(0D) ? null : totalVolume / totalQuantity)
                         .totalQuantity(totalQuantity)
                         .deals(deals)
                         .build();
@@ -219,7 +219,7 @@ public class CompFacade {
                         Double unitTotalQuantity = unitDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
                         return UnitDealVO.builder()
                                 .unitId(unitId)
-                                .averagePrice(unitTotalVolume / unitTotalQuantity)
+                                .averagePrice(unitTotalVolume.equals(0D) ? null : unitTotalVolume / unitTotalQuantity)
                                 .totalQuantity(unitTotalQuantity)
                                 .deals(unitDeals)
                                 .build();
