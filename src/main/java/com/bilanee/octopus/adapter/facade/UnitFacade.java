@@ -170,13 +170,8 @@ public class UnitFacade {
 
         List<BidPO> bidPOs = interBidsPO.getBidPOs().stream()
                 .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0)
-                .filter(bidPO -> bidPO.getPrice() != null)
-                .collect(Collectors.toList());
-
-        if (Collect.isEmpty(bidPOs)) {
-            return Result.success();
-        }
-
+                .filter(bidPO -> bidPO.getPrice() != null).collect(Collectors.toList());
+        BizEx.trueThrow(Collect.isEmpty(bidPOs), PARAM_FORMAT_WRONG.message("无有效报单"));
         Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
