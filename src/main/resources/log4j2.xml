@@ -6,7 +6,7 @@
 
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d %p %c{1.} [%t] %m%n"/>
+            <PatternLayout pattern="%d %p %c{1.} [%t] %m | arg0: %X{arg0} | arg1: %X{arg1}  %n"/>
         </Console>
     </Appenders>
 
