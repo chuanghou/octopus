@@ -40,7 +40,6 @@ public class DelayExecutor implements Runnable, ApplicationRunner {
                 CommandBus.accept(delayCommandWrapper.getCommand(), new HashMap<>());
             }
         }
-
     }
 
     public void removeStepCommand() {
