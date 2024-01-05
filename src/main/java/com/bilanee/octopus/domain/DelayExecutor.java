@@ -33,11 +33,6 @@ public class DelayExecutor implements Runnable, ApplicationRunner {
             DelayCommandWrapper delayCommandWrapper;
             try {
                 delayCommandWrapper = delayQueue.poll(3, TimeUnit.SECONDS);
-                if (delayCommandWrapper != null) {
-                    log.info("poll result is null");
-                } else {
-                    log.info("poll result {}", delayCommandWrapper);
-                }
             } catch (InterruptedException e) {
                 throw new SysEx(e);
             }
