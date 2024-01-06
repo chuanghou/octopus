@@ -104,7 +104,8 @@ public class UnitFacade {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
-
+        StageId currentStageId = tunnel.runningComp().getStageId();
+        boolean realTime = currentStageId.equals(parsedStageId);
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsedStageId.getCompId())
@@ -144,7 +145,7 @@ public class UnitFacade {
                 return InterBidVO.builder().timeFrame(timeFrame)
                         .capacity(capacity)
                         .bidVOs(Collect.transfer(ee.getValue(), Convertor.INST::to))
-                        .balanceVOs(balanceVOs)
+                        .balanceVOs(realTime ? balanceVOs : Collections.EMPTY_LIST)
                         .build();
             }).collect(Collectors.toList());
             return UnitInterBidVO.builder().unitId(unit.getUnitId())
