@@ -19,6 +19,7 @@ import javax.validation.constraints.Size;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Data
 @Builder
@@ -50,7 +51,7 @@ public class InterBidsPO {
 
         long count = bidPOs.stream().map(BidPO::getUnitId).distinct().count();
         BizEx.trueThrow(count != 1L, ErrorEnums.PARAM_FORMAT_WRONG.message("提交机组/负荷id不一致"));
-        count = bidPOs.stream().map(BidPO::getDirection).distinct().count();
+        count = bidPOs.stream().map(BidPO::getDirection).filter(Objects::nonNull).distinct().count();
         BizEx.trueThrow(count != 1L, ErrorEnums.PARAM_FORMAT_WRONG.message("提交方向不完全一致"));
         ListMultimap<TimeFrame, BidPO> grouped = bidPOs.stream().collect(Collect.listMultiMap(BidPO::getTimeFrame));
         Map<TimeFrame, Collection<BidPO>> map = grouped.asMap();

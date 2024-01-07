@@ -236,10 +236,29 @@ public class ManageFacade {
                 .build();
 
         Integer traderNum = marketSettingDO.getTraderNum();
-        List<String> userIds = userDOMapper.selectList(null).subList(0, traderNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
+        Integer robotNum = marketSettingDO.getRobotNum();
+        BizEx.trueThrow(traderNum + robotNum > 120, ErrorEnums.PARAM_FORMAT_WRONG.message("人数最多支持120人"));
+        List<String> traderUserIds = userDOMapper.selectList(null).subList(0, traderNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
+        List<String> robotUserIds = userDOMapper.selectList(null).subList(traderNum, traderNum + robotNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
+        userDOMapper.selectList(null).forEach(userDO -> {
+                    userDO.setUserType(null);
+                    userDOMapper.updateById(userDO);
+                }
+        );
+        traderUserIds.forEach(traderUserId -> {
+            UserDO userDO = userDOMapper.selectById(traderUserId);
+            userDO.setUserType(UserType.TRADER);
+            userDOMapper.updateById(userDO);
+        });
+        robotUserIds.forEach(robotUserId -> {
+            UserDO userDO = userDOMapper.selectById(robotUserId);
+            userDO.setUserType(UserType.ROBOT);
+            userDOMapper.updateById(userDO);
+        });
+
         CompCmd.Create command = CompCmd.Create.builder()
                 .compId(uniqueIdGetter.get())
-                .userIds(userIds)
+                .userIds(Collect.asList(traderUserIds, robotUserIds).stream().flatMap(Collection::stream).collect(Collectors.toList()))
                 .startTimeStamp(compCreatePO.getStartTimeStamp() == null ? Clock.currentTimeMillis() + 30_000L : compCreatePO.getStartTimeStamp())
                 .delayConfig(delayConfig)
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
