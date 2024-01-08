@@ -170,6 +170,7 @@ public class UnitFacade {
     public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
 
         List<BidPO> bidPOs = interBidsPO.getBidPOs().stream()
+                .filter(bidPO -> bidPO.getDirection() != null)
                 .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0)
                 .filter(bidPO -> bidPO.getPrice() != null).collect(Collectors.toList());
         BizEx.trueThrow(Collect.isEmpty(bidPOs), PARAM_FORMAT_WRONG.message("无有效报单"));
