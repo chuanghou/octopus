@@ -37,7 +37,6 @@ public class BidPO {
     /**
      * 申报方向
      */
-    @NotNull
     Direction direction;
 
     /**
