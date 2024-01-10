@@ -330,16 +330,20 @@ public class Routers implements EventRouters {
             double nonMarketQuantity = 0D;
             double accumulate = 0D;
 
-            for (Section section : sections) {
-                double v = accumulate + section.getQuantity();
+            List<List<Section>> groupSections = sections.stream().collect(Collectors.groupingBy(Section::getPrice))
+                    .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+            for (List<Section> gSecs : groupSections) {
+                double sum = gSecs.stream().collect(Collectors.summarizingDouble(Section::getQuantity)).getSum();
+                double v = accumulate + sum;
                 if (v >= require) {
-                    price = section.price;
+                    price = gSecs.get(0).price;
                     marketQuantity = require;
-                    section.setDealQuantity(require - accumulate);
+                    double ratio = (require - accumulate) * sum;
+                    gSecs.forEach(gSec -> gSec.setDealQuantity(ratio * gSec.getQuantity()));
                     break;
                 }
-                accumulate += section.getQuantity();
-                section.setDealQuantity(section.quantity);
+                accumulate += sum;
+                gSecs.forEach(s -> s.setDealQuantity(s.getQuantity()));
             }
 
             if (price == null) {
