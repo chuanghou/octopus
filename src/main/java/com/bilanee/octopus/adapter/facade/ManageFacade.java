@@ -37,6 +37,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -65,6 +66,8 @@ public class ManageFacade {
     final IntraInstantDOMapper intraInstantDOMapper;
     final IntraQuotationDOMapper intraQuotationDOMapper;
     final UnitDOMapper unitDOMapper;
+    final GameRankingMapper gameRankingMapper;
+    final GameResultMapper gameResultMapper;
     /**
      * 获取所有用户信息
      */
@@ -245,6 +248,8 @@ public class ManageFacade {
                     userDOMapper.updateById(userDO);
                 }
         );
+
+
         traderUserIds.forEach(traderUserId -> {
             UserDO userDO = userDOMapper.selectById(traderUserId);
             userDO.setUserType(UserType.TRADER);
@@ -255,6 +260,24 @@ public class ManageFacade {
             userDO.setUserType(UserType.ROBOT);
             userDOMapper.updateById(userDO);
         });
+
+        Integer total = marketSettingDO.getRoundNum();
+
+        gameRankingMapper.selectList(null).forEach(i -> gameRankingMapper.deleteById(i.getTraderId()));
+        gameResultMapper.selectList(null).forEach(i -> gameResultMapper.deleteById(i.getId()));
+
+        Stream.of(traderUserIds, robotUserIds).flatMap(Collection::stream).forEach(userId -> {
+            GameResult gameResult = new GameResult();
+            IntStream.range(1, 1 + total).forEach(roundId -> {
+                gameResult.setRoundId(roundId);
+                gameResult.setTraderId(userId);
+                gameResultMapper.insert(gameResult);
+            });
+            GameRanking gameRanking = new GameRanking();
+            gameRanking.setTraderId(userId);
+            gameRankingMapper.insert(gameRanking);
+        });
+
 
         CompCmd.Create command = CompCmd.Create.builder()
                 .compId(uniqueIdGetter.get())
