@@ -318,13 +318,15 @@ public class Routers implements EventRouters {
             double require = e.getValue();
             LambdaQueryWrapper<InterSpotUnitOfferDO> eq1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
                     .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1).eq(InterSpotUnitOfferDO::getPrd, instant);
-            List<Section> sections = interSpotUnitOfferDOMapper.selectList(eq1)
-                    .stream().filter(i -> !i.getSpotOfferMw1().equals(0D) || !i.getSpotOfferMw2().equals(0D) || !i.getSpotOfferMw3().equals(0D))
+            List<Section> sections = interSpotUnitOfferDOMapper.selectList(eq1).stream()
                     .map(u -> Arrays.asList(
                             new Section(u.getUnitId(), u.getSpotOfferMw1(), u.getSpotOfferPrice1(), 0D),
                             new Section(u.getUnitId(), u.getSpotOfferMw2(), u.getSpotOfferPrice2(), 0D),
                             new Section(u.getUnitId(), u.getSpotOfferMw3(), u.getSpotOfferPrice3(), 0D)
-                    )).flatMap(Collection::stream).sorted(Comparator.comparing(Section::getPrice)).collect(Collectors.toList());
+                    )).flatMap(Collection::stream)
+                    .filter(s -> s.getPrice() != null)
+                    .filter(s -> s.getQuantity() != null && s.getQuantity() > 0)
+                    .sorted(Comparator.comparing(Section::getPrice)).collect(Collectors.toList());
             Double price = null;
             double marketQuantity = 0D;
             double nonMarketQuantity = 0D;
@@ -469,10 +471,10 @@ public class Routers implements EventRouters {
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static private class Section {
 
-        int sourceId;
-        double quantity;
-        double price;
-        double dealQuantity;
+        Integer sourceId;
+        Double quantity;
+        Double price;
+        Double dealQuantity;
 
     }
 
