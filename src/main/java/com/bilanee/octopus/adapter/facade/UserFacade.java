@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.po.UserEditPO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.TokenUtils;
+import com.bilanee.octopus.basic.enums.UserType;
 import com.bilanee.octopus.infrastructure.entity.UserDO;
 import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
 import com.stellariver.milky.common.base.BizEx;
@@ -42,6 +43,9 @@ public class UserFacade {
         }
         if (Kit.notEq(userDO.getPassword(), loginPO.getPassword())) {
             throw new BizEx(ErrorEnums.PASSWORD_ERROR);
+        }
+        if (Kit.eq(userDO.getUserType(), UserType.ROBOT)) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("机器人不允许登陆"));
         }
         return Result.success(TokenUtils.sign(loginPO.getUserId()));
     }

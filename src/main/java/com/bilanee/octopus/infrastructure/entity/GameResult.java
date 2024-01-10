@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GameResult {
 
-  @TableId(type = IdType.AUTO)
+  @TableId(type = IdType.INPUT)
   Long id;
   Integer roundId;
   String dt = Clock.todayString();

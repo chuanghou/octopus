@@ -269,6 +269,7 @@ public class ManageFacade {
         Stream.of(traderUserIds, robotUserIds).flatMap(Collection::stream).forEach(userId -> {
             GameResult gameResult = new GameResult();
             IntStream.range(1, 1 + total).forEach(roundId -> {
+                gameResult.setId(uniqueIdGetter.get());
                 gameResult.setRoundId(roundId);
                 gameResult.setTraderId(userId);
                 gameResultMapper.insert(gameResult);
