@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName(value = "game_result",autoResultMap = true)
+@TableName(value = "game_ranking",autoResultMap = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class GameRanking {
 
