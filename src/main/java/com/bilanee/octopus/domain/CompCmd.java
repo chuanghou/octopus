@@ -22,6 +22,8 @@ public class CompCmd {
         Long startTimeStamp;
         DelayConfig delayConfig;
         List<String> userIds;
+        List<String> traderIds;
+        List<String> robotIds;
         Boolean enableQuiz;
         String dt;
 

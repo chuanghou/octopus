@@ -36,6 +36,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -72,14 +74,15 @@ public class Tunnel {
     }
 
     @SneakyThrows
-    public Map<String, Collection<MetaUnit>> assignMetaUnits(Integer roundId, List<String> userIds, Comp comp) {
+    public Map<String, Collection<MetaUnit>> assignMetaUnits(Integer roundId, List<String> traderIds, List<String> robotIds, Comp comp) {
 
-        String queryString = "trader_id_list=[" + String.join(",", userIds) + "]";
+        String queryString = "trader_id_list=[" + String.join(",", traderIds) + "]&" + "robot_id_list=[" + String.join(",", robotIds) + "]";
         URI uri = new URI("http", null, "118.184.179.113", 8002, "/automatic_assigned/", queryString, null);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
         Message parse = Json.parse(responseEntity.getBody(), Message.class);
         BizEx.falseThrow(Integer.valueOf(0).equals(parse.getCode()), ErrorEnums.SYS_EX.message("静态接口异常"));
 
+        List<String> userIds = Stream.of(traderIds, robotIds).flatMap(Collection::stream).collect(Collectors.toList());
         ListMultimap<String, MetaUnit> metaUnitMap = ArrayListMultimap.create();
 
         LambdaQueryWrapper<GeneratorResult> eq0 = new LambdaQueryWrapper<GeneratorResult>()

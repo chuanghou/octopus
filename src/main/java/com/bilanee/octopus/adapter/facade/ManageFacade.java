@@ -283,6 +283,8 @@ public class ManageFacade {
         CompCmd.Create command = CompCmd.Create.builder()
                 .compId(uniqueIdGetter.get())
                 .userIds(Collect.asList(traderUserIds, robotUserIds).stream().flatMap(Collection::stream).collect(Collectors.toList()))
+                .traderIds(traderUserIds)
+                .robotIds(robotUserIds)
                 .startTimeStamp(compCreatePO.getStartTimeStamp() == null ? Clock.currentTimeMillis() + 30_000L : compCreatePO.getStartTimeStamp())
                 .delayConfig(delayConfig)
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
