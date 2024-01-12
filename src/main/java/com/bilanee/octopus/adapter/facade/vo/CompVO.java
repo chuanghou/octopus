@@ -62,7 +62,4 @@ public class CompVO {
      */
     List<String> userIds;
 
-
-    List<DelayCommandWrapper> delayCommandWrappers;
-
 }

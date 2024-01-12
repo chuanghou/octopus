@@ -1062,8 +1062,6 @@ public class CompFacade {
                     .build();
             compVO.setStageId(stageId.toString());
             DelayExecutor delayExecutor = BeanUtil.getBean(DelayExecutor.class);
-            List<DelayCommandWrapper> wrappers = new ArrayList<>(delayExecutor.getDelayQueue());
-            compVO.setDelayCommandWrappers(wrappers);
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
