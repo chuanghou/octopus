@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -243,8 +244,7 @@ public class Comp extends AggregateRoot {
 
 
     static private void pushDelayCommand(CompCmd.Step command, long executeTime) {
-        DelayCommandWrapper delayCommandWrapper = new DelayCommandWrapper(command, new Date(executeTime));
-        delayExecutor.getDelayQueue().add(delayCommandWrapper);
+        delayExecutor.schedule(command, executeTime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
     }
 
     public StageId getStageId() {
