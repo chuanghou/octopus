@@ -864,6 +864,8 @@ public class CompFacade {
         List<InterSpotTransactionDO> transactionDOs = interSpotTransactionDOMapper
                 .selectList(last).stream().filter(i -> i.getClearedMw() > 0).collect(Collectors.toList());
         double dealTotal = transactionDOs.stream().collect(Collectors.summarizingDouble(InterSpotTransactionDO::getClearedMw)).getSum();
+
+
         Double dealAveragePrice = Collect.isEmpty(transactionDOs) ? null : transactionDOs.get(0).getClearedPrice();
 
 
@@ -997,7 +999,7 @@ public class CompFacade {
     Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
-        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId).stream()
+        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), tunnel.review() ? null : userId).stream()
                 .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR)).collect(Collectors.toList());
         List<Integer> sourceIds = units.stream().map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
         LambdaQueryWrapper<GeneratorResult> in = new LambdaQueryWrapper<GeneratorResult>()
@@ -1020,7 +1022,7 @@ public class CompFacade {
     Result<List<LoadResult>> listLoadsResults(String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
-        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId).stream()
+        List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), tunnel.review() ? null : userId).stream()
                 .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.LOAD)).collect(Collectors.toList());
         List<Integer> sourceIds = units.stream().map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
         LambdaQueryWrapper<LoadResult> in = new LambdaQueryWrapper<LoadResult>()

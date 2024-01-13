@@ -883,10 +883,10 @@ public class UnitFacade {
         if (GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())) {
             return IntStream.range(0, 24).mapToObj(i -> unitDO.getMetaUnit().getMaxCapacity()).collect(Collectors.toList());
         } else {
-            LambdaQueryWrapper<LoadForecastValueDO> eq = new LambdaQueryWrapper<LoadForecastValueDO>()
-                    .eq(LoadForecastValueDO::getLoadId, unitDO.getMetaUnit().getSourceId());
-            return loadForecastValueMapper.selectList(eq).stream().sorted(Comparator.comparing(LoadForecastValueDO::getPrd))
-                    .map(LoadForecastValueDO::getDaPForecast).collect(Collectors.toList());
+            LambdaQueryWrapper<GeneratorForecastValueDO> eq = new LambdaQueryWrapper<GeneratorForecastValueDO>()
+                    .eq(GeneratorForecastValueDO::getUnitId, unitDO.getMetaUnit().getSourceId());
+            return generatorForecastValueMapper.selectList(eq).stream().sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
+                    .map(GeneratorForecastValueDO::getDaPForecast).collect(Collectors.toList());
         }
     }
 

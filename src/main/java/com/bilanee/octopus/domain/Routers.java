@@ -340,7 +340,7 @@ public class Routers implements EventRouters {
                 if (v >= require) {
                     price = gSecs.get(0).price;
                     marketQuantity = require;
-                    double ratio = (require - accumulate) * sum;
+                    double ratio = (require - accumulate) / sum;
                     gSecs.forEach(gSec -> gSec.setDealQuantity(ratio * gSec.getQuantity()));
                     break;
                 }
