@@ -202,7 +202,7 @@ public class CompFacade {
                 }
             } else {
                 dealHists = cDeals.stream().sorted(Map.Entry.comparingByKey())
-                        .map(d -> DealHist.builder().left(d.getLeft()).right(d.getLeft()).value(d.getLeft()).build()).collect(Collectors.toList());
+                        .map(d -> DealHist.builder().left(d.getLeft()).right(d.getLeft()).value(d.getRight()).build()).collect(Collectors.toList());
             }
 
             List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
