@@ -15,11 +15,29 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ClearedVO {
 
+    /**
+     * 成本
+     */
     @JsonSerialize(using = DoubleSerialize.class)
     Double cost;
+
+    /**
+     * 中标量
+     */
     @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
+
+    /**
+     * 中标价格
+     */
     @JsonSerialize(using = DoubleSerialize.class)
     Double price;
+
+
+    /**
+     * 申报量
+     */
+    @JsonSerialize(using = DoubleSerialize.class)
+    Double declared;
 
 }

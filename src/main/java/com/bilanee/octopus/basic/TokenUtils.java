@@ -24,9 +24,6 @@ public class TokenUtils {
         return token;
     }
 
-    public static void main(String[] args) {
-        System.out.println(TokenUtils.sign("1001"));
-    }
 
     @SneakyThrows
     public static Boolean verify(String token){
@@ -44,6 +41,10 @@ public class TokenUtils {
     public static String getUserId(String token){
         JWTVerifier jwtVerifier=JWT.require(Algorithm.HMAC256(TOKEN_SECRET)).withIssuer("auth0").build();
         return jwtVerifier.verify(token).getClaim("userId").asString();
+    }
+
+    public static void main(String[] args) {
+        System.out.println(getUserId("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImV4cCI6MjEzNzIzMDM5NywidXNlcklkIjoiMTAwMyJ9.4Ir10DzfRHP9UMFL796TjScWD7kHprFY8WWKMz0BkiM"));
     }
 
 }

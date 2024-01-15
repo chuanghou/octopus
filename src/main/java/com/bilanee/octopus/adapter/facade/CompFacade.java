@@ -884,10 +884,15 @@ public class CompFacade {
         List<SpotSection> requireSections = Collect.asList(new SpotSection(0D, receiverDeclaredTotal, loadLimit.getHigh()));
         Point<Double> requireTerminus = new Point<>(receiverDeclaredTotal, loadLimit.getLow());
 
+        Point<Double> left = Point.<Double>builder().x(0D).y(dealAveragePrice).build();
+        Point<Double> right = Point.<Double>builder().x(dealTotal).y(dealAveragePrice).build();
+
         InterSpotMarketVO interSpotMarketVO = InterSpotMarketVO.builder()
                 .sellDeclaredTotal(sellDeclaredTotal)
                 .receiverDeclaredTotal(receiverDeclaredTotal)
                 .dealTotal(dealTotal)
+                .clearLineLeft(left)
+                .clearLineRight(right)
                 .dealAveragePrice(dealAveragePrice)
                 .requireQuantity(receiverDeclaredTotal)
                 .clearPrice(dealAveragePrice)
@@ -1010,6 +1015,9 @@ public class CompFacade {
             String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getUnitId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
             g.setUnitName(name);
         });
+        List<GeneratorResult> collect0 = generatorResults.stream().filter(g -> g.getTraderId().equals(userId)).collect(Collectors.toList());
+        List<GeneratorResult> collect1 = generatorResults.stream().filter(g -> !g.getTraderId().equals(userId)).collect(Collectors.toList());
+        generatorResults = Stream.of(collect0, collect1).flatMap(Collection::stream).collect(Collectors.toList());
         return Result.success(generatorResults);
     }
 
@@ -1034,7 +1042,9 @@ public class CompFacade {
             String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getLoadId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
             g.setUnitName(name);
         });
-
+        List<LoadResult> collect0 = loadResults.stream().filter(g -> g.getTraderId().equals(userId)).collect(Collectors.toList());
+        List<LoadResult> collect1 = loadResults.stream().filter(g -> !g.getTraderId().equals(userId)).collect(Collectors.toList());
+        loadResults = Stream.of(collect0, collect1).flatMap(Collection::stream).collect(Collectors.toList());
         return Result.success(loadResults);
     }
 

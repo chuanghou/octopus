@@ -693,12 +693,13 @@ public class UnitFacade {
                 ClearedVO clearedVO = ClearedVO.builder()
                         .cost(unit.getMetaUnit().getMinOutputPrice())
                         .quantity(unit.getMetaUnit().getMinCapacity())
+                        .declared(null)
                         .build();
                 das.add(clearedVO);
                 daTotal = daTotal - unit.getMetaUnit().getMinCapacity();
             }
             generatorDaSegmentBidDOs.forEach(gDO -> {
-                ClearedVO clearedVO = new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice());
+                ClearedVO clearedVO = new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw());
                 bids.add(clearedVO);
             });
             Double daAccumulate = 0D;
@@ -708,7 +709,7 @@ public class UnitFacade {
                     if (daAccumulate >= daTotal) {
                         double v = daTotal - (daAccumulate - bid.getQuantity());
 
-                        das.add(new ClearedVO(bid.getCost(), v, bid.getPrice()));
+                        das.add(new ClearedVO(bid.getCost(), v, bid.getPrice(), bid.getDeclared()));
                         break;
                     }
                     das.add(bid);
@@ -718,7 +719,7 @@ public class UnitFacade {
             Double rtTotal = rtCleared.get(i);
             List<ClearedVO> rts = new ArrayList<>();
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                ClearedVO clearedVO = new ClearedVO(unit.getMetaUnit().getMinOutputPrice(), unit.getMetaUnit().getMinCapacity(), unit.getMetaUnit().getMinOutputPrice());
+                ClearedVO clearedVO = new ClearedVO(unit.getMetaUnit().getMinOutputPrice(), unit.getMetaUnit().getMinCapacity(), unit.getMetaUnit().getMinOutputPrice(), null);
                 rts.add(clearedVO);
                 rtTotal = rtTotal - unit.getMetaUnit().getMinCapacity();
             }
@@ -727,7 +728,7 @@ public class UnitFacade {
                     rtAccumulate += bid.getQuantity();
                     if (rtAccumulate >= rtTotal) {
                         double v = rtTotal - (rtAccumulate - bid.getQuantity());
-                        rts.add(new ClearedVO(bid.getCost(), v, bid.getPrice()));
+                        rts.add(new ClearedVO(bid.getCost(), v, bid.getPrice(), bid.getDeclared()));
                         break;
                     }
                     rts.add(bid);

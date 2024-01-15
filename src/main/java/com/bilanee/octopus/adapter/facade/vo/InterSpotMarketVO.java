@@ -48,10 +48,22 @@ public class InterSpotMarketVO {
     Double requireQuantity;
 
     /**
-     * 分时供需曲线：出清价格
+     * 分时供需曲线：出清价格, 废弃
      */
     @JsonSerialize(using = DoubleSerialize.class)
     Double clearPrice;
+
+    /**
+     * 分时供需曲线：出清价格起点
+     */
+    @JsonSerialize(using = PointSerialize.class)
+    Point<Double> clearLineLeft;
+
+    /**
+     * 分时供需曲线：出清价格终点
+     */
+    @JsonSerialize(using = PointSerialize.class)
+    Point<Double> clearLineRight;
 
     /**
      * 分时供需曲线：供给曲线
