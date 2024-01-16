@@ -884,8 +884,13 @@ public class CompFacade {
         List<SpotSection> requireSections = Collect.asList(new SpotSection(0D, receiverDeclaredTotal, loadLimit.getHigh()));
         Point<Double> requireTerminus = new Point<>(receiverDeclaredTotal, loadLimit.getLow());
 
-        Point<Double> left = Point.<Double>builder().x(0D).y(dealAveragePrice).build();
-        Point<Double> right = Point.<Double>builder().x(dealTotal).y(dealAveragePrice).build();
+        Point<Double> left = null;
+        Point<Double> right = null;
+        if (dealAveragePrice != null) {
+            left = Point.<Double>builder().x(0D).y(dealAveragePrice).build();
+            right = Point.<Double>builder().x(dealTotal).y(dealAveragePrice).build();
+        }
+
 
         InterSpotMarketVO interSpotMarketVO = InterSpotMarketVO.builder()
                 .sellDeclaredTotal(sellDeclaredTotal)
@@ -1082,8 +1087,10 @@ public class CompFacade {
         @AfterMapping
         default void after(InterClearance interClearance, @MappingTarget InterClearanceVO interClearanceVO) {
             interClearanceVO.setDealQuantity(interClearance.getMarketQuantity());
-            interClearanceVO.setStart(Point.<Double>builder().x(0D).y(interClearance.getDealPrice()).build());
-            interClearanceVO.setEnd(Point.<Double>builder().x(interClearance.getMarketQuantity()).y(interClearance.getDealPrice()).build());
+            if (interClearance.getDealPrice() != null) {
+                interClearanceVO.setStart(Point.<Double>builder().x(0D).y(interClearance.getDealPrice()).build());
+                interClearanceVO.setEnd(Point.<Double>builder().x(interClearance.getMarketQuantity()).y(interClearance.getDealPrice()).build());
+            }
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
