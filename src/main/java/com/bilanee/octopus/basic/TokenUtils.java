@@ -44,7 +44,7 @@ public class TokenUtils {
     }
 
     public static void main(String[] args) {
-        System.out.println(getUserId("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhdXRoMCIsImV4cCI6MjEzNzIzMDM5NywidXNlcklkIjoiMTAwMyJ9.4Ir10DzfRHP9UMFL796TjScWD7kHprFY8WWKMz0BkiM"));
+        System.out.println(TokenUtils.sign("1000"));
     }
 
 }
