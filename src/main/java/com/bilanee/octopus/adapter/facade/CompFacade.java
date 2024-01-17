@@ -985,7 +985,7 @@ public class CompFacade {
         List<FinalRankVO.Ranking> roundRankings = IntStream.range(0, 3).mapToObj(i -> {
             Integer roundId = StageId.parse(stageId).getRoundId();
             LambdaQueryWrapper<GameResult> eq1 = new LambdaQueryWrapper<GameResult>().eq(GameResult::getTraderId, userId)
-                    .eq(GameResult::getRoundId, roundId + 1);
+                    .eq(GameResult::getRoundId, i + 1);
             GameResult gameResult = gameResultMapper.selectOne(eq1);
             return Convertor.INST.toFinal(gameResult);
         }).collect(Collectors.toList());
