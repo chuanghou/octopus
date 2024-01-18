@@ -989,7 +989,12 @@ public class CompFacade {
             return Convertor.INST.toFinal(gameResult);
         }).collect(Collectors.toList());
 
-        List<GameRanking> gameRankings = gameRankingMapper.selectList(null).stream().sorted(Comparator.comparing(GameRanking::getTotalRanking)).collect(Collectors.toList());
+        Set<String> userIds = tunnel.runningComp().getUserIds().stream().collect(Collectors.toSet());
+
+        List<GameRanking> gameRankings = gameRankingMapper.selectList(null).stream()
+                .filter(g -> userIds.contains(g.getTraderId()))
+                .sorted(Comparator.comparing(GameRanking::getTotalRanking))
+                .collect(Collectors.toList());
 
         FinalRankVO finalRankVO = FinalRankVO.builder()
                 .myFinalRanking(Convertor.INST.to(gameRanking))
