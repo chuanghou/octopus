@@ -43,7 +43,7 @@ public class Routers implements EventRouters {
     final LoadResultMapper loadResultMapper;
     final GeneratorResultMapper generatorResultMapper;
 
-    @EventRouter
+    @EventRouter(order = 1L)
     public void route(CompEvent.Created created, Context context) {
         Comp comp = created.getComp();
         List<Map<String, Collection<MetaUnit>>> roundMetaUnits = created.getRoundMetaUnits();
@@ -72,7 +72,7 @@ public class Routers implements EventRouters {
     /**
      * 年度省间出清和月度省间出清，主要是为了清算集中竞价结果，算成交价格，确定各个量价最后的成交数量
      */
-    @EventRouter
+    @EventRouter(order = 1L)
     public void routeForInterClear(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
@@ -119,7 +119,7 @@ public class Routers implements EventRouters {
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
      */
-    @EventRouter
+    @EventRouter(order = 1L)
     public void routeForIntraClear(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.AN_INTRA && now.getMarketStatus() == MarketStatus.CLEAR;
@@ -191,7 +191,7 @@ public class Routers implements EventRouters {
         });
     }
 
-    @EventRouter
+    @EventRouter(order = 1L)
     public void routeForRoundIdUpdate(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         if (now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.BID) {
@@ -199,7 +199,7 @@ public class Routers implements EventRouters {
         }
     }
 
-    @EventRouter
+    @EventRouter(order = 1L)
     public void fillReverseBalance(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.BID;
@@ -212,7 +212,7 @@ public class Routers implements EventRouters {
         }
     }
 
-    @EventRouter
+    @EventRouter(order = 2L)
     public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
         WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
@@ -258,7 +258,7 @@ public class Routers implements EventRouters {
     /**
      * 省内现货之后预出清
      */
-    @EventRouter(order = 0)
+    @EventRouter
     public void routeBeforeAfterIntraSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
@@ -298,7 +298,7 @@ public class Routers implements EventRouters {
     /**
      * 填充省间现货报价
      */
-    @EventRouter(order = 0)
+    @EventRouter
     public void routerAfterInterSpotBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
@@ -395,7 +395,7 @@ public class Routers implements EventRouters {
     /**
      * 执行正式出清
      */
-    @EventRouter(order = 0L)
+    @EventRouter
     public void routerAfterIntraSpotBid(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
@@ -420,7 +420,7 @@ public class Routers implements EventRouters {
     /**
      * 执行清算
      */
-    @EventRouter(order = 0L)
+    @EventRouter
     public void routerAfterIntraSpotClear(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.END;
@@ -431,7 +431,7 @@ public class Routers implements EventRouters {
         Ssh.exec("python manage.py settle");
     }
 
-    @EventRouter(order = 0)
+    @EventRouter
     public void routerForFinalClear(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
         boolean b0 = now.getCompStage() == CompStage.RANKING;
@@ -445,7 +445,7 @@ public class Routers implements EventRouters {
     final QuizFacade quizFacade;
 
 
-    @EventRouter
+    @EventRouter(order = 1)
     public void writeScore(CompEvent.Stepped stepped, Context context) {
 
         StageId now = stepped.getNow();
