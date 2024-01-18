@@ -989,7 +989,7 @@ public class CompFacade {
             return Convertor.INST.toFinal(gameResult);
         }).collect(Collectors.toList());
 
-        Set<String> userIds = tunnel.runningComp().getUserIds().stream().collect(Collectors.toSet());
+        Set<String> userIds = new HashSet<>(tunnel.runningComp().getUserIds());
 
         List<GameRanking> gameRankings = gameRankingMapper.selectList(null).stream()
                 .filter(g -> userIds.contains(g.getTraderId()))
