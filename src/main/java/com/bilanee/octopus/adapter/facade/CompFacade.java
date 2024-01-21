@@ -674,7 +674,9 @@ public class CompFacade {
             classicBidden = spotUnitCleareds.stream().filter(c -> classicUnitIds.containsKey(c.getUnitId()))
                     .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
                     .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
+                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(
+                            c -> da ? c.getDaClearedMw() : c.getRtClearedMw()
+                    )).getSum())
                     .collect(Collectors.toList());
         }
 
@@ -686,7 +688,9 @@ public class CompFacade {
             renewableBidden = spotUnitCleareds.stream().filter(c -> renewableUnitIds.containsKey(c.getUnitId()))
                     .collect(Collectors.groupingBy(SpotUnitCleared::getPrd)).entrySet().stream()
                     .sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(SpotUnitCleared::getDaClearedMw)).getSum())
+                    .map(cs -> cs.stream().collect(Collectors.summarizingDouble(
+                            c -> da ? c.getDaClearedMw() : c.getRtClearedMw()
+                    )).getSum())
                     .collect(Collectors.toList());
             builder.renewableBidden(renewableBidden);
         }
