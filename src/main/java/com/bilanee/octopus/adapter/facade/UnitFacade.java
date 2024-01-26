@@ -682,49 +682,103 @@ public class UnitFacade {
                 .stream().sorted(Comparator.comparing(SpotUnitCleared::getPrd)).collect(Collectors.toList());
 
         List<Double> daCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getDaClearedMw);
-
         List<Double> rtCleared = Collect.transfer(spotUnitCleareds, SpotUnitCleared::getRtClearedMw);
 
+        List<Double> daDeclares;
+        List<Double> rtDeclares;
+        if (GeneratorType.RENEWABLE.equals(unit.getMetaUnit().getGeneratorType())) {
+            LambdaQueryWrapper<GeneratorDaForecastBidDO> eq4 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
+                    .eq(GeneratorDaForecastBidDO::getRoundId, roundId + 1)
+                    .eq(GeneratorDaForecastBidDO::getUnitId, unit.getMetaUnit().getSourceId());
+            daDeclares = generatorDaForecastBidMapper.selectList(eq4)
+                    .stream().sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd))
+                    .map(GeneratorDaForecastBidDO::getForecastMw)
+                    .collect(Collectors.toList());
+            LambdaQueryWrapper<GeneratorForecastValueDO> eq5 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
+                    .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId());
+            rtDeclares = generatorForecastValueMapper.selectList(eq5).stream()
+                    .sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
+                    .map(GeneratorForecastValueDO::getRtP)
+                    .collect(Collectors.toList());
+        } else {
+            daDeclares = new ArrayList<>();
+            rtDeclares = new ArrayList<>();
+        }
+
+
         List<Pair<List<ClearedVO>, List<ClearedVO>>> clearedSections = IntStream.range(0, 24).mapToObj(i -> {
-            List<ClearedVO> bids = new ArrayList<>();
+
+            List<ClearedVO> daBids = new ArrayList<>();
             List<ClearedVO> das = new ArrayList<>();
             Double daTotal = daCleared.get(i);
+
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                ClearedVO clearedVO = ClearedVO.builder()
-                        .cost(unit.getMetaUnit().getMinOutputPrice())
-                        .quantity(unit.getMetaUnit().getMinCapacity())
-                        .declared(null)
-                        .build();
+                MetaUnit metaUnit = unit.getMetaUnit();
+                daTotal = daTotal - metaUnit.getMinCapacity();
+                ClearedVO clearedVO = new ClearedVO(metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity());
                 das.add(clearedVO);
-                daTotal = daTotal - unit.getMetaUnit().getMinCapacity();
+                generatorDaSegmentBidDOs.forEach(gDO -> {
+                    daBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
+                });
+            } else {
+                double renewableAccumulate = 0D;
+                Double declareTotal = daDeclares.get(i);
+                for (GeneratorDaSegmentBidDO gDO : generatorDaSegmentBidDOs) {
+                    renewableAccumulate += gDO.getOfferMw();
+                    if (renewableAccumulate < declareTotal) {
+                        daBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
+                    } else {
+                        double v = declareTotal - (renewableAccumulate - gDO.getOfferMw());
+                        daBids.add(new ClearedVO(gDO.getOfferCost(), v, gDO.getOfferPrice(), v));
+                        break;
+                    }
+                }
             }
-            generatorDaSegmentBidDOs.forEach(gDO -> {
-                ClearedVO clearedVO = new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw());
-                bids.add(clearedVO);
-            });
+
             Double daAccumulate = 0D;
             if (!daTotal.equals(0D)) {
-                for (ClearedVO bid : bids) {
+                for (ClearedVO bid : daBids) {
                     daAccumulate += bid.getQuantity();
                     if (daAccumulate >= daTotal) {
                         double v = daTotal - (daAccumulate - bid.getQuantity());
-
                         das.add(new ClearedVO(bid.getCost(), v, bid.getPrice(), bid.getDeclared()));
                         break;
                     }
                     das.add(bid);
                 }
             }
-            Double rtAccumulate = 0D;
-            Double rtTotal = rtCleared.get(i);
+
+            // 实时
+            List<ClearedVO> rtBids = new ArrayList<>();
             List<ClearedVO> rts = new ArrayList<>();
-            if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                ClearedVO clearedVO = new ClearedVO(unit.getMetaUnit().getMinOutputPrice(), unit.getMetaUnit().getMinCapacity(), unit.getMetaUnit().getMinOutputPrice(), null);
+            Double rtTotal = rtCleared.get(i);
+
+            if (GeneratorType.RENEWABLE.equals(unit.getMetaUnit().getGeneratorType())) {
+                MetaUnit metaUnit = unit.getMetaUnit();
+                rtTotal = rtTotal - metaUnit.getMinCapacity();
+                ClearedVO clearedVO = new ClearedVO(metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity());
                 rts.add(clearedVO);
-                rtTotal = rtTotal - unit.getMetaUnit().getMinCapacity();
+                generatorDaSegmentBidDOs.forEach(gDO -> {
+                    rtBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
+                });
+            } else {
+                double renewableAccumulate = 0D;
+                Double declareTotal = rtDeclares.get(i);
+                for (GeneratorDaSegmentBidDO gDO : generatorDaSegmentBidDOs) {
+                    renewableAccumulate += gDO.getOfferMw();
+                    if (renewableAccumulate < declareTotal) {
+                        rtBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
+                    } else {
+                        double v = declareTotal - (renewableAccumulate - gDO.getOfferMw());
+                        rtBids.add(new ClearedVO(gDO.getOfferCost(), v, gDO.getOfferPrice(), v));
+                        break;
+                    }
+                }
             }
+
+            Double rtAccumulate = 0D;
             if (!rtTotal.equals(0D)) {
-                for (ClearedVO bid : bids) {
+                for (ClearedVO bid : rtBids) {
                     rtAccumulate += bid.getQuantity();
                     if (rtAccumulate >= rtTotal) {
                         double v = rtTotal - (rtAccumulate - bid.getQuantity());
@@ -734,6 +788,7 @@ public class UnitFacade {
                     rts.add(bid);
                 }
             }
+
             return Pair.of(das, rts);
         }).collect(Collectors.toList());
 
