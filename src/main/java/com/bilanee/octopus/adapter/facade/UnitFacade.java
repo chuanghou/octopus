@@ -753,7 +753,7 @@ public class UnitFacade {
             List<ClearedVO> rts = new ArrayList<>();
             Double rtTotal = rtCleared.get(i);
 
-            if (GeneratorType.RENEWABLE.equals(unit.getMetaUnit().getGeneratorType())) {
+            if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
                 MetaUnit metaUnit = unit.getMetaUnit();
                 rtTotal = rtTotal - metaUnit.getMinCapacity();
                 ClearedVO clearedVO = new ClearedVO(metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity());
