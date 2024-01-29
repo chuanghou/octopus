@@ -9,6 +9,7 @@ import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
@@ -203,6 +204,9 @@ public class UnitFacade {
     @GetMapping("listIntraSymbolBidVOs")
     public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
+        Comp comp = tunnel.runningComp();
+        StepRecord stepRecord = comp.getStepRecords().get(comp.getStepRecords().size() - 1);
+
 
         CompletableFuture<Map<IntraSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
             // prepare instant
@@ -227,8 +231,6 @@ public class UnitFacade {
         ListMultimap<IntraSymbol, IntraQuotationDO> quotationDOMap = future1.get();
         List<Unit> units = future2.get();
 
-        StepRecord stepRecord = tunnel.runningComp().getStepRecords().stream()
-                .filter(s -> s.getStageId().equals(stageId)).findFirst().orElse(null);
 
         List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
@@ -243,7 +245,7 @@ public class UnitFacade {
                 builder.sellVolumes(intraInstantDO.getSellVolumes());
             }
             List<Unit> us = units.stream().filter(u -> u.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
-            builder.unitIntraBidVOs(to(us, StageId.parse(stageId), intraSymbol));
+            builder.unitIntraBidVOs(to(us, StageId.parse(stageId), intraSymbol, comp));
 
             List<IntraQuotationDO> intraQuotationDOs = quotationDOMap.get(intraSymbol);
             List<QuotationVO> quotationVOs = intraQuotationDOs.stream()
@@ -256,8 +258,10 @@ public class UnitFacade {
         return Result.success(intraSymbolBidVOs);
     }
 
-    private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol) {
+    private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol, Comp comp) {
         Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
+        String currentStageId = comp.getStageId().toString();
+        StepRecord stepRecord = comp.getStepRecords().get(comp.getStepRecords().size() - 1);
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
@@ -281,12 +285,13 @@ public class UnitFacade {
             Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
             builder.transit(transit);
 
+            List<BalanceVO> balanceVOs;
             // 持仓限制
             if (stageId.getTradeStage() != TradeStage.MO_INTRA) {
                 Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
                 balance = Double.parseDouble(String.format("%.2f", balance));
                 BalanceVO balanceVO = BalanceVO.builder().direction(unitType.generalDirection()).balance(balance).build();
-                builder.balanceVOs(Collect.asList(balanceVO));
+                balanceVOs = Collect.asList(balanceVO);
             } else {
                 if (unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()) == null) {
                     Double balance0 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection());
@@ -295,14 +300,24 @@ public class UnitFacade {
                     Double balance1 = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unitType.generalDirection().opposite());
                     balance1 = Double.parseDouble(String.format("%.2f", balance1));
                     BalanceVO balanceVO1 = BalanceVO.builder().direction(unitType.generalDirection().opposite()).balance(balance1).build();
-                    builder.balanceVOs(Collect.asList(balanceVO0, balanceVO1));
+                    balanceVOs = Collect.asList(balanceVO0, balanceVO1);
                 } else {
                     Double balance = unit.getBalance().get(intraSymbol.getTimeFrame()).get(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame()));
                     balance = Double.parseDouble(String.format("%.2f", balance));
                     BalanceVO balanceVO = BalanceVO.builder().direction(unit.getMoIntraDirection().get(intraSymbol.getTimeFrame())).balance(balance).build();
-                    builder.balanceVOs(Collect.asList(balanceVO));
+                    balanceVOs = Collect.asList(balanceVO);
                 }
             }
+
+
+            List<Direction> directions = enableDirections(stepRecord);
+
+            if (Objects.equals(stageId.toString(), currentStageId)) {
+                balanceVOs = balanceVOs.stream().filter(b -> directions.contains(b.getDirection())).collect(Collectors.toList());
+            } else {
+                balanceVOs = new ArrayList<>();
+            }
+            builder.balanceVOs(balanceVOs);
 
             // 报单内容
             List<IntraBidVO> intraBidVOs = bids.stream().map(bid -> IntraBidVO.builder()
@@ -349,6 +364,22 @@ public class UnitFacade {
         CommandBus.accept(command, new HashMap<>());
 
         return Result.success();
+    }
+
+
+    public List<Direction> enableDirections(StepRecord stepRecord) {
+        long now = System.currentTimeMillis();
+        Long startTimeStamp = stepRecord.getStartTimeStamp();
+        Long endTimeStamp = stepRecord.getStartTimeStamp();
+        if (now >= startTimeStamp && now < startTimeStamp + 60_000) {
+            return Collect.asList(Direction.BUY);
+        } else if (now >= startTimeStamp + 60_000 && now < startTimeStamp + 120_000) {
+            return Collect.asList(Direction.SELL);
+        } else if (now >= startTimeStamp + 120_000 && now <= endTimeStamp) {
+            return Collect.asList(Direction.BUY, Direction.SELL);
+        } else {
+            return Collections.EMPTY_LIST;
+        }
     }
 
     /**

@@ -25,6 +25,7 @@ public class CompCmd {
         List<String> traderIds;
         List<String> robotIds;
         Boolean enableQuiz;
+        Integer roundTotal;
         String dt;
 
         @Override

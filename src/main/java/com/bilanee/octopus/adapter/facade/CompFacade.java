@@ -985,8 +985,9 @@ public class CompFacade {
         String userId = TokenUtils.getUserId(token);
         LambdaQueryWrapper<GameRanking> eq0 = new LambdaQueryWrapper<GameRanking>().eq(GameRanking::getTraderId, userId);
         GameRanking gameRanking = gameRankingMapper.selectOne(eq0);
+        Integer roundTotal = tunnel.runningComp().getRoundTotal();
 
-        List<FinalRankVO.Ranking> roundRankings = IntStream.range(0, 3).mapToObj(i -> {
+        List<FinalRankVO.Ranking> roundRankings = IntStream.range(0, roundTotal).mapToObj(i -> {
             LambdaQueryWrapper<GameResult> eq1 = new LambdaQueryWrapper<GameResult>().eq(GameResult::getTraderId, userId)
                     .eq(GameResult::getRoundId, i + 1);
             GameResult gameResult = gameResultMapper.selectOne(eq1);

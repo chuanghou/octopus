@@ -289,6 +289,7 @@ public class ManageFacade {
                 .delayConfig(delayConfig)
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
                 .dt(marketSettingDO.getDt())
+                .roundTotal(marketSettingDO.getRoundNum())
                 .build();
 
         CommandBus.accept(command, new HashMap<>());

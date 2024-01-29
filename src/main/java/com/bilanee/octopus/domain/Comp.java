@@ -91,6 +91,7 @@ public class Comp extends AggregateRoot {
         comp.setEndingTimeStamp(endingTimeStamp);
         comp.setEnableQuiz(command.getEnableQuiz());
         comp.setDt(command.getDt());
+        comp.setRoundTotal(command.getRoundTotal());
 
         // assign metaUnit
         List<Map<String, Collection<MetaUnit>>> roundMetaUnits = IntStream.range(0, comp.getRoundTotal())
