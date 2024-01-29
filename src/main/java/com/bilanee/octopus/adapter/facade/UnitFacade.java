@@ -911,9 +911,9 @@ public class UnitFacade {
                         InterSpotBid interSpotBid1 = InterSpotBid.builder()
                                 .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice1()).build();
                         InterSpotBid interSpotBid2 = InterSpotBid.builder()
-                                .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice2()).build();
+                                .quantity(interSpotUnitOfferDO.getSpotOfferMw2()).price(interSpotUnitOfferDO.getSpotOfferPrice2()).build();
                         InterSpotBid interSpotBid3 = InterSpotBid.builder()
-                                .quantity(interSpotUnitOfferDO.getSpotOfferMw1()).price(interSpotUnitOfferDO.getSpotOfferPrice3()).build();
+                                .quantity(interSpotUnitOfferDO.getSpotOfferMw3()).price(interSpotUnitOfferDO.getSpotOfferPrice3()).build();
                         return InstantSpotBidVO.builder().instant(i)
                                 .maxCapacity(capacities.get(i)).preCleared(spotUnitCleared.getPreclearClearedMw())
                                 .interSpotBids(Collect.asList(interSpotBid1, interSpotBid2, interSpotBid3))

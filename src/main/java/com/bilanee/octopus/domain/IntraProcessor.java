@@ -140,6 +140,7 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             CommandBus.accept(command, new HashMap<>());
         });
         sellPriorityQueue.clear();
+        latestPrice = null;
     }
 
     private void doCancel(Long cancelBidId, Direction cancelBidDirection) {
