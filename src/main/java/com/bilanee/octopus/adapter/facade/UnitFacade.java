@@ -348,7 +348,8 @@ public class UnitFacade {
     @PostMapping("submitIntraBidPO")
     public Result<Void> submitIntraBidPO(@RequestBody IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
-        StageId cStageId = tunnel.runningComp().getStageId();
+        Comp comp = tunnel.runningComp();
+        StageId cStageId = comp.getStageId();
         Long unitId = intraBidPO.getBidPO().getUnitId();
         UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
@@ -359,6 +360,10 @@ public class UnitFacade {
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
+
+        List<Direction> directions = enableDirections(comp.getStepRecords().get(comp.getStepRecords().size() - 1));
+
+        BizEx.falseThrow(directions.contains(intraBidPO.getBidPO().getDirection()), PARAM_FORMAT_WRONG.message("当前不允许此方向报单"));
         UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder()
                 .bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
         CommandBus.accept(command, new HashMap<>());
