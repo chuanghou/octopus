@@ -62,4 +62,9 @@ public class CompVO {
      */
     List<String> userIds;
 
+    /**
+     * 总轮次
+     */
+    Integer roundTotal;
+
 }

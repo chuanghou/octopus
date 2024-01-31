@@ -44,7 +44,7 @@ public class Comp extends AggregateRoot {
 
     Long compId;
 
-    Integer roundTotal = 3;
+    Integer roundTotal;
     List<String> userIds;
 
     CompStage compStage;
