@@ -237,7 +237,9 @@ public class UnitFacade {
                     .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame());
             IntraInstantDO intraInstantDO = instantDOMap.get(intraSymbol);
 
-            if (intraInstantDO != null) {
+            boolean b0 = stepRecord.getStartTimeStamp() <= System.currentTimeMillis();
+            boolean b1 = stepRecord.getStartTimeStamp() + 60_1000L > System.currentTimeMillis();
+            if (intraInstantDO != null && !(b0 && b1)) {
                 builder.latestPrice(intraInstantDO.getPrice());
                 builder.buyAsks(intraInstantDO.getBuyAsks());
                 builder.sellAsks(intraInstantDO.getSellAsks());
