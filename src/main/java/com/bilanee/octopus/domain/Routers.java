@@ -27,6 +27,9 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -42,6 +45,8 @@ public class Routers implements EventRouters {
     final TransactionDOMapper transactionDOMapper;
     final LoadResultMapper loadResultMapper;
     final GeneratorResultMapper generatorResultMapper;
+
+    final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
     @EventRouter(order = 1L)
     public void route(CompEvent.Created created, Context context) {
@@ -116,6 +121,38 @@ public class Routers implements EventRouters {
 
     }
 
+    @EventRouter(order = 1L)
+    public void routeForIntraBid(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.AN_INTRA && now.getMarketStatus() == MarketStatus.BID;
+        boolean b1 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.BID;
+        if (!(b0 || b1)) {
+            return;
+        }
+        scheduledExecutorService.schedule(() -> {
+            TradeStage tradeStage = tunnel.runningComp().getTradeStage();
+            WsTopic  wsTopic;
+            if (tradeStage == TradeStage.AN_INTRA) {
+                wsTopic = WsTopic.AN_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.MO_INTRA) {
+                wsTopic = WsTopic.MO_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            }
+        }, 60_000L, TimeUnit.MILLISECONDS);
+
+        scheduledExecutorService.schedule(() -> {
+            TradeStage tradeStage = tunnel.runningComp().getTradeStage();
+            WsTopic wsTopic;
+            if (tradeStage == TradeStage.AN_INTRA) {
+                wsTopic = WsTopic.AN_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.MO_INTRA) {
+                wsTopic = WsTopic.MO_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            }
+        }, 120_000L, TimeUnit.MILLISECONDS);
+    }
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
      */

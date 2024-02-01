@@ -1,6 +1,5 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
-import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.DoublesSerialize;
 import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.basic.GridLimit;

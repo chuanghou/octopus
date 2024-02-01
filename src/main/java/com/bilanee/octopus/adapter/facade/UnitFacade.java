@@ -231,6 +231,7 @@ public class UnitFacade {
         ListMultimap<IntraSymbol, IntraQuotationDO> quotationDOMap = future1.get();
         List<Unit> units = future2.get();
 
+        boolean notCurrentStage = !tunnel.runningComp().getStageId().toString().equals(stageId);
 
         List<IntraSymbolBidVO> intraSymbolBidVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             IntraSymbolBidVO.IntraSymbolBidVOBuilder builder = IntraSymbolBidVO.builder()
@@ -238,8 +239,8 @@ public class UnitFacade {
             IntraInstantDO intraInstantDO = instantDOMap.get(intraSymbol);
 
             boolean b0 = stepRecord.getStartTimeStamp() <= System.currentTimeMillis();
-            boolean b1 = stepRecord.getStartTimeStamp() + 60_1000L > System.currentTimeMillis();
-            if (intraInstantDO != null && !(b0 && b1)) {
+            boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 60_1000L;
+            if (intraInstantDO != null && ((b0 || b1) || notCurrentStage)) {
                 builder.latestPrice(intraInstantDO.getPrice());
                 builder.buyAsks(intraInstantDO.getBuyAsks());
                 builder.sellAsks(intraInstantDO.getSellAsks());
@@ -377,7 +378,7 @@ public class UnitFacade {
     public List<Direction> enableDirections(StepRecord stepRecord) {
         long now = System.currentTimeMillis();
         Long startTimeStamp = stepRecord.getStartTimeStamp();
-        Long endTimeStamp = stepRecord.getStartTimeStamp();
+        Long endTimeStamp = stepRecord.getEndTimeStamp();
         if (now >= startTimeStamp && now < startTimeStamp + 60_000) {
             return Collect.asList(Direction.BUY);
         } else if (now >= startTimeStamp + 60_000 && now < startTimeStamp + 120_000) {

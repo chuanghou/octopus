@@ -44,6 +44,8 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
 
     Boolean enableQuiz;
 
+    Integer roundTotal;
+
     @TableField(typeHandler = ListStepRecordHandler.class)
     List<StepRecord> stepRecords = new ArrayList<>();
 
