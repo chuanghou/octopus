@@ -264,7 +264,7 @@ public class UnitFacade {
     private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol, Comp comp) {
         Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
         String currentStageId = comp.getStageId().toString();
-        StepRecord stepRecord = comp.getStepRecords().get(comp.getStepRecords().size() - 1);
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId.toString())).findFirst().orElseThrow(SysEx::unreachable);
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
@@ -363,9 +363,8 @@ public class UnitFacade {
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
-
-        List<Direction> directions = enableDirections(comp.getStepRecords().get(comp.getStepRecords().size() - 1));
-
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(intraBidPO.getStageId())).findFirst().orElseThrow(SysEx::unreachable);
+        List<Direction> directions = enableDirections(stepRecord);
         BizEx.falseThrow(directions.contains(intraBidPO.getBidPO().getDirection()), PARAM_FORMAT_WRONG.message("当前不允许此方向报单"));
         UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder()
                 .bid(Convertor.INST.to(intraBidPO.getBidPO())).stageId(pStageId).build();
@@ -383,10 +382,8 @@ public class UnitFacade {
             return Collect.asList(Direction.BUY);
         } else if (now >= startTimeStamp + 60_000 && now < startTimeStamp + 120_000) {
             return Collect.asList(Direction.SELL);
-        } else if (now >= startTimeStamp + 120_000 && now <= endTimeStamp) {
-            return Collect.asList(Direction.BUY, Direction.SELL);
         } else {
-            return Collections.EMPTY_LIST;
+            return Collect.asList(Direction.BUY, Direction.SELL);
         }
     }
 

@@ -28,7 +28,7 @@ public class MyTest {
     @Test
     @SuppressWarnings("UnstableApiUsage")
     public void interPointTest() {
-        Result<List<IntraSymbolBidVO>> listResult = unitFacade.listIntraSymbolBidVOs("209081.TRADE.2.AN_INTRA.BID", TokenUtils.sign("1000"));
+        Result<List<IntraSymbolBidVO>> listResult = unitFacade.listIntraSymbolBidVOs("210238.TRADE.0.MO_INTRA.BID", TokenUtils.sign("1000"));
     }
 
 }
