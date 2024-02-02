@@ -240,7 +240,7 @@ public class UnitFacade {
 
             boolean b0 = stepRecord.getStartTimeStamp() <= System.currentTimeMillis();
             boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 60_1000L;
-            if (intraInstantDO != null && ((b0 || b1) || notCurrentStage)) {
+            if (intraInstantDO != null && ((b0 && b1) || notCurrentStage)) {
                 builder.latestPrice(intraInstantDO.getPrice());
                 builder.buyAsks(intraInstantDO.getBuyAsks());
                 builder.sellAsks(intraInstantDO.getSellAsks());
