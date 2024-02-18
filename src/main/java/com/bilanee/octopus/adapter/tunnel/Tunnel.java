@@ -4,10 +4,7 @@ package com.bilanee.octopus.adapter.tunnel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.CompStage;
-import com.bilanee.octopus.basic.enums.TimeFrame;
-import com.bilanee.octopus.basic.enums.TradeStage;
-import com.bilanee.octopus.basic.enums.UnitType;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
@@ -192,6 +189,33 @@ public class Tunnel {
         intraQuotationDOMapper.insert(intraQuotationDO);
     }
 
+    final IntraCostMapper intraCostMapper;
+
+    public Double cost(Long unitId, Double quantity) {
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
+            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+            IntraCost intraCost = intraCostMapper.selectOne(eq);
+            return intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
+        } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
+            return -400D;
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+    }
+
+    public Double cost(Long unitId, Double startQuantity, Double endQuantity) {
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+        if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
+            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+            IntraCost intraCost = intraCostMapper.selectOne(eq);
+            return 2 * intraCost.getCostQuadraticCoe() * (startQuantity + endQuantity) + intraCost.getCostPrimaryCoe();
+        } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
+            return -400D;
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+    }
 
     public void recordIntraInstantDO(IntraInstantDO intraInstantDO) {
         LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()

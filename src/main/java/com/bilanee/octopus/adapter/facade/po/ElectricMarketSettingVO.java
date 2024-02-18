@@ -44,12 +44,25 @@ public class ElectricMarketSettingVO {
      */
     Double regulatedUserTariff;
 
+    /**
+     * 燃煤价格年度预测（元/t）
+     */
+    Double annualCoalPrice;
 
     /**
-     * 煤价变动倍数
+     * 燃煤价格月度预测（元/t）
      */
-    Double coalPriceMultiple;
+    Double monthlyCoalPrice;
 
+    /**
+     * 燃煤价格日前预测（元/t）
+     */
+    Double daCoalPrice;
+
+    /**
+     * 容量电价（元/MWyear）
+     */
+    Double capacityPrice;
 
     /**
      * 中长期机组持仓量上限比例

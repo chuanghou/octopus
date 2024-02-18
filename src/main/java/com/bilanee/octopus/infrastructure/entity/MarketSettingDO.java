@@ -35,6 +35,7 @@ public class MarketSettingDO {
   Boolean isUnitgroupMwConstraint;
   Boolean isUnitgroupResConstraint;
   Boolean isEnteringReviewStage;
+  Boolean isOpeningTradingPlatform;
   Boolean isConductingQAndAModule;
   Double offerPriceCap;
   Double offerPriceFloor;
@@ -78,11 +79,15 @@ public class MarketSettingDO {
   Integer intraprovincialSpotResultDuration;
   Integer settleResultDuration;
   Integer reviewDuration;
+  Integer quizCompeteDuration;
+  Integer quizResultDuration;
   String dt;
+  String caseSetting;
   Double transmissionAndDistributionTariff;
   Double regulatedUserTariff;
   Double regulatedProducerPrice;
   Double regulatedInterprovTransmissionPrice;
+  Double capacityPrice;
   Integer interprovTradingMode;
   Integer interprovClearingMode;
   Boolean isSettingDefaultOfferForTraders;
@@ -90,9 +95,9 @@ public class MarketSettingDO {
   Integer paperId;
   Double maxForwardUnitPositionInterest;
   Double maxForwardLoadPositionInterest;
-  String caseSetting;
-  Double coalPriceMultiple;
-  Integer quizCompeteDuration;
-  Integer quizResultDuration;
+  Double annualCoalPrice;
+  Double monthlyCoalPrice;
+  Double daCoalPrice;
   String forecastDeviation;
+
 }

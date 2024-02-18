@@ -260,39 +260,6 @@ public class Routers implements EventRouters {
     final UnitFacade unitFacade;
 
     /**
-     * 填充成本值
-     */
-    @EventRouter(order = -1)
-    @SneakyThrows
-    public void fillCost(CompEvent.Stepped stepped, Context context) {
-        StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
-        boolean b1 = now.getMarketStatus() == MarketStatus.BID;
-        if (b0 && b1) {
-            List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
-            units.forEach(u -> {
-
-                LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
-                        .eq(GeneratorDaSegmentBidDO::getRoundId, now.getRoundId() + 1)
-                        .eq(GeneratorDaSegmentBidDO::getUnitId, u.getMetaUnit().getSourceId());
-
-                List<GeneratorDaSegmentBidDO> gSegmentBidDOs = generatorDaSegmentMapper.selectList(eq0).stream().sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
-                Double start = 0D;
-                if (u.getMetaUnit().getUnitType() == UnitType.GENERATOR) {
-                    start = u.getMetaUnit().getMinCapacity();
-                }
-                for (GeneratorDaSegmentBidDO gSegmentBidDO : gSegmentBidDOs) {
-                    double end = start + gSegmentBidDO.getOfferMw();
-                    Double cost = unitFacade.calculateDaCost(u.getUnitId(), start, end).getData();
-                    gSegmentBidDO.setOfferCost(cost);
-                    start = end;
-                }
-                gSegmentBidDOs.forEach(generatorDaSegmentMapper::updateById);
-            });
-        }
-
-    }
-    /**
      * 省内现货之后预出清
      */
     @EventRouter

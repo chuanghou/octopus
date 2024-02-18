@@ -11,6 +11,7 @@ import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -24,10 +25,36 @@ public class IntraDaBidPO {
     @NotNull @Positive
     Long unitId;
 
+
+    /**
+     * 冷启动费用
+     */
+    @NotNull(message = "冷启动费用不能为空") @PositiveOrZero(message = "冷启动费用需要大于等于0")
+    Double coldStartupOffer;
+
+    /**
+     * 温启动费用
+     */
+    @NotNull(message = "温启动费用不能为空") @PositiveOrZero(message = "温启动费用需要大于等于0")
+    Double warmStartupOffer;
+
+    /**
+     * 热启动费用
+     */
+    @NotNull(message = "热启动费用不能为空") @PositiveOrZero(message = "热启动费用需要大于等于0")
+    Double hotStartupOffer;
+
+    /**
+     * 空载启动费用
+     */
+    @NotNull(message = "空载启动费用不能为空") @PositiveOrZero(message = "空载启动费用需要大于等于0")
+    Double unloadOffer;
+
+
     /**
      * 分段申报值
      */
-    @Size(min = 5, max = 5, message = "应该是5个值") @Valids
+    @Size(min = 5, max = 6, message = "应该是5个值") @Valids
     List<Segment> segments;
 
     /**

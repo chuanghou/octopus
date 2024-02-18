@@ -1,8 +1,10 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.DoublesSerialize;
+import com.bilanee.octopus.PointSerialize;
 import com.bilanee.octopus.adapter.facade.Segment;
 import com.bilanee.octopus.basic.GridLimit;
+import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.enums.GeneratorType;
 import com.bilanee.octopus.basic.enums.UnitType;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -47,20 +49,40 @@ public class IntraDaBidVO {
     /**
      * 分段式报价，当单元类型为机组时存在segments报价区
      */
-    @Size(min = 5, max = 5) @Valids
+    @Size(min = 5, max = 6) @Valids
     List<Segment> segments;
 
+    /**
+     * 冷启动费用
+     */
+    Double coldStartupOffer;
 
     /**
-     * 火电机组的最小起始段
+     * 温启动费用
      */
-    @Nullable
-    Segment minSegment;
+    Double warmStartupOffer;
 
     /**
-     * 机组成本曲线, 五段成本，画图用
+     * 热启动费用
      */
-    List<Segment> costs;
+    Double hotStartupOffer;
+
+    /**
+     * 空载费用
+     */
+    Double unLoadOffer;
+
+    /**
+     * 机组成本线起点
+     */
+    @JsonSerialize(using = PointSerialize.class)
+    Point<Double> costStart;
+
+    /**
+     * 机组成本线终点
+     */
+    @JsonSerialize(using = PointSerialize.class)
+    Point<Double> costEnd;
 
     /**
      * 价格限制

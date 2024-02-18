@@ -72,6 +72,7 @@ public class UnitFacade {
     final UnitBasicMapper unitBasicMapper;
     final SpotUnitClearedMapper spotUnitClearedMapper;
     final SpotLoadClearedMapper spotLoadClearedMapper;
+    final IntraOfferMapper intraOfferMapper;
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
@@ -426,6 +427,8 @@ public class UnitFacade {
         return Result.success(intraDaBidVOs);
     }
 
+    final IntraCostMapper intraCostMapper;
+
     private IntraDaBidVO build(Unit unit, StageId stageId) {
         UnitType unitType = unit.getMetaUnit().getUnitType();
         GeneratorType generatorType = unit.getMetaUnit().getGeneratorType();
@@ -438,34 +441,34 @@ public class UnitFacade {
                 .priceLimit(priceLimit);
         if (unitType == UnitType.GENERATOR) {
 
+            Double costStart = tunnel.cost(unit.getUnitId(), 0D);
+            Double costEnd = tunnel.cost(unit.getUnitId(), metaUnit.getMaxCapacity());
+            builder.costStart(Point.<Double>builder().x(costStart).y(costEnd).build());
+            builder.costEnd(Point.<Double>builder().x(metaUnit.getMaxCapacity()).y(costEnd).build());
+
             if (generatorType == GeneratorType.CLASSIC) {
-                Segment segment = Segment.builder().start(0D).end(metaUnit.getMinCapacity())
-                        .price(metaUnit.getMinOutputPrice()).build();
-                builder.minSegment(segment);
-                LambdaQueryWrapper<ThermalCostDO> eq = new LambdaQueryWrapper<ThermalCostDO>().eq(ThermalCostDO::getUnitId, unit.getMetaUnit().getSourceId());
-                List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
-                        .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
-
-                List<Segment> costs = buildCostSegments(thermalCostDOs, metaUnit.getMinCapacity());
-                builder.costs(costs);
-            } else {
-                Double maxCapacity = metaUnit.getMaxCapacity();
-
-                double v = maxCapacity / 5;
-                List<Segment> costs = IntStream.range(0, 5).mapToObj(i -> new Segment(i * v, (i + 1) * v, -400D)).collect(Collectors.toList());
-                builder.costs(costs);
+                LambdaQueryWrapper<IntraOffer> eq = new LambdaQueryWrapper<IntraOffer>()
+                        .eq(IntraOffer::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraOffer::getRoundId, stageId.getRoundId() + 1);
+                IntraOffer intraOffer = intraOfferMapper.selectOne(eq);
+                builder.coldStartupOffer(intraOffer.getColdStartupOffer());
+                builder.warmStartupOffer(intraOffer.getWarmStartupOffer());
+                builder.hotStartupOffer(intraOffer.getHotStartupOffer());
+                builder.unLoadOffer(intraOffer.getUnLoadOffer());
             }
 
-
-
-            double start = generatorType == GeneratorType.CLASSIC ? metaUnit.getMinCapacity(): 0D;
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
                     .eq(GeneratorDaSegmentBidDO::getUnitId, metaUnit.getSourceId());
             List<GeneratorDaSegmentBidDO> gDOs = generatorDaSegmentMapper.selectList(eq0).stream()
-                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId))
+                    .skip(generatorType == GeneratorType.RENEWABLE ? 1 : 0)
+                    .collect(Collectors.toList());
+            if (generatorType == GeneratorType.CLASSIC) {
+                gDOs.get(0).setOfferMw(metaUnit.getMinCapacity());
+            }
             List<Segment> segments = new ArrayList<>();
 
+            Double start = 0D;
             for (GeneratorDaSegmentBidDO gDO : gDOs) {
                 Segment segment = Segment.builder().start(start).end(start + gDO.getOfferMw()).price(gDO.getOfferPrice()).build();
                 segments.add(segment);
@@ -534,12 +537,14 @@ public class UnitFacade {
                     .eq(GeneratorDaSegmentBidDO::getUnitId, unit.getMetaUnit().getSourceId());
             List<GeneratorDaSegmentBidDO> gSegmentBidDOs = generatorDaSegmentMapper.selectList(eq0);
             List<Segment> segments = intraDaBidPO.getSegments();
+            int offset = (generatorType == GeneratorType.RENEWABLE) ? 1 : 0;
             IntStream.range(0, gSegmentBidDOs.size()).forEach(i -> {
                 Segment segment = intraDaBidPO.getSegments().get(i);
-                GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i);
+                GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i + offset);
                 double v = segments.get(i).getEnd() - segments.get(i).getStart();
                 generatorDaSegmentBidDO.setOfferMw(v);
                 generatorDaSegmentBidDO.setOfferPrice(segment.getPrice());
+                generatorDaSegmentBidDO.setOfferCost(tunnel.cost(unitId, segment.getStart(), segment.getEnd()));
             });
             gSegmentBidDOs.forEach(generatorDaSegmentMapper::updateById);
 
@@ -553,6 +558,24 @@ public class UnitFacade {
                 List<Double> declares = intraDaBidPO.getDeclares().stream().map(dec -> Math.min(dec, maxCapacity)).collect(Collectors.toList());
                 IntStream.range(0, gForecastDOs.size()).forEach(i -> gForecastDOs.get(i).setForecastMw(declares.get(i)));
                 gForecastDOs.forEach(generatorDaForecastBidMapper::updateById);
+            } else {
+                LambdaQueryWrapper<IntraOffer> eq = new LambdaQueryWrapper<IntraOffer>()
+                        .eq(IntraOffer::getRoundId, StageId.parse(stageId).getRoundId() + 1)
+                        .eq(IntraOffer::getUnitId, unit.getMetaUnit().getSourceId());
+                IntraOffer intraOffer = intraOfferMapper.selectOne(eq);
+
+                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+                IntraCost intraCost = intraCostMapper.selectOne(eq1);
+                BizEx.trueThrow(intraDaBidPO.getColdStartupOffer() > intraCost.getColdStartupOfferCap(), PARAM_FORMAT_WRONG.message("冷启动费用超过上限"));
+                BizEx.trueThrow(intraDaBidPO.getWarmStartupOffer() > intraCost.getWarmStartupOfferCap(), PARAM_FORMAT_WRONG.message("温启动费用超过上限"));
+                BizEx.trueThrow(intraDaBidPO.getHotStartupOffer() > intraCost.getHotStartupOfferCap(), PARAM_FORMAT_WRONG.message("热启动费用超过上限"));
+                BizEx.trueThrow(intraDaBidPO.getUnloadOffer() > intraCost.getNoLoadOfferCap(), PARAM_FORMAT_WRONG.message("空载费用超过上限"));
+
+                intraOffer.setColdStartupOffer(intraDaBidPO.getColdStartupOffer());
+                intraOffer.setWarmStartupOffer(intraDaBidPO.getWarmStartupOffer());
+                intraOffer.setHotStartupOffer(intraDaBidPO.getHotStartupOffer());
+                intraOffer.setUnLoadOffer(intraDaBidPO.getUnloadOffer());
+                intraOfferMapper.updateById(intraOffer);
             }
         } else if (unitType == UnitType.LOAD) {
             LambdaQueryWrapper<LoadDaForecastBidDO> eq1 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
@@ -583,65 +606,9 @@ public class UnitFacade {
                                   @NotNull @PositiveOrZero Double start,
                                   @NotNull @Positive Double end) {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
-        Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
-        if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
-            return Result.success(-400D);
-        }
-        Double minCapacity = unit.getMetaUnit().getMinCapacity();
-        LambdaQueryWrapper<ThermalCostDO> eq = new LambdaQueryWrapper<ThermalCostDO>().eq(ThermalCostDO::getUnitId, unit.getMetaUnit().getSourceId());
-        List<ThermalCostDO> thermalCostDOs = thermalCostDOMapper.selectList(eq).stream()
-                .sorted(Comparator.comparing(ThermalCostDO::getSpotCostId)).collect(Collectors.toList());
-
-        List<Segment> segments = buildCostSegments(thermalCostDOs, minCapacity);
-
-        double accumulate = 0D;
-        int segStart = IntStream.range(0, segments.size()).filter(i -> {
-            Segment segment = segments.get(i);
-            return segment.getStart() <= start && segment.getEnd() >= start;
-        }).findFirst().orElseThrow(SysEx::unreachable);
-
-        int segEnd = IntStream.range(0, segments.size()).filter(i -> {
-            Segment segment = segments.get(i);
-            return segment.getStart() <= end && segment.getEnd() >= end;
-        }).findFirst().orElseThrow(SysEx::unreachable);
-
-        if (segStart == segEnd) {
-            return Result.success(segments.get(segEnd).getPrice());
-        } else {
-            accumulate += (segments.get(segStart).getEnd() - start) * segments.get(segStart).getPrice();
-            accumulate += (end - segments.get(segEnd).getStart()) * segments.get(segEnd).getPrice();
-            for (int i = segStart + 1; i < segEnd; i++) {
-                Segment segment = segments.get(i);
-                accumulate += (segment.getEnd() - segment.getStart()) * segment.getPrice();
-            }
-            return Result.success(accumulate/(end - start));
-        }
-
+        double v = tunnel.cost(unitId, start, end);
+        return Result.success(v);
     }
-
-    private List<Segment> buildCostSegments(List<ThermalCostDO> thermalCostDOs, Double start) {
-        List<Segment> segments = new ArrayList<>();
-        for (ThermalCostDO thermalCostDO : thermalCostDOs) {
-            Segment segment = Segment.builder().start(start)
-                    .end(start + thermalCostDO.getSpotCostMw()).price(thermalCostDO.getSpotCostMarginalCost()).build();
-            segments.add(segment);
-            start += thermalCostDO.getSpotCostMw();
-        }
-        return segments;
-    }
-
-
-    @Data
-    @lombok.Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    static private class CostSection {
-        Double left;
-        Double right;
-        Double price;
-    }
-
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
@@ -709,7 +676,9 @@ public class UnitFacade {
                 .eq(GeneratorDaSegmentBidDO::getUnitId, sourceId);
 
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = generatorDaSegmentMapper.selectList(eq2).stream()
-                .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
+                .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId))
+                .skip(GeneratorType.RENEWABLE == unit.getMetaUnit().getGeneratorType() ? 1 : 0)
+                .collect(Collectors.toList());
 
         LambdaQueryWrapper<SpotUnitCleared> eq3 = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, roundId + 1)
@@ -751,8 +720,8 @@ public class UnitFacade {
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
                 MetaUnit metaUnit = unit.getMetaUnit();
                 daTotal = daTotal - metaUnit.getMinCapacity();
-                ClearedVO clearedVO = new ClearedVO(metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity());
-                das.add(clearedVO);
+                LambdaQueryWrapper<IntraOffer> eq4 = new LambdaQueryWrapper<IntraOffer>()
+                        .eq(IntraOffer::getUnitId, metaUnit.getSourceId()).eq(IntraOffer::getRoundId, StageId.parse(stageId).getRoundId() + 1);
                 generatorDaSegmentBidDOs.forEach(gDO -> {
                     daBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
                 });
@@ -792,8 +761,6 @@ public class UnitFacade {
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
                 MetaUnit metaUnit = unit.getMetaUnit();
                 rtTotal = rtTotal - metaUnit.getMinCapacity();
-                ClearedVO clearedVO = new ClearedVO(metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity(), metaUnit.getMinOutputPrice(), metaUnit.getMinCapacity());
-                rts.add(clearedVO);
                 generatorDaSegmentBidDOs.forEach(gDO -> {
                     rtBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
                 });

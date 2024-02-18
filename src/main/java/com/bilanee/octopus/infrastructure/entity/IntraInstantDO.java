@@ -20,7 +20,6 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TableName(value = "octopus_intra_instant_do", autoResultMap = true)
-
 public class IntraInstantDO {
 
 

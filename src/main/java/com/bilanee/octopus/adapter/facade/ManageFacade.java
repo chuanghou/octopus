@@ -456,7 +456,10 @@ public class ManageFacade {
                 .generatorPriceLimit(GridLimit.builder().high(marketSettingDO.getOfferPriceCap()).low(marketSettingDO.getOfferPriceFloor()).build())
                 .loadPriceLimit(GridLimit.builder().high(marketSettingDO.getBidPriceCap()).low(marketSettingDO.getBidPriceFloor()).build())
                 .transmissionAndDistributionTariff(marketSettingDO.getTransmissionAndDistributionTariff())
-                .coalPriceMultiple(marketSettingDO.getCoalPriceMultiple())
+                .annualCoalPrice(marketSettingDO.getAnnualCoalPrice())
+                .monthlyCoalPrice(marketSettingDO.getMonthlyCoalPrice())
+                .daCoalPrice(marketSettingDO.getDaCoalPrice())
+                .capacityPrice(marketSettingDO.getCapacityPrice())
                 .maxForwardUnitPositionInterest(marketSettingDO.getMaxForwardUnitPositionInterest())
                 .maxForwardLoadPositionInterest(marketSettingDO.getMaxForwardLoadPositionInterest())
                 .regulatedProducerPrice(marketSettingDO.getRegulatedProducerPrice())
@@ -496,7 +499,6 @@ public class ManageFacade {
         marketSettingDO.setBidPriceCap(electricMarketSetting.getLoadPriceLimit().getHigh());
         marketSettingDO.setBidPriceFloor(electricMarketSetting.getLoadPriceLimit().getLow());
         marketSettingDO.setTransmissionAndDistributionTariff(electricMarketSetting.getTransmissionAndDistributionTariff());
-        marketSettingDO.setCoalPriceMultiple(electricMarketSetting.getCoalPriceMultiple());
         marketSettingDO.setMaxForwardLoadPositionInterest(electricMarketSetting.getMaxForwardLoadPositionInterest());
         marketSettingDO.setMaxForwardUnitPositionInterest(electricMarketSetting.getMaxForwardUnitPositionInterest());
         marketSettingDO.setRegulatedProducerPrice(electricMarketSetting.getRegulatedProducerPrice());
