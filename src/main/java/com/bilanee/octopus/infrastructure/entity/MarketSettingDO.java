@@ -90,8 +90,8 @@ public class MarketSettingDO {
   Double capacityPrice;
   Integer interprovTradingMode;
   Integer interprovClearingMode;
-  Boolean isSettingDefaultOfferForTraders;
-  Boolean isSettingDefaultOfferForRobots;
+  Integer traderOfferMode;
+  Integer robotOfferMode;
   Integer paperId;
   Double maxForwardUnitPositionInterest;
   Double maxForwardLoadPositionInterest;

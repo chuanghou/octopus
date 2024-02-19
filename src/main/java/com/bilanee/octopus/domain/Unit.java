@@ -65,7 +65,8 @@ public class Unit extends AggregateRoot {
     public static Unit create(UnitCmd.Create command, Context context) {
         Unit unit = Convertor.INST.to(command);
         unit.setMoIntraDirection(new HashMap<>());
-        context.publishPlaceHolderEvent(unit.getAggregateId());
+        UnitEvent.Created created = UnitEvent.Created.builder().unit(unit).build();
+        context.publish(created);
         return unit;
     }
 
@@ -98,7 +99,7 @@ public class Unit extends AggregateRoot {
             bid.setUserId(userId);
             bid.setCompId(command.getStageId().getCompId());
             bid.setProvince(metaUnit.getProvince());
-            bid.setRoundId(comp.getRoundId());
+            bid.setRoundId(command.getStageId().getRoundId());
             bid.setTradeStage(command.getStageId().getTradeStage());
             bid.setDeclareTimeStamp(Clock.currentTimeMillis());
             bid.setBidStatus(BidStatus.NEW_DECELERATED);

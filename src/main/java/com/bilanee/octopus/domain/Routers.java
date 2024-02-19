@@ -14,7 +14,9 @@ import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
+import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
@@ -45,8 +47,112 @@ public class Routers implements EventRouters {
     final TransactionDOMapper transactionDOMapper;
     final LoadResultMapper loadResultMapper;
     final GeneratorResultMapper generatorResultMapper;
+    final ForwardLoadBidMapper forwardLoadBidMapper;
+    final ForwardUnitOfferMapper forwardUnitOfferMapper;
 
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+
+    @EventRouter
+    public void route(UnitEvent.Created created, Context context) {
+        Unit unit = created.getUnit();
+        MetaUnit metaUnit = unit.getMetaUnit();
+        Integer roundId = unit.getRoundId();
+        Integer sourceId = unit.getMetaUnit().getSourceId();
+
+        Bid bid1 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid2 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid3 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+
+        Comp comp = tunnel.runningComp();
+        if (metaUnit.getUnitType() == UnitType.GENERATOR) {
+            LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>()
+                    .eq(ForwardUnitOffer::getUnitId, sourceId).eq(ForwardUnitOffer::getRoundId, roundId + 1);
+            List<ForwardUnitOffer> unitOffers = forwardUnitOfferMapper.selectList(eq);
+            unitOffers.forEach(unitOffer -> {
+
+                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE)
+                        .compId(comp.getCompId()).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
+
+                bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid1.setQuantity(unitOffer.getAnnualOfferMw1());
+                bid1.setPrice(unitOffer.getAnnualOfferPrice1());
+
+                bid2.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid2.setQuantity(unitOffer.getAnnualOfferMw2());
+                bid2.setPrice(unitOffer.getAnnualOfferPrice2());
+
+                bid3.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid3.setQuantity(unitOffer.getAnnualOfferMw3());
+                bid3.setPrice(unitOffer.getAnnualOfferPrice3());
+
+                UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
+                CommandBus.accept(commandAn, new HashMap<>());
+
+                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
+                        .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
+
+                bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid1.setQuantity(unitOffer.getMonthlyOfferMw1());
+                bid1.setPrice(unitOffer.getMonthlyOfferPrice1());
+
+                bid2.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid2.setQuantity(unitOffer.getMonthlyOfferMw2());
+                bid2.setPrice(unitOffer.getMonthlyOfferPrice2());
+
+                bid3.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
+                bid3.setQuantity(unitOffer.getMonthlyOfferMw3());
+                bid3.setPrice(unitOffer.getMonthlyOfferPrice3());
+
+                UnitCmd.InterBids commandMo = UnitCmd.InterBids.builder().stageId(stageIdMo).bids(Collect.asList(bid1, bid2, bid3)).build();
+                CommandBus.accept(commandMo, new HashMap<>());
+            });
+        } else if (metaUnit.getUnitType() == UnitType.LOAD) {
+            LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>()
+                    .eq(ForwardLoadBid::getLoadId, sourceId).eq(ForwardLoadBid::getRoundId, roundId + 1);
+            List<ForwardLoadBid> loadBids = forwardLoadBidMapper.selectList(eq);
+            loadBids.forEach(loadBid -> {
+
+                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE)
+                        .compId(comp.getCompId()).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
+
+                bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid1.setQuantity(loadBid.getAnnualBidMw1());
+                bid1.setPrice(loadBid.getAnnualBidPrice1());
+
+                bid2.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid2.setQuantity(loadBid.getAnnualBidMw2());
+                bid2.setPrice(loadBid.getAnnualBidPrice2());
+
+                bid3.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid3.setQuantity(loadBid.getAnnualBidMw3());
+                bid3.setPrice(loadBid.getAnnualBidPrice3());
+
+                UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
+                CommandBus.accept(commandAn, new HashMap<>());
+
+                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
+                        .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
+
+                bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid1.setQuantity(loadBid.getMonthlyBidMw1());
+                bid1.setPrice(loadBid.getMonthlyBidPrice1());
+
+                bid2.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid2.setQuantity(loadBid.getMonthlyBidMw2());
+                bid2.setPrice(loadBid.getMonthlyBidPrice2());
+
+                bid3.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
+                bid3.setQuantity(loadBid.getMonthlyBidMw3());
+                bid3.setPrice(loadBid.getMonthlyBidPrice3());
+
+                UnitCmd.InterBids commandMo = UnitCmd.InterBids.builder().stageId(stageIdMo).bids(Collect.asList(bid1, bid2, bid3)).build();
+                CommandBus.accept(commandMo, new HashMap<>());
+            });
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+    }
 
     @EventRouter(order = 1L)
     public void route(CompEvent.Created created, Context context) {

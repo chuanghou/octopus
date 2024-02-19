@@ -97,16 +97,16 @@ public class SimulateSetting {
     Integer robotNum;
 
     /**
-     * 是否为交易员设置中长期智能报价
+     * 交易员报价模式 1零量零价型，2预测电价型
      */
     @NotNull
-    Boolean isSettingDefaultOfferForTraders;
+    Integer traderOfferMode;
 
     /**
-     * 是否为机器人设置中长期智能报价
+     * 机器人报价模式 1零量零价型，2预测电价型
      */
     @NotNull
-    Boolean isSettingDefaultOfferForRobots;
+    Integer robotOfferMode;
 
     /**
      * 是否进入复盘阶段

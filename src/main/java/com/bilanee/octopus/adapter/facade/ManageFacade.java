@@ -542,8 +542,8 @@ public class ManageFacade {
         marketSettingDO.setReviewDuration(simulateSetting.getReviewDuration());
         marketSettingDO.setRobotNum(simulateSetting.getRobotNum());
         marketSettingDO.setTraderNum(simulateSetting.getTraderNum());
-        marketSettingDO.setIsSettingDefaultOfferForTraders(simulateSetting.getIsSettingDefaultOfferForTraders());
-        marketSettingDO.setIsSettingDefaultOfferForRobots(simulateSetting.getIsSettingDefaultOfferForRobots());
+        marketSettingDO.setTraderOfferMode(simulateSetting.getTraderOfferMode());
+        marketSettingDO.setRobotOfferMode(simulateSetting.getRobotOfferMode());
         marketSettingDO.setIsEnteringReviewStage(simulateSetting.getIsEnteringReviewStage());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
