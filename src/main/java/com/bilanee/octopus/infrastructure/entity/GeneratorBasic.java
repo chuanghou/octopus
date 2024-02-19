@@ -24,13 +24,8 @@ public class GeneratorBasic {
   Double minOnDuration;
   Double rampUpRate;
   Double rampDnRate;
-  Double coldStartupCost;
-  Double warmStartupCost;
-  Double hotStartupCost;
   Double hotStartupTime;
   Double warmStartupTime;
-  @TableField("t_to_MWh")
-  Double tToMWh;
   Double maxAgc;
   Double minAgc;
   Double maxSpinRes;
