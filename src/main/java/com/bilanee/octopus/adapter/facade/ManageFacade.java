@@ -153,8 +153,6 @@ public class ManageFacade {
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
-        Map<Integer, Double> minOutPuts = minOutputCostDOMapper.selectList(null).stream()
-                .collect(Collectors.toMap(MinOutputCostDO::getUnitId, MinOutputCostDO::getSpotCostMinoutput));
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         for (MetaUnitDO metaUnitDO : metaUnitDOMapper.selectList(null)) {
             LambdaQueryWrapper<MetaUnitDO> eq = new LambdaQueryWrapper<MetaUnitDO>().eq(MetaUnitDO::getSourceId, metaUnitDO.getSourceId());
