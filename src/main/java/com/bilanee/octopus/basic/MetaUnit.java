@@ -24,6 +24,4 @@ public class MetaUnit {
     Map<TimeFrame, Map<Direction, Double>> capacity;
     Double minCapacity;
     Double maxCapacity;
-    Double minOutputPrice;
-
 }

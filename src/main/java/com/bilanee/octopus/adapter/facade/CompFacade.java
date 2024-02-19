@@ -413,11 +413,6 @@ public class CompFacade {
         List<UnitDO> renewableUnitDOs = unitDOs.stream().filter(unitDO -> GeneratorType.RENEWABLE.equals(unitDO.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
         List<UnitDO> loadUnitDOs = unitDOs.stream().filter(unitDO -> UnitType.LOAD.equals(unitDO.getMetaUnit().getUnitType())).collect(Collectors.toList());
 
-        // 1. 火电机组的最小输出量
-        List<Qp> minOutputQps = classicUnitDOs.stream()
-                .map(unitDO -> new Qp(null, unitDO.getUnitId(), unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()))
-                .collect(Collectors.toList());
-
         // 2. 火电机组5段量价
         Map<Integer, Long> classicUnitIds = classicUnitDOs.stream().collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
@@ -476,16 +471,15 @@ public class CompFacade {
             }).collect(Collectors.toList());
         }
 
-        List<Qp> nonInstantQps = Stream.of(minOutputQps, classicQps).flatMap(Collection::stream).collect(Collectors.toList());
 
         ListMultimap<Integer, Qp> groupDaQps = Stream.of(daRenewableQps, tielineQps)
                 .flatMap(Collection::stream).collect(Collect.listMultiMap(Qp::getInstant));
         List<List<Qp>> daInstantQps = IntStream.range(0, 24).mapToObj(i -> new ArrayList<>(groupDaQps.get(i))).collect(Collectors.toList());
-        daInstantQps.forEach(qps -> qps.addAll(nonInstantQps));
+        daInstantQps.forEach(qps -> qps.addAll(classicQps));
 
         ListMultimap<Integer, Qp> groupRtQps = Stream.of(rtRenewableQps, tielineQps).flatMap(Collection::stream).collect(Collect.listMultiMap(Qp::getInstant));
         List<List<Qp>> rtInstantQps = IntStream.range(0, 24).mapToObj(i -> new ArrayList<>(groupRtQps.get(i))).collect(Collectors.toList());
-        rtInstantQps.forEach(qps -> qps.addAll(nonInstantQps));
+        rtInstantQps.forEach(qps -> qps.addAll(classicQps));
         return Qps.builder().rt(rtInstantQps).da(daInstantQps).build();
     }
 
@@ -728,9 +722,6 @@ public class CompFacade {
                     .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
             SpotUnitCleared spotUnitCleared = unitClearedMap.get(sourceId);
             List<Pair<Double, Double>> qps = new ArrayList<>();
-            if (GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())) {
-                qps.add(Pair.of(unitDO.getMetaUnit().getMinCapacity(), unitDO.getMetaUnit().getMinOutputPrice()));
-            }
             generatorDaSegmentBidDOs.forEach(gDO -> qps.add(Pair.of(gDO.getOfferMw(), gDO.getOfferPrice())));
             List<Pair<Double, Double>> clearedQps = new ArrayList<>();
             if (da && spotUnitCleared.getDaClearedMw().equals(0D)) {

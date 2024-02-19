@@ -182,7 +182,6 @@ public class ManageFacade {
                     .capacity(capacity)
                     .maxCapacity(g.getMaxP())
                     .minCapacity(g.getMinP())
-                    .minOutputPrice(minOutPuts.get(g.getUnitId()))
                     .build();
             metaUnitDOMapper.insert(metaUnitDO);
         });
@@ -200,7 +199,6 @@ public class ManageFacade {
                     .capacity(capacity)
                     .maxCapacity(i.getMaxP())
                     .minCapacity(0D)
-                    .minOutputPrice(null)
                     .build();
             metaUnitDOMapper.insert(metaUnitDO);
 
