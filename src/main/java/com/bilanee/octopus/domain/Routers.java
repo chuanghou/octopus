@@ -60,9 +60,12 @@ public class Routers implements EventRouters {
         Integer roundId = unit.getRoundId();
         Integer sourceId = unit.getMetaUnit().getSourceId();
 
-        Bid bid1 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
-        Bid bid2 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
-        Bid bid3 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid1 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
+                .direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid2 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
+                .direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid3 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
+                .direction(metaUnit.getUnitType().generalDirection()).build();
 
         Comp comp = tunnel.runningComp();
         if (metaUnit.getUnitType() == UnitType.GENERATOR) {
