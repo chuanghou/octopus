@@ -1,8 +1,6 @@
 package com.bilanee.octopus.infrastructure.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.bilanee.octopus.basic.TokenUtils;
 import com.bilanee.octopus.basic.enums.UserType;
 import lombok.*;
@@ -21,6 +19,7 @@ public class UserDO  {
     String userName;
     String password;
     String portrait;
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     UserType userType;
 
     public static void main(String[] args) {
