@@ -60,12 +60,9 @@ public class Routers implements EventRouters {
         Integer roundId = unit.getRoundId();
         Integer sourceId = unit.getMetaUnit().getSourceId();
 
-        Bid bid1 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
-                .direction(metaUnit.getUnitType().generalDirection()).build();
-        Bid bid2 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
-                .direction(metaUnit.getUnitType().generalDirection()).build();
-        Bid bid3 = Bid.builder().unitId(unit.getUnitId()).roundId(roundId)
-                .direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid1 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid2 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
+        Bid bid3 = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
 
         Comp comp = tunnel.runningComp();
         if (metaUnit.getUnitType() == UnitType.GENERATOR) {
@@ -74,7 +71,7 @@ public class Routers implements EventRouters {
             List<ForwardUnitOffer> unitOffers = forwardUnitOfferMapper.selectList(eq);
             unitOffers.forEach(unitOffer -> {
 
-                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE)
+                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE).roundId(roundId)
                         .compId(comp.getCompId()).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
 
                 bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
@@ -92,7 +89,7 @@ public class Routers implements EventRouters {
                 UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
                 CommandBus.driveByEvent(commandAn, created);
 
-                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
+                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE).roundId(roundId)
                         .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
 
                 bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, unitOffer.getPfvPrd()));
@@ -116,7 +113,7 @@ public class Routers implements EventRouters {
             List<ForwardLoadBid> loadBids = forwardLoadBidMapper.selectList(eq);
             loadBids.forEach(loadBid -> {
 
-                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE)
+                StageId stageIdAn = StageId.builder().compStage(CompStage.TRADE).roundId(roundId)
                         .compId(comp.getCompId()).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
 
                 bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
@@ -134,7 +131,7 @@ public class Routers implements EventRouters {
                 UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
                 CommandBus.driveByEvent(commandAn, created);
 
-                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
+                StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE).roundId(roundId)
                         .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
 
                 bid1.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
