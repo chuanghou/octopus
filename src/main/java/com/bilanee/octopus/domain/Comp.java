@@ -93,13 +93,9 @@ public class Comp extends AggregateRoot {
         comp.setDt(command.getDt());
         comp.setRoundTotal(command.getRoundTotal());
 
-        // assign metaUnit
-        List<Map<String, Collection<MetaUnit>>> roundMetaUnits = IntStream.range(0, comp.getRoundTotal())
-                .mapToObj(roundId -> tunnel.assignMetaUnits(roundId, command.getTraderIds(), command.getRobotIds(), comp)).collect(Collectors.toList());
-
         Map<UnitType, GridLimit> priceLimits = tunnel.priceLimits();
 
-        roundMetaUnits.stream().map(Map::values)
+        command.getRoundMetaUnits().stream().map(Map::values)
                 .flatMap(Collection::stream).flatMap(Collection::stream)
                 .forEach(metaUnit -> metaUnit.setPriceLimit(priceLimits.get(metaUnit.getUnitType())));
 
@@ -107,7 +103,7 @@ public class Comp extends AggregateRoot {
         StageId stageId = comp.getStageId();
         CompCmd.Step stepCommand = CompCmd.Step.builder().stageId(stageId.next(comp)).build();
         pushDelayCommand(stepCommand, comp.endingTimeStamp);
-        CompEvent.Created event = CompEvent.Created.builder().comp(comp).roundMetaUnits(roundMetaUnits).build();
+        CompEvent.Created event = CompEvent.Created.builder().comp(comp).roundMetaUnits(command.getRoundMetaUnits()).build();
         context.publish(event);
         return comp;
 

@@ -7,10 +7,7 @@ import com.bilanee.octopus.adapter.facade.vo.PaperVO;
 import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
-import com.bilanee.octopus.basic.BasicConvertor;
-import com.bilanee.octopus.basic.ErrorEnums;
-import com.bilanee.octopus.basic.GridLimit;
-import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
@@ -148,8 +145,6 @@ public class ManageFacade {
 
 
         Ssh.exec("python manage.py init_data");
-        Ssh.exec("python manage.py intra_spot_default_bid");
-        Ssh.exec("python manage.py forward_default_bid");
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
@@ -275,6 +270,13 @@ public class ManageFacade {
             gameRankingMapper.insert(gameRanking);
         });
 
+        // assign metaUnit
+        List<Map<String, Collection<MetaUnit>>> roundMetaUnits = IntStream.range(0, marketSettingDO.getRoundNum())
+                .mapToObj(roundId -> tunnel.assignMetaUnits(roundId, traderUserIds, robotUserIds)).collect(Collectors.toList());
+
+
+        Ssh.exec("python manage.py intra_spot_default_bid");
+        Ssh.exec("python manage.py forward_default_bid");
 
         CompCmd.Create command = CompCmd.Create.builder()
                 .compId(uniqueIdGetter.get())

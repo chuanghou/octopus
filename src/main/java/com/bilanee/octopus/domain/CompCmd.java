@@ -1,12 +1,15 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public class CompCmd {
 
@@ -26,6 +29,7 @@ public class CompCmd {
         List<String> robotIds;
         Boolean enableQuiz;
         Integer roundTotal;
+        List<Map<String, Collection<MetaUnit>>> roundMetaUnits;
         String dt;
 
         @Override

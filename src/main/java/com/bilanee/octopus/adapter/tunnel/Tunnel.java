@@ -71,7 +71,7 @@ public class Tunnel {
     }
 
     @SneakyThrows
-    public Map<String, Collection<MetaUnit>> assignMetaUnits(Integer roundId, List<String> traderIds, List<String> robotIds, Comp comp) {
+    public Map<String, Collection<MetaUnit>> assignMetaUnits(Integer roundId, List<String> traderIds, List<String> robotIds) {
 
         String queryString = "trader_id_list=[" + String.join(",", traderIds) + "]&" + "robot_id_list=[" + String.join(",", robotIds) + "]";
 
