@@ -73,6 +73,11 @@ public class Routers implements EventRouters {
             LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>()
                     .eq(ForwardUnitOffer::getUnitId, sourceId).eq(ForwardUnitOffer::getRoundId, roundId + 1);
             List<ForwardUnitOffer> unitOffers = forwardUnitOfferMapper.selectList(eq);
+
+            if (Collect.isEmpty(unitOffers)) {
+                throw new RuntimeException(sourceId + " " + roundId);
+            }
+
             List<Bid> bidsAn = new ArrayList<>();
             List<Bid> bidsMo = new ArrayList<>();
 
@@ -124,6 +129,11 @@ public class Routers implements EventRouters {
             LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>()
                     .eq(ForwardLoadBid::getLoadId, sourceId).eq(ForwardLoadBid::getRoundId, roundId + 1);
             List<ForwardLoadBid> loadBids = forwardLoadBidMapper.selectList(eq);
+
+            if (Collect.isEmpty(loadBids)) {
+                throw new RuntimeException(sourceId + " " + roundId);
+            }
+
             List<Bid> bidsAn = new ArrayList<>();
             List<Bid> bidsMo = new ArrayList<>();
 
