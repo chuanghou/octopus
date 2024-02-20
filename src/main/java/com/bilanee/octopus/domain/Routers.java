@@ -87,7 +87,7 @@ public class Routers implements EventRouters {
                 bid3.setPrice(unitOffer.getAnnualOfferPrice3());
 
                 UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
-                CommandBus.accept(commandAn, new HashMap<>());
+                CommandBus.driveByEvent(commandAn, created);
 
                 StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
                         .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
@@ -129,7 +129,7 @@ public class Routers implements EventRouters {
                 bid3.setPrice(loadBid.getAnnualBidPrice3());
 
                 UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(Collect.asList(bid1, bid2, bid3)).build();
-                CommandBus.accept(commandAn, new HashMap<>());
+                CommandBus.driveByEvent(commandAn, created);
 
                 StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE)
                         .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
