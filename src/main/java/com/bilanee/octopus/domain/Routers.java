@@ -105,7 +105,7 @@ public class Routers implements EventRouters {
                 bid3.setPrice(unitOffer.getMonthlyOfferPrice3());
 
                 UnitCmd.InterBids commandMo = UnitCmd.InterBids.builder().stageId(stageIdMo).bids(Collect.asList(bid1, bid2, bid3)).build();
-                CommandBus.accept(commandMo, new HashMap<>());
+                CommandBus.driveByEvent(commandMo, created);
             });
         } else if (metaUnit.getUnitType() == UnitType.LOAD) {
             LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>()
@@ -147,7 +147,7 @@ public class Routers implements EventRouters {
                 bid3.setPrice(loadBid.getMonthlyBidPrice3());
 
                 UnitCmd.InterBids commandMo = UnitCmd.InterBids.builder().stageId(stageIdMo).bids(Collect.asList(bid1, bid2, bid3)).build();
-                CommandBus.accept(commandMo, new HashMap<>());
+                CommandBus.driveByEvent(commandMo, created);
             });
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);

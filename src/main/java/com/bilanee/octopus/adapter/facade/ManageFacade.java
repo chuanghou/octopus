@@ -288,6 +288,7 @@ public class ManageFacade {
                 .enableQuiz(marketSettingDO.getIsConductingQAndAModule())
                 .dt(marketSettingDO.getDt())
                 .roundTotal(marketSettingDO.getRoundNum())
+                .roundMetaUnits(roundMetaUnits)
                 .build();
 
         CommandBus.accept(command, new HashMap<>());
