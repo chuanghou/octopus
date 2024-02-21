@@ -24,7 +24,6 @@ import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import com.stellariver.milky.domain.support.event.EventRouter;
 import com.stellariver.milky.domain.support.event.EventRouters;
-import javafx.util.Pair;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
