@@ -453,7 +453,7 @@ public class UnitFacade {
                 builder.coldStartupOffer(intraOffer.getColdStartupOffer());
                 builder.warmStartupOffer(intraOffer.getWarmStartupOffer());
                 builder.hotStartupOffer(intraOffer.getHotStartupOffer());
-                builder.unLoadOffer(intraOffer.getUnLoadOffer());
+                builder.noLoadOffer(intraOffer.getNoLoadOffer());
             }
 
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
@@ -574,7 +574,7 @@ public class UnitFacade {
                 intraOffer.setColdStartupOffer(intraDaBidPO.getColdStartupOffer());
                 intraOffer.setWarmStartupOffer(intraDaBidPO.getWarmStartupOffer());
                 intraOffer.setHotStartupOffer(intraDaBidPO.getHotStartupOffer());
-                intraOffer.setUnLoadOffer(intraDaBidPO.getUnloadOffer());
+                intraOffer.setNoLoadOffer(intraDaBidPO.getUnloadOffer());
                 intraOfferMapper.updateById(intraOffer);
             }
         } else if (unitType == UnitType.LOAD) {

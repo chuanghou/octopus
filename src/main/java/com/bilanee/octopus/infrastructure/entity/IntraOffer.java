@@ -23,6 +23,6 @@ public class IntraOffer {
   Double coldStartupOffer;
   Double warmStartupOffer;
   Double hotStartupOffer;
-  Double unLoadOffer;
+  Double noLoadOffer;
 
 }

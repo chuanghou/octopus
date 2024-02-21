@@ -12,7 +12,6 @@ import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.annotation.Nullable;
 import javax.validation.constraints.Size;
 import java.util.List;
 
@@ -70,7 +69,7 @@ public class IntraDaBidVO {
     /**
      * 空载费用
      */
-    Double unLoadOffer;
+    Double noLoadOffer;
 
     /**
      * 机组成本线起点
