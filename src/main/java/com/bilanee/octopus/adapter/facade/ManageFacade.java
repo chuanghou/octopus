@@ -154,8 +154,6 @@ public class ManageFacade {
                     userDOMapper.updateById(userDO);
                 }
         );
-
-
         traderUserIds.forEach(traderUserId -> {
             UserDO userDO = userDOMapper.selectById(traderUserId);
             userDO.setUserType(UserType.TRADER);
@@ -219,12 +217,7 @@ public class ManageFacade {
             metaUnitDOMapper.insert(metaUnitDO);
 
         });
-
-
-
         delayExecutor.removeStepCommand();
-
-
         Map<TradeStage, Integer> bidLengths = StreamMap.<TradeStage, Integer>init()
                 .put(TradeStage.AN_INTER, marketSettingDO.getInterprovincialAnnualBidDuration())
                 .put(TradeStage.AN_INTRA, marketSettingDO.getIntraprovincialAnnualBidDuration())
