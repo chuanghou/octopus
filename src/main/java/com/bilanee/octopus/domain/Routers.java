@@ -69,7 +69,7 @@ public class Routers implements EventRouters {
                 .compId(comp.getCompId()).tradeStage(TradeStage.AN_INTER).marketStatus(MarketStatus.BID).build();
 
         StageId stageIdMo = StageId.builder().compStage(CompStage.TRADE).roundId(roundId)
-                .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTRA).marketStatus(MarketStatus.BID).build();
+                .compId(comp.getCompId()).tradeStage(TradeStage.MO_INTER).marketStatus(MarketStatus.BID).build();
 
         if (metaUnit.getUnitType() == UnitType.GENERATOR) {
             LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>()
@@ -140,7 +140,6 @@ public class Routers implements EventRouters {
             List<Bid> bidsMo = new ArrayList<>();
 
             loadBids.forEach(loadBid -> {
-
 
                 Bid bid1An = Bid.builder().unitId(unit.getUnitId()).direction(metaUnit.getUnitType().generalDirection()).build();
                 bid1An.setTimeFrame(Kit.enumOfMightEx(TimeFrame::getDbCode, loadBid.getPfvPrd()));
