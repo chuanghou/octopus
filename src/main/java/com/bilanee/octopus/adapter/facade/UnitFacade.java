@@ -35,6 +35,8 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -443,7 +445,7 @@ public class UnitFacade {
 
             Double costStart = tunnel.cost(unit.getUnitId(), 0D);
             Double costEnd = tunnel.cost(unit.getUnitId(), metaUnit.getMaxCapacity());
-            builder.costStart(Point.<Double>builder().x(costStart).y(costEnd).build());
+            builder.costStart(Point.<Double>builder().x(0D).y(costStart).build());
             builder.costEnd(Point.<Double>builder().x(metaUnit.getMaxCapacity()).y(costEnd).build());
 
             if (generatorType == GeneratorType.CLASSIC) {
@@ -613,6 +615,7 @@ public class UnitFacade {
                                   @NotNull @Positive Double end) {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
         double v = tunnel.cost(unitId, start, end);
+        v = BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
         return Result.success(v);
     }
 
