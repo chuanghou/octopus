@@ -32,7 +32,6 @@ public class SprDO {
   Double resUp;
   Double resDn;
   Double minThermalCapacity;
-  Double coalPrice;
   Double renewableGovernmentSubsidy;
 
 }
