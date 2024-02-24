@@ -459,7 +459,7 @@ public class UnitFacade {
                 builder.warmStartupOffer(intraOffer.getWarmStartupOffer());
                 builder.warmStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getWarmStartupOfferCap()).build());
                 builder.hotStartupOffer(intraOffer.getHotStartupOffer());
-                builder.coldStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getHotStartupOfferCap()).build());
+                builder.hotStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getHotStartupOfferCap()).build());
                 builder.noLoadOffer(intraOffer.getNoLoadOffer());
                 builder.noLoadOfferOfferLimit(GridLimit.builder().low(0D).high(intraCost.getNoLoadOfferCap()).build());
             }
