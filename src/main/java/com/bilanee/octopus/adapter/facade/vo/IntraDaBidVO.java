@@ -57,9 +57,19 @@ public class IntraDaBidVO {
     Double coldStartupOffer;
 
     /**
+     * 冷启动费用限制,左右闭区间
+     */
+    GridLimit coldStartupOfferLimit;
+
+    /**
      * 温启动费用
      */
     Double warmStartupOffer;
+
+    /**
+     * 温启动费用限制,左右闭区间
+     */
+    GridLimit warmStartupOfferLimit;
 
     /**
      * 热启动费用
@@ -67,9 +77,20 @@ public class IntraDaBidVO {
     Double hotStartupOffer;
 
     /**
+     * 热启动费用限制,左右闭区间
+     */
+    GridLimit hotStartupOfferLimit;
+
+
+    /**
      * 空载费用
      */
     Double noLoadOffer;
+
+    /**
+     * 空载费用限制,左右闭区间
+     */
+    GridLimit noLoadOfferOfferLimit;
 
     /**
      * 机组成本线起点

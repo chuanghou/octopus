@@ -449,11 +449,17 @@ public class UnitFacade {
             if (generatorType == GeneratorType.CLASSIC) {
                 LambdaQueryWrapper<IntraOffer> eq = new LambdaQueryWrapper<IntraOffer>()
                         .eq(IntraOffer::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraOffer::getRoundId, stageId.getRoundId() + 1);
+                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+                IntraCost intraCost = intraCostMapper.selectOne(eq1);
                 IntraOffer intraOffer = intraOfferMapper.selectOne(eq);
                 builder.coldStartupOffer(intraOffer.getColdStartupOffer());
+                builder.coldStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getColdStartupOfferCap()).build());
                 builder.warmStartupOffer(intraOffer.getWarmStartupOffer());
+                builder.warmStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getWarmStartupOfferCap()).build());
                 builder.hotStartupOffer(intraOffer.getHotStartupOffer());
+                builder.coldStartupOfferLimit(GridLimit.builder().low(0D).high(intraCost.getHotStartupOfferCap()).build());
                 builder.noLoadOffer(intraOffer.getNoLoadOffer());
+                builder.noLoadOfferOfferLimit(GridLimit.builder().low(0D).high(intraCost.getNoLoadOfferCap()).build());
             }
 
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
@@ -569,12 +575,12 @@ public class UnitFacade {
                 BizEx.trueThrow(intraDaBidPO.getColdStartupOffer() > intraCost.getColdStartupOfferCap(), PARAM_FORMAT_WRONG.message("冷启动费用超过上限"));
                 BizEx.trueThrow(intraDaBidPO.getWarmStartupOffer() > intraCost.getWarmStartupOfferCap(), PARAM_FORMAT_WRONG.message("温启动费用超过上限"));
                 BizEx.trueThrow(intraDaBidPO.getHotStartupOffer() > intraCost.getHotStartupOfferCap(), PARAM_FORMAT_WRONG.message("热启动费用超过上限"));
-                BizEx.trueThrow(intraDaBidPO.getUnloadOffer() > intraCost.getNoLoadOfferCap(), PARAM_FORMAT_WRONG.message("空载费用超过上限"));
+                BizEx.trueThrow(intraDaBidPO.getNoLoadOffer() > intraCost.getNoLoadOfferCap(), PARAM_FORMAT_WRONG.message("空载费用超过上限"));
 
                 intraOffer.setColdStartupOffer(intraDaBidPO.getColdStartupOffer());
                 intraOffer.setWarmStartupOffer(intraDaBidPO.getWarmStartupOffer());
                 intraOffer.setHotStartupOffer(intraDaBidPO.getHotStartupOffer());
-                intraOffer.setNoLoadOffer(intraDaBidPO.getUnloadOffer());
+                intraOffer.setNoLoadOffer(intraDaBidPO.getNoLoadOffer());
                 intraOfferMapper.updateById(intraOffer);
             }
         } else if (unitType == UnitType.LOAD) {

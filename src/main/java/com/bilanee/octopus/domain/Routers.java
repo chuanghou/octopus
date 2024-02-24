@@ -56,6 +56,9 @@ public class Routers implements EventRouters {
     @EventRouter
     public void route(UnitEvent.Created created, Context context) {
         Unit unit = created.getUnit();
+        if (unit.getMetaUnit().getProvince().interDirection() != unit.getMetaUnit().getUnitType().generalDirection()) {
+            return;
+        }
         MetaUnit metaUnit = unit.getMetaUnit();
         Integer roundId = unit.getRoundId();
         Integer sourceId = unit.getMetaUnit().getSourceId();

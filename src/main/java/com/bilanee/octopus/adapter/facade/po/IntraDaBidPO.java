@@ -48,7 +48,7 @@ public class IntraDaBidPO {
      * 空载启动费用
      */
     @NotNull(message = "空载启动费用不能为空") @PositiveOrZero(message = "空载启动费用需要大于等于0")
-    Double unloadOffer;
+    Double noLoadOffer;
 
 
     /**

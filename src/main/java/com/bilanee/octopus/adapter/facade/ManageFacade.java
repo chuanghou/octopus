@@ -317,6 +317,9 @@ public class ManageFacade {
     }
 
 
+    public static void main(String[] args) {
+        Ssh.exec("python manage.py forward_default_bid");
+    }
     /**
      * 查看算例参数
      */
