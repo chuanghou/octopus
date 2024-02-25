@@ -58,13 +58,6 @@ public class ElectricMarketSetting {
 
 
     /**
-     * 煤价变动倍数
-     */
-    @NotNull(message = "煤价变动倍数不可为空")
-    Double coalPriceMultiple;
-
-
-    /**
      * 燃煤价格年度预测（元/t）
      */
     @NotNull(message = "燃煤价格年度预测不可为空")
@@ -100,12 +93,6 @@ public class ElectricMarketSetting {
      */
     @NotNull(message = "中长期负荷持仓量上限比例不可为空")
     Double maxForwardLoadPositionInterest;
-
-
-    @AfterValidation
-    public void afterValidation() {
-        BizEx.trueThrow(coalPriceMultiple < 0.1 || coalPriceMultiple > 10, ErrorEnumsBase.PARAM_FORMAT_WRONG.message("煤价系数不合法"));
-    }
 
 
 }
