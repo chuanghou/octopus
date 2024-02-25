@@ -500,6 +500,10 @@ public class ManageFacade {
         marketSettingDO.setRegulatedProducerPrice(electricMarketSetting.getRegulatedProducerPrice());
         marketSettingDO.setRegulatedUserTariff(electricMarketSetting.getRegulatedUserTariff());
         marketSettingDO.setRegulatedInterprovTransmissionPrice(electricMarketSetting.getRegulatedInterprovTransmissionPrice());
+        marketSettingDO.setAnnualCoalPrice(electricMarketSetting.getAnnualCoalPrice());
+        marketSettingDO.setMonthlyCoalPrice(electricMarketSetting.getMonthlyCoalPrice());
+        marketSettingDO.setDaCoalPrice(electricMarketSetting.getDaCoalPrice());
+        marketSettingDO.setCapacityPrice(electricMarketSetting.getCapacityPrice());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }
