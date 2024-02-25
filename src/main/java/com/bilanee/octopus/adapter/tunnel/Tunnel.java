@@ -197,7 +197,7 @@ public class Tunnel {
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
             LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
             IntraCost intraCost = intraCostMapper.selectOne(eq);
-            return intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
+            return 2 * intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             return -400D;
         } else {
@@ -208,9 +208,7 @@ public class Tunnel {
     public Double cost(Long unitId, Double startQuantity, Double endQuantity) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
-            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
-            IntraCost intraCost = intraCostMapper.selectOne(eq);
-            return 2 * intraCost.getCostQuadraticCoe() * (startQuantity + endQuantity) + intraCost.getCostPrimaryCoe();
+            return (cost(unitId, startQuantity) + cost(unitId, endQuantity)) / 2;
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             return -400D;
         } else {

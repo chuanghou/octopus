@@ -1,5 +1,6 @@
 package com.bilanee.octopus;
 
+import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.vo.IntraSymbolBidVO;
@@ -26,10 +27,14 @@ public class MyTest {
 
     @Autowired
     UnitFacade unitFacade;
+
+    @Autowired
+    CompFacade compFacade;
+
     @Test
-    @SuppressWarnings("UnstableApiUsage")
     public void interPointTest() {
-        Ssh.exec("python manage.py intra_spot_default_bid");
-        Ssh.exec("python manage.py forward_default_bid");}
+        String sign = TokenUtils.sign("1000");
+        unitFacade.listIntraSymbolBidVOs("233219.TRADE.0.MO_INTRA.BID", sign);
+    }
 
 }

@@ -241,14 +241,15 @@ public class UnitFacade {
                     .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame());
             IntraInstantDO intraInstantDO = instantDOMap.get(intraSymbol);
 
-            boolean b0 = stepRecord.getStartTimeStamp() <= System.currentTimeMillis();
-            boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 60_1000L;
-            if (intraInstantDO != null && ((b0 && b1) || notCurrentStage)) {
-                builder.latestPrice(intraInstantDO.getPrice());
-                builder.buyAsks(intraInstantDO.getBuyAsks());
-                builder.sellAsks(intraInstantDO.getSellAsks());
-                builder.buyVolumes(intraInstantDO.getBuyVolumes());
-                builder.sellVolumes(intraInstantDO.getSellVolumes());
+            boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 60_000L;
+            if (intraInstantDO != null) {
+                if (notCurrentStage || b1) {
+                    builder.latestPrice(intraInstantDO.getPrice());
+                    builder.buyAsks(intraInstantDO.getBuyAsks());
+                    builder.sellAsks(intraInstantDO.getSellAsks());
+                    builder.buyVolumes(intraInstantDO.getBuyVolumes());
+                    builder.sellVolumes(intraInstantDO.getSellVolumes());
+                }
             }
             List<Unit> us = units.stream().filter(u -> u.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
             builder.unitIntraBidVOs(to(us, StageId.parse(stageId), intraSymbol, comp));
@@ -806,17 +807,8 @@ public class UnitFacade {
 
         List<List<ClearedVO>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
         List<List<ClearedVO>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
-        if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-            List<Pair<ClearedVO, List<ClearedVO>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
-            List<Pair<ClearedVO, List<ClearedVO>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
-            builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
-            builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
-            builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
-            builder.rtClearedSections(rtPs.stream().map(Pair::getRight).collect(Collectors.toList()));
-        } else {
-            builder.daClearedSections(daSections);
-            builder.rtClearedSections(rtSections);
-        }
+        builder.daClearedSections(daSections);
+        builder.rtClearedSections(rtSections);
         GeneratorClearVO generatorClearVO = builder.build();
         return Result.success(generatorClearVO);
     }
