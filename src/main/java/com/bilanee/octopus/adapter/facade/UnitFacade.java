@@ -728,10 +728,6 @@ public class UnitFacade {
             Double daTotal = daCleared.get(i);
 
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                MetaUnit metaUnit = unit.getMetaUnit();
-                daTotal = daTotal - metaUnit.getMinCapacity();
-                LambdaQueryWrapper<IntraOffer> eq4 = new LambdaQueryWrapper<IntraOffer>()
-                        .eq(IntraOffer::getUnitId, metaUnit.getSourceId()).eq(IntraOffer::getRoundId, StageId.parse(stageId).getRoundId() + 1);
                 generatorDaSegmentBidDOs.forEach(gDO -> {
                     daBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
                 });
@@ -769,8 +765,6 @@ public class UnitFacade {
             Double rtTotal = rtCleared.get(i);
 
             if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
-                MetaUnit metaUnit = unit.getMetaUnit();
-                rtTotal = rtTotal - metaUnit.getMinCapacity();
                 generatorDaSegmentBidDOs.forEach(gDO -> {
                     rtBids.add(new ClearedVO(gDO.getOfferCost(), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferMw()));
                 });
@@ -807,8 +801,17 @@ public class UnitFacade {
 
         List<List<ClearedVO>> daSections = clearedSections.stream().map(Pair::getLeft).collect(Collectors.toList());
         List<List<ClearedVO>> rtSections = clearedSections.stream().map(Pair::getRight).collect(Collectors.toList());
-        builder.daClearedSections(daSections);
-        builder.rtClearedSections(rtSections);
+        if (GeneratorType.CLASSIC.equals(unit.getMetaUnit().getGeneratorType())) {
+            List<Pair<ClearedVO, List<ClearedVO>>> daPs = daSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            List<Pair<ClearedVO, List<ClearedVO>>> rtPs = rtSections.stream().map(ds -> Pair.of(ds.get(0), ds.subList(1, ds.size()))).collect(Collectors.toList());
+            builder.daMinClears(daPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
+            builder.daClearedSections(daPs.stream().map(Pair::getRight).collect(Collectors.toList()));
+            builder.rtMinClears(rtPs.stream().map(Pair::getLeft).collect(Collectors.toList()));
+            builder.rtClearedSections(rtPs.stream().map(Pair::getRight).collect(Collectors.toList()));
+        } else {
+            builder.daClearedSections(daSections);
+            builder.rtClearedSections(rtSections);
+        }
         GeneratorClearVO generatorClearVO = builder.build();
         return Result.success(generatorClearVO);
     }
