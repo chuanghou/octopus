@@ -28,7 +28,7 @@ public class Ssh {
             ssh.connect("118.184.179.113");
             ssh.authPassword("administrator", "gjdtsjtu@public0313");
             session = ssh.startSession();
-            final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperiment & " + command);
+            final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperimentv2 & " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), "GBK"));
         } finally {
             try {
@@ -43,7 +43,11 @@ public class Ssh {
     }
 
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        exec("python --version");
+        try {
+            exec("python manage.py annual_default_bid");
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
     }
 
 }
