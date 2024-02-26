@@ -270,7 +270,7 @@ public class ManageFacade {
 
 
         Ssh.exec("python manage.py intra_spot_default_bid");
-        Ssh.exec("python manage.py forward_default_bid");
+        Ssh.exec("python manage.py annual_default_bid");
 
         CompCmd.Create command = CompCmd.Create.builder()
                 .compId(uniqueIdGetter.get())
