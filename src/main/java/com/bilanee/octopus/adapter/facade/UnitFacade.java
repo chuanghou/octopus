@@ -540,6 +540,16 @@ public class UnitFacade {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         UnitType unitType = unit.getMetaUnit().getUnitType();
         GeneratorType generatorType = unit.getMetaUnit().getGeneratorType();
+
+        boolean b0 = unitType == UnitType.GENERATOR;
+        boolean b1 = generatorType == GeneratorType.CLASSIC;
+        boolean b2 = intraDaBidPO.getWarmStartupOffer() == null;
+        boolean b3 = intraDaBidPO.getHotStartupOffer() == null;
+        boolean b4 = intraDaBidPO.getNoLoadOffer() == null;
+        boolean b5 = intraDaBidPO.getColdStartupOffer() == null;
+        boolean b = (b0 && b1) && (b2 || b3 || b4 || b5);
+        BizEx.trueThrow(b, PARAM_FORMAT_WRONG.message("火电机组启动费用不可为空"));
+
         if (unitType == UnitType.GENERATOR) {
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, parsed.getRoundId() + 1)

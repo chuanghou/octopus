@@ -29,25 +29,25 @@ public class IntraDaBidPO {
     /**
      * 冷启动费用
      */
-    @NotNull(message = "冷启动费用不能为空") @PositiveOrZero(message = "冷启动费用需要大于等于0")
+    @PositiveOrZero(message = "冷启动费用需要大于等于0")
     Double coldStartupOffer;
 
     /**
      * 温启动费用
      */
-    @NotNull(message = "温启动费用不能为空") @PositiveOrZero(message = "温启动费用需要大于等于0")
+    @PositiveOrZero(message = "温启动费用需要大于等于0")
     Double warmStartupOffer;
 
     /**
      * 热启动费用
      */
-    @NotNull(message = "热启动费用不能为空") @PositiveOrZero(message = "热启动费用需要大于等于0")
+    @PositiveOrZero(message = "热启动费用需要大于等于0")
     Double hotStartupOffer;
 
     /**
      * 空载启动费用
      */
-    @NotNull(message = "空载启动费用不能为空") @PositiveOrZero(message = "空载启动费用需要大于等于0")
+    @PositiveOrZero(message = "空载启动费用需要大于等于0")
     Double noLoadOffer;
 
 
@@ -65,6 +65,7 @@ public class IntraDaBidPO {
 
     @AfterValidation
     public void afterValidation() {
+
         if (Collect.isNotEmpty(segments)) {
             segments.forEach(s -> BizEx.trueThrow(s.getStart() >= s.getEnd(),
                     ErrorEnums.PARAM_FORMAT_WRONG.message("报价段起点必须小于终点")));

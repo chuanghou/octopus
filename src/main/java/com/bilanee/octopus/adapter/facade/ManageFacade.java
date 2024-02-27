@@ -25,6 +25,7 @@ import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
@@ -166,7 +167,7 @@ public class ManageFacade {
         });
 
         Ssh.exec("python manage.py init_data");
-
+        marketSettingDO = marketSettingMapper.selectById(1);
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(null);
         List<IndividualLoadBasic> individualLoadBasics = loadBasicMapper.selectList(null);
 
@@ -180,8 +181,7 @@ public class ManageFacade {
         if (paperDO == null) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("试卷ID:" + paperId + "不存在!"));
         }
-
-        generatorBasics.forEach(g -> {
+        for (GeneratorBasic g : generatorBasics) {
             Double maxForwardUnitOpenInterest = marketSettingDO.getMaxForwardUnitPositionInterest();
             Double maxP = g.getMaxP();
             maxP = maxP * maxForwardUnitOpenInterest;
@@ -198,9 +198,9 @@ public class ManageFacade {
                     .minCapacity(g.getMinP())
                     .build();
             metaUnitDOMapper.insert(metaUnitDO);
-        });
+        }
 
-        individualLoadBasics.forEach(i -> {
+        for (IndividualLoadBasic i : individualLoadBasics) {
             Double maxForwardLoadOpenInterest = marketSettingDO.getMaxForwardLoadPositionInterest();
             Double maxP = i.getMaxP();
             maxP = maxP * maxForwardLoadOpenInterest;
@@ -215,8 +215,7 @@ public class ManageFacade {
                     .minCapacity(0D)
                     .build();
             metaUnitDOMapper.insert(metaUnitDO);
-
-        });
+        }
         delayExecutor.removeStepCommand();
         Map<TradeStage, Integer> bidLengths = StreamMap.<TradeStage, Integer>init()
                 .put(TradeStage.AN_INTER, marketSettingDO.getInterprovincialAnnualBidDuration())
@@ -545,6 +544,7 @@ public class ManageFacade {
         marketSettingDO.setTraderOfferMode(simulateSetting.getTraderOfferMode());
         marketSettingDO.setRobotOfferMode(simulateSetting.getRobotOfferMode());
         marketSettingDO.setIsEnteringReviewStage(simulateSetting.getIsEnteringReviewStage());
+        marketSettingDO.setRoundNum(simulateSetting.getRoundNum());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

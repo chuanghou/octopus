@@ -113,4 +113,7 @@ public class SimulateSetting {
      */
     @NotNull
     Boolean isEnteringReviewStage;
+
+    @NotNull
+    Integer roundNum;
 }
