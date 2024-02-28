@@ -554,12 +554,12 @@ public class UnitFacade {
             LambdaQueryWrapper<GeneratorDaSegmentBidDO> eq0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                     .eq(GeneratorDaSegmentBidDO::getRoundId, parsed.getRoundId() + 1)
                     .eq(GeneratorDaSegmentBidDO::getUnitId, unit.getMetaUnit().getSourceId());
-            List<GeneratorDaSegmentBidDO> gSegmentBidDOs = generatorDaSegmentMapper.selectList(eq0);
+            List<GeneratorDaSegmentBidDO> gSegmentBidDOs = generatorDaSegmentMapper.selectList(eq0).stream()
+                    .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
             List<Segment> segments = intraDaBidPO.getSegments();
-            int offset = (generatorType == GeneratorType.RENEWABLE) ? 1 : 0;
             IntStream.range(0, gSegmentBidDOs.size()).forEach(i -> {
                 Segment segment = intraDaBidPO.getSegments().get(i);
-                GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i + offset);
+                GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i);
                 double v = segments.get(i).getEnd() - segments.get(i).getStart();
                 generatorDaSegmentBidDO.setOfferMw(v);
                 generatorDaSegmentBidDO.setOfferPrice(segment.getPrice());
