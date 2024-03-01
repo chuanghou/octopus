@@ -395,7 +395,7 @@ public class Routers implements EventRouters {
             Arrays.stream(TimeFrame.values()).forEach(tf -> {
                 List<Bid> tBids = unitBids.stream().filter(bid -> bid.getTimeFrame() == tf).collect(Collectors.toList());
                 LambdaQueryWrapper<TransactionDO> eq = new LambdaQueryWrapper<TransactionDO>()
-                        .in(Collect.isNotEmpty(tf.getPrds()), TransactionDO::getPrd, tf.getPrds())
+                        .in(TransactionDO::getPrd, tf.getPrds())
                         .eq(TransactionDO::getRoundId, now.getRoundId() + 1)
                         .eq(TransactionDO::getResourceId, unit.getMetaUnit().getSourceId())
                         .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
