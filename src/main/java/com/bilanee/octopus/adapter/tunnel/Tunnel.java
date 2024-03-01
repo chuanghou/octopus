@@ -85,7 +85,7 @@ public class Tunnel {
 
         LambdaQueryWrapper<GeneratorResult> eq0 = new LambdaQueryWrapper<GeneratorResult>()
                 .eq(GeneratorResult::getRoundId, roundId + 1)
-                .in(GeneratorResult::getTraderId, userIds);
+                .in(Collect.isNotEmpty(userIds), GeneratorResult::getTraderId, userIds);
 
         List<GeneratorResult> generatorResults = generatorResultMapper.selectList(eq0);
         generatorResults.forEach(gR -> {
@@ -98,7 +98,7 @@ public class Tunnel {
 
         LambdaQueryWrapper<LoadResult> eq1 = new LambdaQueryWrapper<LoadResult>()
                 .eq(LoadResult::getRoundId, roundId + 1)
-                .in(LoadResult::getTraderId, userIds);
+                .in(Collect.isNotEmpty(userIds), LoadResult::getTraderId, userIds);
         List<LoadResult> loadResults = loadResultMapper.selectList(eq1);
         loadResults.forEach(lR -> {
             LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()

@@ -2,6 +2,7 @@ package com.bilanee.octopus;
 
 import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
+import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.vo.IntraSymbolBidVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
@@ -31,10 +32,13 @@ public class MyTest {
     @Autowired
     CompFacade compFacade;
 
+    @Autowired
+    QuizFacade quizFacade;
+
     @Test
     public void interPointTest() {
         String sign = TokenUtils.sign("1000");
-        unitFacade.listIntraSymbolBidVOs("233219.TRADE.0.MO_INTRA.BID", sign);
+        quizFacade.listQuestionVOs("244749.QUIT_RESULT.null.null.null", TokenUtils.sign("1000"));
     }
 
 }

@@ -5,6 +5,7 @@ import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Data
 @Builder
@@ -93,7 +94,7 @@ public class SimulateSetting {
     /**
      * 机器人数量
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     Integer robotNum;
 
     /**

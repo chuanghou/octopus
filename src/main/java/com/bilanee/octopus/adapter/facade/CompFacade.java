@@ -284,7 +284,7 @@ public class CompFacade {
         //  表头的4个值
         LambdaQueryWrapper<SubregionPrice> eq = new LambdaQueryWrapper<SubregionPrice>()
                 .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1)
-                .in(SubregionPrice::getSubregionId, subRegionIds);
+                .in(Collect.isNotEmpty(subRegionIds), SubregionPrice::getSubregionId, subRegionIds);
         List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq);
         Double maxDaPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
         Double minDaPrice = subregionPrices.stream().min(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
@@ -300,11 +300,12 @@ public class CompFacade {
                 .map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
 
         LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>().eq(LoadDaForecastBidDO::getRoundId, parsed.getRoundId() + 1)
-                .in(LoadDaForecastBidDO::getLoadId, loadSourceIds);
+                .in(Collect.isNotEmpty(loadSourceIds), LoadDaForecastBidDO::getLoadId, loadSourceIds);
         List<Double> daInstantLoadBids = loadDaForecastBidMapper.selectList(in).stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd)).values()
                 .stream().map(bids -> bids.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum()).collect(Collectors.toList());
 
-        LambdaQueryWrapper<LoadForecastValueDO> in1 = new LambdaQueryWrapper<LoadForecastValueDO>().in(LoadForecastValueDO::getLoadId, loadSourceIds);
+        LambdaQueryWrapper<LoadForecastValueDO> in1 = new LambdaQueryWrapper<LoadForecastValueDO>()
+                .in(Collect.isNotEmpty(loadSourceIds), LoadForecastValueDO::getLoadId, loadSourceIds);
         List<Double> rtInstantLoadBids = loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
                 .stream().map(vs -> vs.stream().collect(Collectors.summarizingDouble(LoadForecastValueDO::getRtP)).getSum()).collect(Collectors.toList());
 
@@ -417,7 +418,7 @@ public class CompFacade {
         Map<Integer, Long> classicUnitIds = classicUnitDOs.stream().collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in0 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
-                .in(GeneratorDaSegmentBidDO::getUnitId, classicUnitIds.keySet());
+                .in(Collect.isNotEmpty(classicUnitIds), GeneratorDaSegmentBidDO::getUnitId, classicUnitIds.keySet());
 
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = Collect.isEmpty(classicUnitIds) ? Collections.EMPTY_LIST : generatorDaSegmentMapper.selectList(in0);
 
@@ -429,7 +430,7 @@ public class CompFacade {
                 .collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in1 = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, stageId.getRoundId() + 1)
-                .in(GeneratorDaSegmentBidDO::getUnitId, renewableUnitIds.keySet());
+                .in(Collect.isNotEmpty(renewableUnitIds), GeneratorDaSegmentBidDO::getUnitId, renewableUnitIds.keySet());
         generatorDaSegmentBidDOs = Collect.isEmpty(renewableUnitIds) ? Collections.EMPTY_LIST : generatorDaSegmentMapper.selectList(in1);
         Map<Long, List<GeneratorDaSegmentBidDO>> groupSegments = generatorDaSegmentBidDOs.stream()
                 .collect(Collectors.groupingBy(gDO -> renewableUnitIds.get(gDO.getUnitId())));
@@ -437,7 +438,7 @@ public class CompFacade {
         // da qps;
         LambdaQueryWrapper<GeneratorDaForecastBidDO> in2 = new LambdaQueryWrapper<GeneratorDaForecastBidDO>()
                 .eq(GeneratorDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
-                .in(GeneratorDaForecastBidDO::getUnitId, renewableUnitIds.keySet());
+                .in(Collect.isNotEmpty(renewableUnitIds), GeneratorDaForecastBidDO::getUnitId, renewableUnitIds.keySet());
         Collector<GeneratorDaForecastBidDO, List<GeneratorDaForecastBidDO>, List<Double>> collector0 = Collector.of(
                 ArrayList::new, List::add, (ls0, ls1) -> { ls0.addAll(ls1); return ls0; },
                 ls -> ls.stream().sorted(Comparator.comparing(GeneratorDaForecastBidDO::getPrd)).map(GeneratorDaForecastBidDO::getForecastMw).collect(Collectors.toList()));
@@ -449,7 +450,7 @@ public class CompFacade {
 
         // rt qps
         LambdaQueryWrapper<GeneratorForecastValueDO> in3 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
-                .in(GeneratorForecastValueDO::getUnitId, renewableUnitIds.keySet());
+                .in(Collect.isNotEmpty(renewableUnitIds), GeneratorForecastValueDO::getUnitId, renewableUnitIds.keySet());
         Collector<GeneratorForecastValueDO, List<GeneratorForecastValueDO>, List<Double>> collector1 = Collector.of(
                 ArrayList::new, List::add, (ls0, ls1) -> { ls0.addAll(ls1); return ls0; },
                 ls -> ls.stream().sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd)).map(GeneratorForecastValueDO::getRtP).collect(Collectors.toList()));
@@ -494,7 +495,7 @@ public class CompFacade {
         //  日前
         LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>()
                 .eq(LoadDaForecastBidDO::getRoundId, stageId.getRoundId() + 1)
-                .in(LoadDaForecastBidDO::getLoadId, loadIds.keySet());
+                .in(Collect.isNotEmpty(loadIds), LoadDaForecastBidDO::getLoadId, loadIds.keySet());
         List<LoadDaForecastBidDO> loadDaForecastBidDOS = loadDaForecastBidMapper.selectList(in);
         List<Qp> daInstantQps = loadDaForecastBidDOS.stream()
                 .collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
@@ -610,7 +611,8 @@ public class CompFacade {
         // 日前
         if (da) {
             LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
-                    .eq(LoadDaForecastBidDO::getRoundId, roundId + 1).in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
+                    .eq(LoadDaForecastBidDO::getRoundId, roundId + 1)
+                    .in(Collect.isNotEmpty(unitIds), LoadDaForecastBidDO::getLoadId, unitIds.keySet());
             List<LoadDaForecastBidDO> loadDaForecastBidDOs = loadDaForecastBidMapper.selectList(wrapper0);
                 intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
                     .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
@@ -641,7 +643,8 @@ public class CompFacade {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
 
-        LambdaQueryWrapper<GeneratorBasic> in0 = new LambdaQueryWrapper<GeneratorBasic>().in(GeneratorBasic::getUnitId, unitIds.keySet());
+        LambdaQueryWrapper<GeneratorBasic> in0 = new LambdaQueryWrapper<GeneratorBasic>()
+                .in(Collect.isNotEmpty(unitIds), GeneratorBasic::getUnitId, unitIds.keySet());
 
         List<GeneratorBasic> generatorBasics = unitBasicMapper.selectList(in0);
 
@@ -652,7 +655,7 @@ public class CompFacade {
         if (!Collect.isEmpty(renewableUnitIds)) {
             if (da) {
                 LambdaQueryWrapper<GeneratorDaForecastBidDO> in = new LambdaQueryWrapper<GeneratorDaForecastBidDO>().eq(GeneratorDaForecastBidDO::getRoundId, roundId + 1)
-                        .in(GeneratorDaForecastBidDO::getUnitId, unitIds.keySet());
+                        .in(Collect.isNotEmpty(unitIds), GeneratorDaForecastBidDO::getUnitId, unitIds.keySet());
                 renewableTotals = generatorDaForecastBidMapper.selectList(in).stream()
                         .collect(Collectors.groupingBy(GeneratorDaForecastBidDO::getPrd))
                         .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
@@ -664,7 +667,7 @@ public class CompFacade {
         }
         LambdaQueryWrapper<SpotUnitCleared> in1 = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, parsedStageId.getRoundId() + 1)
-                .in(SpotUnitCleared::getUnitId, unitIds.keySet());
+                .in(Collect.isNotEmpty(unitIds), SpotUnitCleared::getUnitId, unitIds.keySet());
         List<SpotUnitCleared> spotUnitCleareds = spotUnitClearedMapper.selectList(in1);
         List<Double> classicBidden = IntStream.range(0, 24).mapToObj(i -> 0D).collect(Collectors.toList());
         if (Collect.isNotEmpty(classicUnitIds)) {
@@ -700,7 +703,7 @@ public class CompFacade {
         // 分报价区间
         LambdaQueryWrapper<GeneratorDaSegmentBidDO> in = new LambdaQueryWrapper<GeneratorDaSegmentBidDO>()
                 .eq(GeneratorDaSegmentBidDO::getRoundId, parsedStageId.getRoundId() + 1)
-                .in(GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
+                .in(Collect.isNotEmpty(unitIds), GeneratorDaSegmentBidDO::getUnitId, unitIds.keySet());
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = generatorDaSegmentMapper.selectList(in);
 
         List<List<SpotUnitCleared>> indexedSpotUnitCleared = spotUnitCleareds.stream().collect(Collectors.groupingBy(SpotUnitCleared::getPrd))
@@ -1017,7 +1020,7 @@ public class CompFacade {
         List<Integer> sourceIds = units.stream().map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
         LambdaQueryWrapper<GeneratorResult> in = new LambdaQueryWrapper<GeneratorResult>()
                 .eq(GeneratorResult::getRoundId, parsed.getRoundId() + 1)
-                .in(GeneratorResult::getUnitId, sourceIds);
+                .in(Collect.isNotEmpty(sourceIds), GeneratorResult::getUnitId, sourceIds);
         List<GeneratorResult> generatorResults = generatorResultMapper.selectList(in);
         generatorResults.forEach(g -> {
             String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getUnitId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
@@ -1043,7 +1046,7 @@ public class CompFacade {
         List<Integer> sourceIds = units.stream().map(u -> u.getMetaUnit().getSourceId()).collect(Collectors.toList());
         LambdaQueryWrapper<LoadResult> in = new LambdaQueryWrapper<LoadResult>()
                 .eq(LoadResult::getRoundId, parsed.getRoundId() + 1)
-                .in(LoadResult::getLoadId, sourceIds);
+                .in(Collect.isNotEmpty(sourceIds), LoadResult::getLoadId, sourceIds);
         List<LoadResult> loadResults = loadResultMapper.selectList(in);
 
         loadResults.forEach(g -> {

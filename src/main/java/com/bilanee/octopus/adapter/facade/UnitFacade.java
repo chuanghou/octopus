@@ -896,12 +896,13 @@ public class UnitFacade {
         Map<Integer, List<Double>> maxCapacities = generatorUnitDOs.stream().collect(Collectors.toMap(u -> u.getMetaUnit().getSourceId(), this::highLimit));
         List<Integer> sourceIds = Collect.transfer(generatorUnitDOs, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<SpotUnitCleared> in = new LambdaQueryWrapper<SpotUnitCleared>()
-                .eq(SpotUnitCleared::getRoundId, roundId + 1).in(SpotUnitCleared::getUnitId, sourceIds);
-        Map<Integer, List<SpotUnitCleared>> clearResult = spotUnitClearedMapper.selectList(in).stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
+                .eq(SpotUnitCleared::getRoundId, roundId + 1).in(Collect.isNotEmpty(sourceIds), SpotUnitCleared::getUnitId, sourceIds);
+        Map<Integer, List<SpotUnitCleared>> clearResult = spotUnitClearedMapper.selectList(in)
+                .stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
 
         LambdaQueryWrapper<InterSpotUnitOfferDO> in1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
                 .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1)
-                .in(InterSpotUnitOfferDO::getUnitId, sourceIds);
+                .in(Collect.isNotEmpty(sourceIds), InterSpotUnitOfferDO::getUnitId, sourceIds);
         ListMultimap<Integer, InterSpotUnitOfferDO> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collect.listMultiMap(InterSpotUnitOfferDO::getUnitId));
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
