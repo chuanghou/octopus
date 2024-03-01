@@ -29,7 +29,6 @@ import javax.sql.DataSource;
 @MapperScan(basePackages = "com.bilanee.octopus.infrastructure.mapper")
 public class MyBatisPlusConfiguration {
 
-
     @Bean
     public SqlSessionFactory sqlSessionFactory(
             DataSource dataSource, @Autowired(required = false) MilkyStableSupport milkyStableSupport) throws Exception {
@@ -59,6 +58,7 @@ public class MyBatisPlusConfiguration {
         mybatisPlusInterceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         mybatisPlusInterceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
         mybatisPlusInterceptor.addInnerInterceptor(new ReplacePlaceholderInnerInterceptor());
+        mybatisPlusInterceptor.addInnerInterceptor(new EmptyListPlugin());
         sqlSessionFactoryBean.setPlugins(mybatisPlusInterceptor);
 
         return sqlSessionFactoryBean.getObject();

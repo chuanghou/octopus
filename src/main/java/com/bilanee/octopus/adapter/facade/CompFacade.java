@@ -1012,7 +1012,7 @@ public class CompFacade {
      * @param stageId 阶段id
      */
     @GetMapping("listGeneratorResults")
-    Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
+    public Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
         List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), tunnel.review() ? null : userId).stream()

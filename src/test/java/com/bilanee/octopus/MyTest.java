@@ -38,7 +38,7 @@ public class MyTest {
     @Test
     public void interPointTest() {
         String sign = TokenUtils.sign("1000");
-        quizFacade.listQuestionVOs("244749.QUIT_RESULT.null.null.null", TokenUtils.sign("1000"));
+        compFacade.listGeneratorResults("255133.TRADE.3.END.null", TokenUtils.sign("1000"));
     }
 
 }
