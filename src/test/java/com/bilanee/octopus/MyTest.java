@@ -38,7 +38,7 @@ public class MyTest {
     @Test
     public void interPointTest() {
         String sign = TokenUtils.sign("1000");
-        compFacade.listGeneratorResults("255133.TRADE.3.END.null", TokenUtils.sign("1000"));
+        unitFacade.listGeneratorClearances("257433.TRADE.0.DA_INTRA.CLEAR", 257453L);
     }
 
 }
