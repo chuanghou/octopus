@@ -15,6 +15,7 @@ import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
@@ -909,13 +910,14 @@ public class UnitFacade {
         List<Integer> sourceIds = Collect.transfer(generatorUnitDOs, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<SpotUnitCleared> in = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, roundId + 1).in(SpotUnitCleared::getUnitId, sourceIds);
-        Map<Integer, List<SpotUnitCleared>> clearResult = spotUnitClearedMapper.selectList(in)
+        Map<Integer, List<SpotUnitCleared>> clearResult = Collect.isEmpty(sourceIds) ? new HashMap<>() : spotUnitClearedMapper.selectList(in)
                 .stream().collect(Collectors.groupingBy(SpotUnitCleared::getUnitId));
 
         LambdaQueryWrapper<InterSpotUnitOfferDO> in1 = new LambdaQueryWrapper<InterSpotUnitOfferDO>()
                 .eq(InterSpotUnitOfferDO::getRoundId, roundId + 1)
                 .in(InterSpotUnitOfferDO::getUnitId, sourceIds);
-        ListMultimap<Integer, InterSpotUnitOfferDO> spotOfferMap = interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collect.listMultiMap(InterSpotUnitOfferDO::getUnitId));
+        ListMultimap<Integer, InterSpotUnitOfferDO> spotOfferMap = Collect.isEmpty(sourceIds) ?
+                ArrayListMultimap.create() : interSpotUnitOfferDOMapper.selectList(in1).stream().collect(Collect.listMultiMap(InterSpotUnitOfferDO::getUnitId));
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
 

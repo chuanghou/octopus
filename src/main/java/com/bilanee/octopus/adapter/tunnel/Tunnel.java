@@ -29,10 +29,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -99,7 +96,7 @@ public class Tunnel {
         LambdaQueryWrapper<LoadResult> eq1 = new LambdaQueryWrapper<LoadResult>()
                 .eq(LoadResult::getRoundId, roundId + 1)
                 .in(LoadResult::getTraderId, userIds);
-        List<LoadResult> loadResults = loadResultMapper.selectList(eq1);
+        List<LoadResult> loadResults = Collect.isEmpty(userIds) ? Collections.EMPTY_LIST : loadResultMapper.selectList(eq1);
         loadResults.forEach(lR -> {
             LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
                     .eq(MetaUnitDO::getSourceId, lR.getLoadId()).eq(MetaUnitDO::getUnitType, UnitType.LOAD);
