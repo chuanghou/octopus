@@ -129,7 +129,8 @@ public class UnitFacade {
                 .build();
 
 
-        ListMultimap<Long, Bid> groupedByUnitId = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+        ListMultimap<Long, Bid> groupedByUnitId = Collect.isEmpty(unitMap) ? ArrayListMultimap.create() :
+                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
         List<UnitInterBidVO> interBidsVOs = unitMap.entrySet().stream().map(e -> {
             Long uId = e.getKey();
@@ -273,7 +274,8 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
-        ListMultimap<Long, Bid> bidMap = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+        ListMultimap<Long, Bid> bidMap = Collect.isNotEmpty(unitIds) ? ArrayListMultimap.create() :
+                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
         return units.stream().map(unit -> {
             UnitIntraBidVO.UnitIntraBidVOBuilder builder = UnitIntraBidVO.builder().unitId(unit.getUnitId())
                     .priceLimit(unit.getMetaUnit().getPriceLimit())
