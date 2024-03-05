@@ -84,7 +84,7 @@ public class Tunnel {
                 .eq(GeneratorResult::getRoundId, roundId + 1)
                 .in(GeneratorResult::getTraderId, userIds);
 
-        List<GeneratorResult> generatorResults = generatorResultMapper.selectList(eq0);
+        List<GeneratorResult> generatorResults = Collect.isEmpty(userIds) ? Collections.emptyList() : generatorResultMapper.selectList(eq0);
         generatorResults.forEach(gR -> {
             LambdaQueryWrapper<MetaUnitDO> metaUnitDOEq = new LambdaQueryWrapper<MetaUnitDO>()
                     .eq(MetaUnitDO::getSourceId, gR.getUnitId()).eq(MetaUnitDO::getUnitType, UnitType.GENERATOR);
@@ -119,7 +119,13 @@ public class Tunnel {
         LambdaQueryWrapper<BidDO> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(q.getCompId() != null, BidDO::getCompId, q.getCompId());
         queryWrapper.eq(!Kit.isBlank(q.getUserId()), BidDO::getUserId, q.getUserId());
-        queryWrapper.in(q.getUnitIds() != null, BidDO::getUnitId, q.getUnitIds());
+        if (q.getUnitIds() != null) {
+            if (Collect.isEmpty(q.getUnitIds())) {
+                return new ArrayList<>();
+            }
+            queryWrapper.in(BidDO::getUnitId, q.getUnitIds());
+
+        }
         queryWrapper.eq(q.getRoundId() != null, BidDO::getRoundId, q.getRoundId());
         queryWrapper.eq(q.getProvince() != null, BidDO::getProvince, Kit.op(q.getProvince()).orElse(null));
         queryWrapper.eq(q.getDirection() != null, BidDO::getDirection, Kit.op(q.getDirection()).orElse(null));

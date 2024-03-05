@@ -285,7 +285,7 @@ public class CompFacade {
         LambdaQueryWrapper<SubregionPrice> eq = new LambdaQueryWrapper<SubregionPrice>()
                 .eq(SubregionPrice::getRoundId, parsed.getRoundId() + 1)
                 .in(SubregionPrice::getSubregionId, subRegionIds);
-        List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq);
+        List<SubregionPrice> subregionPrices = Collect.isEmpty(subRegionIds) ? new ArrayList<>() : subregionPriceMapper.selectList(eq);
         Double maxDaPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
         Double minDaPrice = subregionPrices.stream().min(Comparator.comparing(SubregionPrice::getDaLmp)).map(SubregionPrice::getDaLmp).orElseThrow(SysEx::unreachable);
         Double maxRtPrice = subregionPrices.stream().max(Comparator.comparing(SubregionPrice::getRtLmp)).map(SubregionPrice::getRtLmp).orElseThrow(SysEx::unreachable);
@@ -301,12 +301,12 @@ public class CompFacade {
 
         LambdaQueryWrapper<LoadDaForecastBidDO> in = new LambdaQueryWrapper<LoadDaForecastBidDO>().eq(LoadDaForecastBidDO::getRoundId, parsed.getRoundId() + 1)
                 .in(LoadDaForecastBidDO::getLoadId, loadSourceIds);
-        List<Double> daInstantLoadBids = loadDaForecastBidMapper.selectList(in).stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd)).values()
+        List<Double> daInstantLoadBids = Collect.isEmpty(loadSourceIds) ? new ArrayList<>() : loadDaForecastBidMapper.selectList(in).stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd)).values()
                 .stream().map(bids -> bids.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum()).collect(Collectors.toList());
 
         LambdaQueryWrapper<LoadForecastValueDO> in1 = new LambdaQueryWrapper<LoadForecastValueDO>()
                 .in(LoadForecastValueDO::getLoadId, loadSourceIds);
-        List<Double> rtInstantLoadBids = loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
+        List<Double> rtInstantLoadBids = Collect.isEmpty(loadSourceIds) ? new ArrayList<>() : loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
                 .stream().map(vs -> vs.stream().collect(Collectors.summarizingDouble(LoadForecastValueDO::getRtP)).getSum()).collect(Collectors.toList());
 
         // 日前的
