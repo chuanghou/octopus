@@ -124,6 +124,7 @@ public class Comp extends AggregateRoot {
     @SuppressWarnings("UnstableApiUsage")
     private void doClear(List<Bid> bids, TimeFrame timeFrame) {
 
+        bids = bids.stream().filter(bid -> bid.getQuantity() > 0).collect(Collectors.toList());
         List<Bid> sortedBuyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
                 .sorted(Comparator.comparing(Bid::getPrice).reversed())
                 .collect(Collectors.toList());
