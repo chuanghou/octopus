@@ -100,7 +100,16 @@ public class ClearUtil {
             }
         }
 
+
+
         Double price = bids.get(endIndex).getPrice();
+        for (int i = endIndex + 1; i < bids.size(); i++) {
+            if (!bids.get(i).getPrice().equals(bids.get(endIndex).getPrice())) {
+                break;
+            }
+            endIndex = i;
+        }
+
         Integer startIndex = null;
         for (int i = 0; i < endIndex + 1; i++) {
             if (bids.get(i).getPrice().equals(price)) {

@@ -274,7 +274,7 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
-        ListMultimap<Long, Bid> bidMap = Collect.isNotEmpty(unitIds) ? ArrayListMultimap.create() :
+        ListMultimap<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
                 tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
         return units.stream().map(unit -> {
             UnitIntraBidVO.UnitIntraBidVOBuilder builder = UnitIntraBidVO.builder().unitId(unit.getUnitId())
