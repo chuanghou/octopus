@@ -171,13 +171,10 @@ public class Comp extends AggregateRoot {
 
         Double buyDeclaredQuantity = sortedBuyBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
         Double sellDeclaredQuantity = sortedSellBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
-        List<Deal> buyDeals = sortedBuyBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
-        Double dealQuantity = buyDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-        Double dealPrice = Collect.isNotEmpty(buyDeals) ? buyDeals.get(0).getPrice() : null;
         interClearBOBuilder.buyDeclaredQuantity(buyDeclaredQuantity)
                 .sellDeclaredQuantity(sellDeclaredQuantity)
-                .dealQuantity(dealQuantity)
-                .dealPrice(dealPrice);
+                .dealQuantity(marketQuantity)
+                .dealPrice(interPoint.y);
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
 
@@ -198,7 +195,7 @@ public class Comp extends AggregateRoot {
         List<Section> sections = new ArrayList<>();
         for (Bid sortedBid : sortedBids) {
             Section section = Section.builder().unitId(sortedBid.getUnitId())
-                    .lx(x).y(sortedBid.getPrice()).rx(x + sortedBid.getQuantity()).build();
+                    .lx(x).y(sortedBid.getPriceAfterTariff()).rx(x + sortedBid.getQuantity()).build();
             x += sortedBid.getQuantity();
             sections.add(section);
         }

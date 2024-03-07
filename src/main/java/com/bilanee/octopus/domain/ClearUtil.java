@@ -7,6 +7,7 @@ import com.bilanee.octopus.basic.enums.BidStatus;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
+import com.stellariver.milky.common.tool.Doubles;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 
@@ -60,19 +61,19 @@ public class ClearUtil {
 
         Double x = 0D;
         Range<Double> xRange = Range.singleton(x);
-        Range<Double> yRange = closeRange(startY, sortedBids.get(0).getPrice());
+        Range<Double> yRange = closeRange(startY, sortedBids.get(0).getPriceAfterTariff());
         rangeMap.put(xRange, yRange);
         for (int i = 0; i < sortedBids.size(); i++) {
             Bid bid = sortedBids.get(i);
             xRange = Range.open(x, bid.getQuantity() + x);
-            yRange = Range.singleton(bid.getPrice());
+            yRange = Range.singleton(bid.getPriceAfterTariff());
             rangeMap.put(xRange, yRange);
             xRange = Range.singleton(bid.getQuantity() + x);
             if (i == sortedBids.size() - 1) {
-                yRange = closeRange(bid.getPrice(), endY);
+                yRange = closeRange(bid.getPriceAfterTariff(), endY);
                 rangeMap.put(xRange, yRange);
             } else {
-                yRange = closeRange(bid.getPrice(), sortedBids.get(i + 1).getPrice());
+                yRange = closeRange(bid.getPriceAfterTariff(), sortedBids.get(i + 1).getPriceAfterTariff());
                 rangeMap.put(xRange, yRange);
             }
             x = x + bid.getQuantity();
@@ -100,11 +101,10 @@ public class ClearUtil {
             }
         }
 
+        Double price = bids.get(endIndex).getPriceAfterTariff();
 
-
-        Double price = bids.get(endIndex).getPrice();
         for (int i = endIndex + 1; i < bids.size(); i++) {
-            if (!bids.get(i).getPrice().equals(bids.get(endIndex).getPrice())) {
+            if (!bids.get(i).getPriceAfterTariff().equals(bids.get(endIndex).getPriceAfterTariff())) {
                 break;
             }
             endIndex = i;
@@ -112,7 +112,7 @@ public class ClearUtil {
 
         Integer startIndex = null;
         for (int i = 0; i < endIndex + 1; i++) {
-            if (bids.get(i).getPrice().equals(price)) {
+            if (bids.get(i).getPriceAfterTariff().equals(price)) {
                 startIndex = i;
                 break;
             }
@@ -128,11 +128,11 @@ public class ClearUtil {
         Double originalAverageBidsQuantity = averageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
         averageBids.forEach(b -> {
             double averageQuantity = (averageBidsQuantity / originalAverageBidsQuantity) * b.getQuantity();
-            Deal deal = Deal.builder().quantity(averageQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            Deal deal = Deal.builder().quantity(averageQuantity).price(Doubles.add(dealPrice, b.getTariff())).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
         });
         notAverageBids.forEach(b -> {
-            Deal deal = Deal.builder().quantity(b.getQuantity()).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+            Deal deal = Deal.builder().quantity(b.getQuantity()).price(Doubles.add(dealPrice, b.getTariff())).timeStamp(Clock.currentTimeMillis()).build();
             b.getDeals().add(deal);
         });
 
