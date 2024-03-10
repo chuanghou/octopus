@@ -561,7 +561,7 @@ public class UnitFacade {
                     .sorted(Comparator.comparing(GeneratorDaSegmentBidDO::getOfferId)).collect(Collectors.toList());
             List<Segment> segments = intraDaBidPO.getSegments();
             int offset = (generatorType == GeneratorType.RENEWABLE) ? 1 : 0;
-            IntStream.range(0, gSegmentBidDOs.size() - 1).forEach(i -> {
+            IntStream.range(0, gSegmentBidDOs.size() - offset).forEach(i -> {
                 Segment segment = intraDaBidPO.getSegments().get(i);
                 GeneratorDaSegmentBidDO generatorDaSegmentBidDO = gSegmentBidDOs.get(i + offset);
                 double v = segments.get(i).getEnd() - segments.get(i).getStart();
