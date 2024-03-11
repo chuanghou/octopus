@@ -465,7 +465,7 @@ public class ManageFacade {
                 .spotNumBidSegs(marketSettingDO.getSpotNumBidSegs())
                 .spotNumOfferSegs(marketSettingDO.getSpotNumOfferSegs())
                 .interprovClearingMode(tradingMode.get(marketSettingDO.getInterprovClearingMode()))
-                .interprovTradingMode(clearingMode.get(marketSettingDO.getInterprovTradingMode()))
+                .interprovTradingMode(marketSettingDO.getInterprovTradingMode())
                 .build();
         return Result.success(electricMarketSettingVO);
     }

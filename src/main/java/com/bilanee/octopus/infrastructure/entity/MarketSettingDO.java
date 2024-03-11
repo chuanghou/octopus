@@ -88,7 +88,7 @@ public class MarketSettingDO {
   Double regulatedProducerPrice;
   Double regulatedInterprovTransmissionPrice;
   Double capacityPrice;
-  Integer interprovTradingMode;
+  String interprovTradingMode;
   Integer interprovClearingMode;
   Integer traderOfferMode;
   Integer robotOfferMode;
