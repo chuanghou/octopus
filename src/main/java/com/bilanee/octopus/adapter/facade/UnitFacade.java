@@ -71,7 +71,7 @@ public class UnitFacade {
     final DomainTunnel domainTunnel;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final MarketSettingMapper marketSettingMapper;
-    final SprDOMapper sprDOMapper;
+    final NodeBasicDOMapper nodeBasicDOMapper;
     final UnitBasicMapper unitBasicMapper;
     final SpotUnitClearedMapper spotUnitClearedMapper;
     final SpotLoadClearedMapper spotLoadClearedMapper;
@@ -434,6 +434,7 @@ public class UnitFacade {
     }
 
     final IntraCostMapper intraCostMapper;
+    final SubRegionBasicMapper subRegionBasicMapper;
 
     private IntraDaBidVO build(Unit unit, StageId stageId) {
         UnitType unitType = unit.getMetaUnit().getUnitType();
@@ -687,8 +688,9 @@ public class UnitFacade {
         Integer sourceId = unit.getMetaUnit().getSourceId();
         LambdaQueryWrapper<GeneratorBasic> eq = new LambdaQueryWrapper<GeneratorBasic>().eq(GeneratorBasic::getUnitId, sourceId);
         Integer nodeId = unitBasicMapper.selectOne(eq).getNodeId();
+        NodeBasicDO nodeBasicDO = nodeBasicDOMapper.selectById(nodeId);
         LambdaQueryWrapper<SubregionPrice> eq6 = new LambdaQueryWrapper<SubregionPrice>().eq(SubregionPrice::getRoundId, roundId + 1)
-                .eq(SubregionPrice::getSubregionId, nodeId);
+                .eq(SubregionPrice::getSubregionId, nodeBasicDO.getSubregionId());
         List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq6).stream()
                 .sorted(Comparator.comparing(SubregionPrice::getPrd)).collect(Collectors.toList());
         List<Double> daPrices = Collect.transfer(subregionPrices, SubregionPrice::getDaLmp);
@@ -867,9 +869,10 @@ public class UnitFacade {
 
 
         Integer nodeId = loadBasicMapper.selectById(sourceId).getNodeId();
+        NodeBasicDO nodeBasicDO = nodeBasicDOMapper.selectById(nodeId);
         LambdaQueryWrapper<SubregionPrice> eqx = new LambdaQueryWrapper<SubregionPrice>()
                 .eq(SubregionPrice::getRoundId, roundId + 1)
-                .eq(SubregionPrice::getSubregionId, nodeId);
+                .eq(SubregionPrice::getSubregionId, nodeBasicDO.getSubregionId());
         List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eqx)
                 .stream().sorted(Comparator.comparing(SubregionPrice::getPrd)).collect(Collectors.toList());
         builder.daPrice(Collect.transfer(subregionPrices, SubregionPrice::getDaLmp));
