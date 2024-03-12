@@ -673,6 +673,7 @@ public class UnitFacade {
     }
 
     final NodalPriceVoltageMapper nodalPriceVoltageMapper;
+    final SubregionPriceMapper subregionPriceMapper;
 
     /**
      * 现货中标量量价曲线-分机组
@@ -686,12 +687,12 @@ public class UnitFacade {
         Integer sourceId = unit.getMetaUnit().getSourceId();
         LambdaQueryWrapper<GeneratorBasic> eq = new LambdaQueryWrapper<GeneratorBasic>().eq(GeneratorBasic::getUnitId, sourceId);
         Integer nodeId = unitBasicMapper.selectOne(eq).getNodeId();
-        LambdaQueryWrapper<NodalPriceVoltage> eq1 = new LambdaQueryWrapper<NodalPriceVoltage>().eq(NodalPriceVoltage::getRoundId, roundId + 1)
-                .eq(NodalPriceVoltage::getNodeId, nodeId);
-        List<NodalPriceVoltage> nodalPriceVoltages = nodalPriceVoltageMapper.selectList(eq1).stream()
-                .sorted(Comparator.comparing(NodalPriceVoltage::getPrd)).collect(Collectors.toList());
-        List<Double> daPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp);
-        List<Double> rtPrices = Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getRtLmp);
+        LambdaQueryWrapper<SubregionPrice> eq6 = new LambdaQueryWrapper<SubregionPrice>().eq(SubregionPrice::getRoundId, roundId + 1)
+                .eq(SubregionPrice::getSubregionId, nodeId);
+        List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eq6).stream()
+                .sorted(Comparator.comparing(SubregionPrice::getPrd)).collect(Collectors.toList());
+        List<Double> daPrices = Collect.transfer(subregionPrices, SubregionPrice::getDaLmp);
+        List<Double> rtPrices = Collect.transfer(subregionPrices, SubregionPrice::getRtLmp);
 
         GeneratorClearVO.GeneratorClearVOBuilder builder = GeneratorClearVO.builder().daPrice(daPrices).rtPrice(rtPrices);
 
@@ -866,13 +867,13 @@ public class UnitFacade {
 
 
         Integer nodeId = loadBasicMapper.selectById(sourceId).getNodeId();
-        LambdaQueryWrapper<NodalPriceVoltage> eqx = new LambdaQueryWrapper<NodalPriceVoltage>()
-                .eq(NodalPriceVoltage::getRoundId, roundId + 1)
-                .eq(NodalPriceVoltage::getNodeId, nodeId);
-        List<NodalPriceVoltage> nodalPriceVoltages = nodalPriceVoltageMapper.selectList(eqx)
-                .stream().sorted(Comparator.comparing(NodalPriceVoltage::getPrd)).collect(Collectors.toList());
-        builder.daPrice(Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getDaLmp));
-        builder.rtPrice(Collect.transfer(nodalPriceVoltages, NodalPriceVoltage::getRtLmp));
+        LambdaQueryWrapper<SubregionPrice> eqx = new LambdaQueryWrapper<SubregionPrice>()
+                .eq(SubregionPrice::getRoundId, roundId + 1)
+                .eq(SubregionPrice::getSubregionId, nodeId);
+        List<SubregionPrice> subregionPrices = subregionPriceMapper.selectList(eqx)
+                .stream().sorted(Comparator.comparing(SubregionPrice::getPrd)).collect(Collectors.toList());
+        builder.daPrice(Collect.transfer(subregionPrices, SubregionPrice::getDaLmp));
+        builder.rtPrice(Collect.transfer(subregionPrices, SubregionPrice::getRtLmp));
 
         LoadClearVO loadClearVO = builder.build();
 
