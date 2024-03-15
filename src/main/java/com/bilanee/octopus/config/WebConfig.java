@@ -25,37 +25,37 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 @EnableWebSocket
 public class WebConfig implements WebMvcConfigurer{
 
-    @Value("${server.port}")
-    private int serverPort;
+//    @Value("${server.port}")
+//    private int serverPort;
+//
+//    @Value("${server.http.port}")
+//    private int serverHttpPort;
 
-    @Value("${server.http.port}")
-    private int serverHttpPort;
+//    @Bean
+//    public ServletWebServerFactory servletWebServerFactory() {
+//        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
+//            @Override
+//            protected void postProcessContext(Context context) {
+//                SecurityConstraint securityConstraint = new SecurityConstraint();
+//                securityConstraint.setUserConstraint("CONFIDENTIAL");
+//                SecurityCollection collection = new SecurityCollection();
+//                collection.addPattern("/*");
+//                securityConstraint.addCollection(collection);
+//                context.addConstraint(securityConstraint);
+//            }
+//        };
+//        tomcat.addAdditionalTomcatConnectors(redirectConnector());
+//        return tomcat;
+//    }
 
-    @Bean
-    public ServletWebServerFactory servletWebServerFactory() {
-        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory() {
-            @Override
-            protected void postProcessContext(Context context) {
-                SecurityConstraint securityConstraint = new SecurityConstraint();
-                securityConstraint.setUserConstraint("CONFIDENTIAL");
-                SecurityCollection collection = new SecurityCollection();
-                collection.addPattern("/*");
-                securityConstraint.addCollection(collection);
-                context.addConstraint(securityConstraint);
-            }
-        };
-        tomcat.addAdditionalTomcatConnectors(redirectConnector());
-        return tomcat;
-    }
-
-    private Connector redirectConnector() {
-        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-        connector.setScheme("http");
-        connector.setPort(serverHttpPort);
-        connector.setSecure(false);
-        connector.setRedirectPort(serverPort);
-        return connector;
-    }
+//    private Connector redirectConnector() {
+//        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+//        connector.setScheme("http");
+//        connector.setPort(serverHttpPort);
+//        connector.setSecure(false);
+//        connector.setRedirectPort(serverPort);
+//        return connector;
+//    }
 
 
     @Override
@@ -75,7 +75,7 @@ public class WebConfig implements WebMvcConfigurer{
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**").addResourceLocations("file:/root/octopus/static/").addResourceLocations("classpath:static/");
+        registry.addResourceHandler("/**").addResourceLocations("C:/Users/Administrator/octopus/static/").addResourceLocations("classpath:static/");
     }
 
 
@@ -84,10 +84,10 @@ public class WebConfig implements WebMvcConfigurer{
         return new ServerEndpointExporter();
     }
 
-    @Bean
-    public TomcatContextCustomizer tomcatConnectorCustomizer() {
-        return context -> context.addServletContainerInitializer(new WsSci(), null);
-    }
+//    @Bean
+//    public TomcatContextCustomizer tomcatConnectorCustomizer() {
+//        return context -> context.addServletContainerInitializer(new WsSci(), null);
+//    }
 
     @Bean
     public RestTemplate restTemplate() {
