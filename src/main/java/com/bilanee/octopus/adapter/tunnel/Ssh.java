@@ -21,7 +21,6 @@ public class Ssh {
         long l = System.currentTimeMillis();
         final SSHClient ssh = new SSHClient();
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
-        ssh.loadKnownHosts();
         Session session = null;
         long s;
         try {
