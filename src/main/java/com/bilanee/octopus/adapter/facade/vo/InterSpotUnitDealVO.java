@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.DoubleSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.stellariver.milky.common.base.DoubleSerializer;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -24,6 +25,14 @@ public class InterSpotUnitDealVO {
      * 分时成交量价
      */
     List<Deal> instantDeals;
+
+    /**
+     * 平均成交价
+     */
+    @JsonSerialize(using = DoubleSerialize.class)
+    Double averagePrice;
+
+
 
     @Data
     @Builder

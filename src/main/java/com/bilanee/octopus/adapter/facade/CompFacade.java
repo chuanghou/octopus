@@ -934,7 +934,9 @@ public class CompFacade {
                     .eq(InterSpotTransactionDO::getPrd, instant);
             List<InterSpotUnitDealVO.Deal> deals = interSpotTransactionDOMapper.selectList(eq3).stream()
                     .map(i -> new InterSpotUnitDealVO.Deal(i.getClearedMw(), i.getClearedPrice())).collect(Collectors.toList());
-            return new InterSpotUnitDealVO(name, deals);
+            double sumMoney = deals.stream().collect(Collectors.summarizingDouble(d -> d.getPrice() * d.getQuantity())).getSum();
+            double quantity = deals.stream().collect(Collectors.summarizingDouble(InterSpotUnitDealVO.Deal::getQuantity)).getSum();
+            return new InterSpotUnitDealVO(name, deals, sumMoney/quantity);
         }).collect(Collectors.toList());
         return Result.success(interSpotUnitDealVOs);
     }
