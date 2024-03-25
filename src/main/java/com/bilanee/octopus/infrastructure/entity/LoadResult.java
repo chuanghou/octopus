@@ -58,10 +58,7 @@ public class LoadResult {
      * 该轮比赛实时偏差电量支出（元）
      **/
     Double rtDeviationExpenditure;
-    /**
-     * 该轮比赛支出（元）
-     **/
-    Double expenditure;
+
     /**
      * 该轮比赛归一化支出（元）
      **/
@@ -97,4 +94,18 @@ public class LoadResult {
     Double rDeviationIncoming;
 
 
+    /**
+     * 该轮比赛收入（元）
+     */
+    Double revenue;
+
+    /**
+     * 该轮比赛利润（元）
+     */
+    Double profit;
+
+    /**
+     * 该轮比赛归一化利润（元）
+     */
+    Double normalizedProfit;
 }

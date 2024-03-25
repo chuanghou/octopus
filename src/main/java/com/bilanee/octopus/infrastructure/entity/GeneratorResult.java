@@ -115,4 +115,9 @@ public class GeneratorResult {
     @JsonProperty("rIntraImbalanceShare")
     Double rIntraImbalanceShare;
 
+    /**
+     * 该轮比赛收入（元）
+     **/
+    Double revenue;
+
 }

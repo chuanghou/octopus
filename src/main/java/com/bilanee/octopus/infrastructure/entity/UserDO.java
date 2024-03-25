@@ -21,6 +21,7 @@ public class UserDO  {
     String portrait;
     @TableField(updateStrategy = FieldStrategy.IGNORED)
     UserType userType;
+    String groupId;
 
     public static void main(String[] args) {
         System.out.println(TokenUtils.sign("1000"));

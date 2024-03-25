@@ -466,6 +466,7 @@ public class ManageFacade {
                 .spotNumOfferSegs(marketSettingDO.getSpotNumOfferSegs())
                 .interprovClearingMode(tradingMode.get(marketSettingDO.getInterprovClearingMode()))
                 .interprovTradingMode(marketSettingDO.getInterprovTradingMode())
+                .retailPriceForecastMultiple(marketSettingDO.getRetailPriceForecastMultiple())
                 .build();
         return Result.success(electricMarketSettingVO);
     }
@@ -503,6 +504,7 @@ public class ManageFacade {
         marketSettingDO.setMonthlyCoalPrice(electricMarketSetting.getMonthlyCoalPrice());
         marketSettingDO.setDaCoalPrice(electricMarketSetting.getDaCoalPrice());
         marketSettingDO.setCapacityPrice(electricMarketSetting.getCapacityPrice());
+        marketSettingDO.setRetailPriceForecastMultiple(electricMarketSetting.getRetailPriceForecastMultiple());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }
@@ -515,6 +517,10 @@ public class ManageFacade {
     public Result<SimulateSetting> getSimulateSetting() {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         SimulateSetting simulateSetting = Convertor.INST.to(marketSettingDO);
+        String assetAllocationModeStr = marketSettingDO.getAssetAllocationModeStr();
+        List<String> assetAllocationModes = Arrays.stream(StringUtils.split(assetAllocationModeStr, ":")).collect(Collectors.toList());
+        simulateSetting.setAssetAllocationModes(assetAllocationModes);
+        simulateSetting.setAssetAllocationMode(marketSettingDO.getAssetAllocationMode());
         return Result.success(simulateSetting);
     }
 
@@ -545,6 +551,7 @@ public class ManageFacade {
         marketSettingDO.setRobotOfferMode(simulateSetting.getRobotOfferMode());
         marketSettingDO.setIsEnteringReviewStage(simulateSetting.getIsEnteringReviewStage());
         marketSettingDO.setRoundNum(simulateSetting.getRoundNum());
+        marketSettingDO.setAssetAllocationMode(simulateSetting.getAssetAllocationMode());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

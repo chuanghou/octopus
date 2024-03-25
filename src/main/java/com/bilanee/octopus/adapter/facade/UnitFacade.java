@@ -167,6 +167,9 @@ public class UnitFacade {
         return Result.success(interBidsVOs);
     }
 
+    final ForwardUnitOfferMapper forwardUnitOfferMapper;
+    final ForwardLoadBidMapper forwardLoadBidMapper;
+
     /**
      * 省间报价接口
      * @param interBidsPO 省间报价请求结构体
@@ -181,9 +184,43 @@ public class UnitFacade {
                 .filter(bidPO -> bidPO.getPrice() != null).collect(Collectors.toList());
         BizEx.trueThrow(Collect.isEmpty(bidPOs), PARAM_FORMAT_WRONG.message("无有效报单"));
         Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
-        UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
+        MetaUnit metaUnit = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit();
+        Integer sourceId = metaUnit.getSourceId();
+        UnitType unitType = metaUnit.getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         bidPOs.forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
+
+        Comp comp = tunnel.runningComp();
+        int roundId = comp.getStageId().getRoundId() + 1;
+        boolean b = comp.getStageId().getTradeStage() == TradeStage.AN_INTER;
+        Map<TimeFrame, Double> sumCap = new HashMap<>();
+
+        if (unitType == UnitType.GENERATOR) {
+            LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, roundId)
+                    .eq(ForwardUnitOffer::getUnitId, sourceId);
+            forwardUnitOfferMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+            )).forEach((t, fs) -> {
+                sumCap.put(t, b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw());
+            });
+
+        } else {
+            LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, roundId)
+                    .eq(ForwardLoadBid::getLoadId, sourceId);
+            forwardLoadBidMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+            )).forEach((t, fs) -> {
+                sumCap.put(t, b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw());
+            });
+        }
+
+
+        bidPOs.stream().collect(Collect.listMultiMap(BidPO::getTimeFrame)).asMap().forEach((t, bs) -> {
+            double sum = bs.stream().collect(Collectors.summarizingDouble(BidPO::getQuantity)).getSum();
+            BizEx.trueThrow(sumCap.get(t) < sum, PARAM_FORMAT_WRONG.message(t.getDesc() + "三段报价总量超过" + sumCap.get(t)));
+        });
+
+
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
@@ -243,7 +280,7 @@ public class UnitFacade {
                     .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame());
             IntraInstantDO intraInstantDO = instantDOMap.get(intraSymbol);
 
-            boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 60_000L;
+            boolean b1 =  System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 180_000L;
             if (intraInstantDO != null) {
                 if (notCurrentStage || b1) {
                     builder.latestPrice(intraInstantDO.getPrice());
@@ -385,9 +422,9 @@ public class UnitFacade {
         long now = System.currentTimeMillis();
         Long startTimeStamp = stepRecord.getStartTimeStamp();
         Long endTimeStamp = stepRecord.getEndTimeStamp();
-        if (now >= startTimeStamp && now < startTimeStamp + 60_000) {
+        if (now >= startTimeStamp && now < startTimeStamp + 180_000) {
             return Collect.asList(Direction.BUY);
-        } else if (now >= startTimeStamp + 60_000 && now < startTimeStamp + 120_000) {
+        } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 300_000) {
             return Collect.asList(Direction.SELL);
         } else {
             return Collect.asList(Direction.BUY, Direction.SELL);

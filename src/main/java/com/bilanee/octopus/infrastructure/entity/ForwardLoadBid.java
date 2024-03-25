@@ -41,6 +41,13 @@ public class ForwardLoadBid {
   Double monthlyBidPrice2;
   @TableField("monthly_bid_price_3")
   Double monthlyBidPrice3;
+
+  @TableField("max_annual_cleared_mw")
+  Double maxAnnualClearedMw;
+
+  @TableField("max_monthly_cleared_mw")
+  Double maxMonthlyClearedMw;
+
   Integer loadId;
 
 }

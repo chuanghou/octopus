@@ -936,7 +936,7 @@ public class CompFacade {
                     .map(i -> new InterSpotUnitDealVO.Deal(i.getClearedMw(), i.getClearedPrice())).collect(Collectors.toList());
             double sumMoney = deals.stream().collect(Collectors.summarizingDouble(d -> d.getPrice() * d.getQuantity())).getSum();
             double quantity = deals.stream().collect(Collectors.summarizingDouble(InterSpotUnitDealVO.Deal::getQuantity)).getSum();
-            return new InterSpotUnitDealVO(name, deals, sumMoney/quantity);
+            return new InterSpotUnitDealVO(name, deals, quantity == 0D ? null : sumMoney/quantity);
         }).collect(Collectors.toList());
         return Result.success(interSpotUnitDealVOs);
     }
@@ -1116,6 +1116,11 @@ public class CompFacade {
         @Mapping(source = "totalRanking", target = "number")
         FinalRankVO.Ranking to (GameRanking gameRanking);
 
+        @AfterMapping
+        default void afterMapping(GameRanking gameRanking, @MappingTarget FinalRankVO.Ranking ranking) {
+            UserDO userDO = BeanUtil.getBean(UserDOMapper.class).selectById(gameRanking.getTraderId());
+            ranking.setGroupId(userDO.getGroupId());
+        }
 
 
     }

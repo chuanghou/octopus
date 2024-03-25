@@ -3,9 +3,8 @@ package com.bilanee.octopus.adapter.facade.po;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
+import javax.validation.constraints.*;
+import java.util.List;
 
 @Data
 @Builder
@@ -117,4 +116,29 @@ public class SimulateSetting {
 
     @NotNull
     Integer roundNum;
+
+
+    /**
+     * 设备分配方式
+     */
+    @NotNull @Min(value = 1) @Max(value = 6)
+    Integer assetAllocationMode;
+
+    List<String> assetAllocationModes;
+
+    /**
+     * 是否开放省内现货快捷报价
+     */
+    Boolean isOpeningIntraprovSpotQuickOffer;
+
+    /**
+     * 是否开放火电机组开机和空载费用报价
+     */
+    Boolean isOpeningThermalStartOffer;
+
+    /**
+     * 是否开放火电机组最小技术出力报价
+     */
+    Boolean isOpeningThermalMinoutputOffer;
+
 }

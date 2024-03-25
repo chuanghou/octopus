@@ -107,5 +107,11 @@ public class ElectricMarketSettingVO {
     String interprovClearingMode;
 
 
+    /**
+     * 零售电价基于现货价格预测的倍数
+     */
+    Double retailPriceForecastMultiple;
+
+
 }
 

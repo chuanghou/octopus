@@ -35,6 +35,11 @@ public class FinalRankVO {
     static public class Ranking {
 
         /**
+         * 组别
+         */
+        String groupId;
+
+        /**
          *
          */
         Integer number;

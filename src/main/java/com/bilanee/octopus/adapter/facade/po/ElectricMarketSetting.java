@@ -94,5 +94,11 @@ public class ElectricMarketSetting {
     @NotNull(message = "中长期负荷持仓量上限比例不可为空")
     Double maxForwardLoadPositionInterest;
 
+    /**
+     * 零售电价基于现货价格预测的倍数
+     */
+    @NotNull(message = "零售电价基于现货价格预测的倍数不可为空")
+    Double retailPriceForecastMultiple;
+
 
 }

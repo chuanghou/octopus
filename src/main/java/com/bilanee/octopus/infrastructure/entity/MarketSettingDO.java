@@ -99,5 +99,13 @@ public class MarketSettingDO {
   Double monthlyCoalPrice;
   Double daCoalPrice;
   String forecastDeviation;
+  Double retailPriceForecastMultiple;
+  Integer assetAllocationMode;
+  String assetAllocationModeStr;
+
+  Boolean isOpeningIntraprovSpotQuickOffer;
+  Boolean isOpeningThermalStartOffer;
+  Boolean isOpeningThermalMinoutputOffer;
+
 
 }

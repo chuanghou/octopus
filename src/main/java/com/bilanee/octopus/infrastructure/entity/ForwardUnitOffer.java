@@ -41,6 +41,13 @@ public class ForwardUnitOffer {
   Double monthlyOfferPrice2;
   @TableField("monthly_offer_price_3")
   Double monthlyOfferPrice3;
+
+  @TableField("max_annual_cleared_mw")
+  Double maxAnnualClearedMw;
+
+  @TableField("max_monthly_cleared_mw")
+  Double maxMonthlyClearedMw;
+
   Integer unitId;
 
 }
