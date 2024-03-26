@@ -72,7 +72,7 @@ public class Tunnel {
 
         String queryString = "trader_id_list=[" + String.join(",", traderIds) + "]&" + "robot_id_list=[" + String.join(",", robotIds) + "]";
 
-        URI uri = new URI("http", null, "127.0.0.1", 8002, "/automatic_assigned/", queryString, null);
+        URI uri = new URI("http", null, "118.184.179.113", 8002, "/automatic_assigned/", queryString, null);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
         Message parse = Json.parse(responseEntity.getBody(), Message.class);
         BizEx.falseThrow(Integer.valueOf(0).equals(parse.getCode()), ErrorEnums.SYS_EX.message(queryString + Json.toJson(parse)));
