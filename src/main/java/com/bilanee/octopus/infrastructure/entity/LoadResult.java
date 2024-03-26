@@ -60,9 +60,9 @@ public class LoadResult {
     Double rtDeviationExpenditure;
 
     /**
-     * 该轮比赛归一化支出（元）
+     * 该轮比赛化支出（元）
      **/
-    Double normalizedExpenditure;
+    Double expenditure;
     /**
      * 同类负荷的平均支出（元）
      **/
