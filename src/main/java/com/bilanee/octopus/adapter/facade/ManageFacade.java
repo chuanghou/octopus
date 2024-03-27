@@ -552,6 +552,9 @@ public class ManageFacade {
         marketSettingDO.setIsEnteringReviewStage(simulateSetting.getIsEnteringReviewStage());
         marketSettingDO.setRoundNum(simulateSetting.getRoundNum());
         marketSettingDO.setAssetAllocationMode(simulateSetting.getAssetAllocationMode());
+        marketSettingDO.setIsOpeningIntraprovSpotQuickOffer(simulateSetting.getIsOpeningIntraprovSpotQuickOffer());
+        marketSettingDO.setIsOpeningThermalStartOffer(simulateSetting.getIsOpeningThermalStartOffer());
+        marketSettingDO.setIsOpeningThermalMinoutputOffer(marketSettingDO.getIsOpeningThermalMinoutputOffer());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

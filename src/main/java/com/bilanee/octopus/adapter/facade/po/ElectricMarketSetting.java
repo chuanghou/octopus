@@ -8,6 +8,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 @Data
@@ -98,6 +100,7 @@ public class ElectricMarketSetting {
      * 零售电价基于现货价格预测的倍数
      */
     @NotNull(message = "零售电价基于现货价格预测的倍数不可为空")
+    @Min(value = 1, message = "最小为1") @Max(value = 6, message = "最大为6")
     Double retailPriceForecastMultiple;
 
 
