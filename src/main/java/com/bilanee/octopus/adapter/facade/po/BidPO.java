@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Data
 @Builder
@@ -25,7 +26,7 @@ public class BidPO {
     /**
      * 申报数量
      */
-    @Positive @Digits(integer = 10, fraction = 0, message = "申报数量格式不满足要求")
+    @PositiveOrZero @Digits(integer = 10, fraction = 0, message = "申报数量格式不满足要求")
     Double quantity;
 
     /**

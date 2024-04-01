@@ -158,11 +158,13 @@ public class ManageFacade {
         traderUserIds.forEach(traderUserId -> {
             UserDO userDO = userDOMapper.selectById(traderUserId);
             userDO.setUserType(UserType.TRADER);
+            userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
         });
         robotUserIds.forEach(robotUserId -> {
             UserDO userDO = userDOMapper.selectById(robotUserId);
             userDO.setUserType(UserType.ROBOT);
+            userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
         });
 

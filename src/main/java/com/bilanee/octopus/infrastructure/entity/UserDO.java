@@ -21,6 +21,7 @@ public class UserDO  {
     String portrait;
     @TableField(updateStrategy = FieldStrategy.IGNORED)
     UserType userType;
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
     String groupId;
 
     public static void main(String[] args) {
