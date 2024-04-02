@@ -325,7 +325,7 @@ public class Routers implements EventRouters {
                 wsTopic = WsTopic.MO_INTRA_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
-        }, 60_000L, TimeUnit.MILLISECONDS);
+        }, 180_000L, TimeUnit.MILLISECONDS);
 
         scheduledExecutorService.schedule(() -> {
             TradeStage tradeStage = tunnel.runningComp().getTradeStage();
@@ -337,7 +337,7 @@ public class Routers implements EventRouters {
                 wsTopic = WsTopic.MO_INTRA_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
-        }, 120_000L, TimeUnit.MILLISECONDS);
+        }, 300_000L, TimeUnit.MILLISECONDS);
     }
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
