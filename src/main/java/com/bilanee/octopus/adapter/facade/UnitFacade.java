@@ -148,7 +148,7 @@ public class UnitFacade {
                         k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
                 )).forEach((t, fs) -> {
                     Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
-                    List<BalanceVO> balanceVOs = Arrays.asList(new BalanceVO(Direction.SELL, maxCleared), new BalanceVO(Direction.BUY, 0D));
+                    List<BalanceVO> balanceVOs = Collections.singletonList(new BalanceVO(Direction.SELL, maxCleared));
                     sumCap.put(t, balanceVOs);
                 });
 
@@ -159,7 +159,7 @@ public class UnitFacade {
                         k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
                 )).forEach((t, fs) -> {
                     Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
-                    List<BalanceVO> balanceVOs = Arrays.asList(new BalanceVO(Direction.BUY, maxCleared), new BalanceVO(Direction.SELL, 0D));
+                    List<BalanceVO> balanceVOs = Collections.singletonList(new BalanceVO(Direction.BUY, maxCleared));
                     sumCap.put(t, balanceVOs);
                 });
             }
