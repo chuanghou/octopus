@@ -109,7 +109,8 @@ public class UnitFacade {
 
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
-        StageId currentStageId = tunnel.runningComp().getStageId();
+        Comp comp = tunnel.runningComp();
+        StageId currentStageId = comp.getStageId();
         boolean realTime = currentStageId.equals(parsedStageId);
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
@@ -129,6 +130,8 @@ public class UnitFacade {
                 .build();
 
 
+        boolean b = comp.getStageId().getTradeStage() == TradeStage.AN_INTER;
+
         ListMultimap<Long, Bid> groupedByUnitId = Collect.isEmpty(unitMap) ? ArrayListMultimap.create() :
                 tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
@@ -136,8 +139,30 @@ public class UnitFacade {
             Long uId = e.getKey();
             Unit unit = e.getValue();
             Collection<Bid> bs = groupedByUnitId.get(uId);
-
+            Map<TimeFrame, List<BalanceVO>> sumCap = new HashMap<>();
             GridLimit priceLimit = unit.getMetaUnit().getPriceLimit();
+            if (unit.getMetaUnit().getUnitType() == UnitType.GENERATOR) {
+                LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, currentStageId.getRoundId() + 1)
+                        .eq(ForwardUnitOffer::getUnitId, unit.getMetaUnit().getSourceId());
+                forwardUnitOfferMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                        k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+                )).forEach((t, fs) -> {
+                    Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
+                    List<BalanceVO> balanceVOs = Arrays.asList(new BalanceVO(Direction.SELL, maxCleared), new BalanceVO(Direction.BUY, 0D));
+                    sumCap.put(t, balanceVOs);
+                });
+
+            } else {
+                LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, currentStageId.getRoundId() + 1)
+                        .eq(ForwardLoadBid::getLoadId, unit.getMetaUnit().getSourceId());
+                forwardLoadBidMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                        k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+                )).forEach((t, fs) -> {
+                    Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
+                    List<BalanceVO> balanceVOs = Arrays.asList(new BalanceVO(Direction.BUY, maxCleared), new BalanceVO(Direction.SELL, 0D));
+                    sumCap.put(t, balanceVOs);
+                });
+            }
 
             Map<TimeFrame, Collection<Bid>> map = bs.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap();
             Map<TimeFrame, Collection<Bid>> newMap = new HashMap<>(map);
@@ -145,13 +170,10 @@ public class UnitFacade {
             List<InterBidVO> interBidVOS = newMap.entrySet().stream().map(ee -> {
                 TimeFrame timeFrame = ee.getKey();
                 Double capacity = unit.getMetaUnit().getCapacity().get(timeFrame).get(unit.getMetaUnit().getUnitType().generalDirection());
-                List<BalanceVO> balanceVOs = unit.getBalance().get(timeFrame).entrySet().stream()
-                        .map(eee -> new BalanceVO(eee.getKey(), Double.parseDouble(String.format("%.2f", eee.getValue()))))
-                        .filter(b -> b.getBalance() > 0).collect(Collectors.toList());
                 return InterBidVO.builder().timeFrame(timeFrame)
                         .capacity(capacity)
                         .bidVOs(Collect.transfer(ee.getValue(), Convertor.INST::to))
-                        .balanceVOs(realTime ? balanceVOs : Collections.EMPTY_LIST)
+                        .balanceVOs(realTime ? sumCap.get(timeFrame) : Collections.EMPTY_LIST)
                         .build();
             }).collect(Collectors.toList());
             return UnitInterBidVO.builder().unitId(unit.getUnitId())
@@ -189,38 +211,6 @@ public class UnitFacade {
         UnitType unitType = metaUnit.getUnitType();
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         bidPOs.forEach(bidPO -> gridLimit.check(bidPO.getPrice()));
-
-        Comp comp = tunnel.runningComp();
-        int roundId = comp.getStageId().getRoundId() + 1;
-        boolean b = comp.getStageId().getTradeStage() == TradeStage.AN_INTER;
-        Map<TimeFrame, Double> sumCap = new HashMap<>();
-
-        if (unitType == UnitType.GENERATOR) {
-            LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, roundId)
-                    .eq(ForwardUnitOffer::getUnitId, sourceId);
-            forwardUnitOfferMapper.selectList(eq).stream().collect(Collectors.groupingBy(
-                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
-            )).forEach((t, fs) -> {
-                sumCap.put(t, b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw());
-            });
-
-        } else {
-            LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, roundId)
-                    .eq(ForwardLoadBid::getLoadId, sourceId);
-            forwardLoadBidMapper.selectList(eq).stream().collect(Collectors.groupingBy(
-                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
-            )).forEach((t, fs) -> {
-                sumCap.put(t, b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw());
-            });
-        }
-
-
-        bidPOs.stream().collect(Collect.listMultiMap(BidPO::getTimeFrame)).asMap().forEach((t, bs) -> {
-            double sum = bs.stream().collect(Collectors.summarizingDouble(BidPO::getQuantity)).getSum();
-            BizEx.trueThrow(sumCap.get(t) < sum, PARAM_FORMAT_WRONG.message(t.getDesc() + "三段报价总量超过" + sumCap.get(t)));
-        });
-
-
         StageId pStageId = StageId.parse(interBidsPO.getStageId());
         StageId cStageId = tunnel.runningComp().getStageId();
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
