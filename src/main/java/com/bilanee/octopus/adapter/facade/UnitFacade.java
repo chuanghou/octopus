@@ -197,11 +197,11 @@ public class UnitFacade {
      * @return 报单结果
      */
     @PostMapping("submitInterBidsPO")
-    public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO) {
+    public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO, @RequestHeader String token) {
 
         List<BidPO> bidPOs = interBidsPO.getBidPOs().stream()
                 .filter(bidPO -> bidPO.getDirection() != null)
-                .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() > 0)
+                .filter(bidPO -> bidPO.getQuantity() != null && bidPO.getQuantity() >= 0)
                 .filter(bidPO -> bidPO.getPrice() != null).collect(Collectors.toList());
         BizEx.trueThrow(Collect.isEmpty(bidPOs), PARAM_FORMAT_WRONG.message("无有效报单"));
         Long unitId = interBidsPO.getBidPOs().get(0).getUnitId();
@@ -217,6 +217,30 @@ public class UnitFacade {
                 PARAM_FORMAT_WRONG.message("当前为中长期省省间报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+
+
+        if (unitType == UnitType.GENERATOR) {
+            LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, cStageId.getRoundId() + 1)
+                    .eq(ForwardUnitOffer::getUnitId, sourceId);
+            forwardUnitOfferMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+            )).forEach((t, fs) -> {
+                Double maxCleared = cStageId.getTradeStage() == TradeStage.AN_INTER ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
+                double sum = bidPOs.stream().filter(bidPO -> bidPO.getTimeFrame().equals(t)).collect(Collectors.summarizingDouble(BidPO::getQuantity)).getSum();
+                BizEx.trueThrow(sum > maxCleared, PARAM_FORMAT_WRONG.message(t.getDesc() + "报价总量超过限制" + maxCleared));
+            });
+
+        } else {
+            LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, cStageId.getRoundId() + 1)
+                    .eq(ForwardLoadBid::getLoadId, sourceId);
+            forwardLoadBidMapper.selectList(eq).stream().collect(Collectors.groupingBy(
+                    k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
+            )).forEach((t, fs) -> {
+                Double maxCleared =  cStageId.getTradeStage() == TradeStage.AN_INTER ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
+                double sum = bidPOs.stream().filter(bidPO -> bidPO.getTimeFrame().equals(t)).collect(Collectors.summarizingDouble(BidPO::getQuantity)).getSum();
+                BizEx.trueThrow(sum > maxCleared, PARAM_FORMAT_WRONG.message(t.getDesc() + "报价总量超过限制" + maxCleared));
+            });
+        }
 
         UnitCmd.InterBids command = UnitCmd.InterBids.builder().stageId(pStageId)
                 .bids(Collect.transfer(bidPOs, Convertor.INST::to))
