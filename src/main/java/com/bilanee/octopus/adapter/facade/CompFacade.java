@@ -999,11 +999,15 @@ public class CompFacade {
                 .filter(g -> userIds.contains(g.getTraderId()))
                 .sorted(Comparator.comparing(GameRanking::getTotalRanking))
                 .collect(Collectors.toList());
+        List<FinalRankVO.Ranking> finalRankVORankings = Collect.transfer(gameRankings, Convertor.INST::to).stream()
+                .collect(Collectors.groupingBy(FinalRankVO.Ranking::getGroupId))
+                .values().stream().map(rankings -> rankings.subList(0, (rankings.size() + 1) / 2))
+                .flatMap(Collection::stream).collect(Collectors.toList());
 
         FinalRankVO finalRankVO = FinalRankVO.builder()
                 .myFinalRanking(Convertor.INST.to(gameRanking))
                 .roundRankings(roundRankings)
-                .finalRankings(Collect.transfer(gameRankings, Convertor.INST::to))
+                .finalRankings(finalRankVORankings)
                 .build();
         return Result.success(finalRankVO);
     }
@@ -1114,7 +1118,7 @@ public class CompFacade {
         @BeanMapping(builder = @Builder(disableBuilder = true))
         @Mapping(source = "traderId", target = "userId")
         @Mapping(source = "totalRanking", target = "number")
-        FinalRankVO.Ranking to (GameRanking gameRanking);
+        FinalRankVO.Ranking to(GameRanking gameRanking);
 
         @AfterMapping
         default void afterMapping(GameRanking gameRanking, @MappingTarget FinalRankVO.Ranking ranking) {

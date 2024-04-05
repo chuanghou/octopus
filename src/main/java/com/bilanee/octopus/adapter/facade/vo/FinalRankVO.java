@@ -53,5 +53,10 @@ public class FinalRankVO {
          * 分数
          */
         Double score;
+
+        /**
+         * 绝对利润
+         */
+        Double profit;
     }
 }

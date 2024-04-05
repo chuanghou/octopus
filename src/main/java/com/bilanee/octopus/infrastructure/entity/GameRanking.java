@@ -18,5 +18,7 @@ public class GameRanking {
   @TableId(type = IdType.INPUT)
   String traderId;
   Integer totalRanking = 0;
+  Double score;
+  Double profit;
 
 }

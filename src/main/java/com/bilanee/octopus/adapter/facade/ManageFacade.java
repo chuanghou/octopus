@@ -148,8 +148,9 @@ public class ManageFacade {
         Integer traderNum = marketSettingDO.getTraderNum();
         Integer robotNum = marketSettingDO.getRobotNum();
         BizEx.trueThrow(traderNum + robotNum > 120, ErrorEnums.PARAM_FORMAT_WRONG.message("人数最多支持120人"));
-        List<String> traderUserIds = userDOMapper.selectList(null).subList(0, traderNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
-        List<String> robotUserIds = userDOMapper.selectList(null).subList(traderNum, traderNum + robotNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
+        List<UserDO> userDOs = userDOMapper.selectList(null).stream().sorted(Comparator.comparing(UserDO::getUserId)).collect(Collectors.toList());
+        List<String> traderUserIds = userDOs.subList(0, traderNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
+        List<String> robotUserIds = userDOs.subList(traderNum, traderNum + robotNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
         userDOMapper.selectList(null).forEach(userDO -> {
                     userDO.setUserType(null);
                     userDOMapper.updateById(userDO);
@@ -158,11 +159,13 @@ public class ManageFacade {
         traderUserIds.forEach(traderUserId -> {
             UserDO userDO = userDOMapper.selectById(traderUserId);
             userDO.setUserType(UserType.TRADER);
+            userDO.setUserName("交易员" + traderUserId);
             userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
         });
         robotUserIds.forEach(robotUserId -> {
             UserDO userDO = userDOMapper.selectById(robotUserId);
+            userDO.setUserName("机器人" + robotUserId);
             userDO.setUserType(UserType.ROBOT);
             userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
