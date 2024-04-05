@@ -110,8 +110,7 @@ public class UnitFacade {
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
         Comp comp = tunnel.runningComp();
-        StageId currentStageId = comp.getStageId();
-        boolean realTime = currentStageId.equals(parsedStageId);
+        boolean realTime = comp.getStageId().equals(parsedStageId);
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
                 .eq(UnitDO::getCompId, parsedStageId.getCompId())
@@ -142,7 +141,7 @@ public class UnitFacade {
             Map<TimeFrame, List<BalanceVO>> sumCap = new HashMap<>();
             GridLimit priceLimit = unit.getMetaUnit().getPriceLimit();
             if (unit.getMetaUnit().getUnitType() == UnitType.GENERATOR) {
-                LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, currentStageId.getRoundId() + 1)
+                LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, parsedStageId.getRoundId() + 1)
                         .eq(ForwardUnitOffer::getUnitId, unit.getMetaUnit().getSourceId());
                 forwardUnitOfferMapper.selectList(eq).stream().collect(Collectors.groupingBy(
                         k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())
@@ -153,7 +152,7 @@ public class UnitFacade {
                 });
 
             } else {
-                LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, currentStageId.getRoundId() + 1)
+                LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>().eq(ForwardLoadBid::getRoundId, parsedStageId.getRoundId() + 1)
                         .eq(ForwardLoadBid::getLoadId, unit.getMetaUnit().getSourceId());
                 forwardLoadBidMapper.selectList(eq).stream().collect(Collectors.groupingBy(
                         k -> Kit.enumOfMightEx(TimeFrame::getDbCode, k.getPfvPrd())

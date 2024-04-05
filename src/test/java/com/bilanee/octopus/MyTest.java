@@ -64,11 +64,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() {
-        BidQuery bidQuery = BidQuery.builder().compId(270278L).roundId(0).tradeStage(TradeStage.MO_INTER).build();
-        List<Bid> bids = tunnel.listBids(bidQuery);
-        TimeFrame t = TimeFrame.VALLEY;
-        List<Bid> timeFrameBids = bids.stream().filter(b -> b.getTimeFrame().equals(t)).collect(Collectors.toList());
-        doClear(timeFrameBids, t);
+        unitFacade.listInterBidsVOs("324370.TRADE.0.AN_INTER.BID", TokenUtils.sign("1000"));
 
     }
 

@@ -64,9 +64,7 @@ public class WebSocket {
         } catch (Throwable e) {
             backUp = e;
         }finally {
-            if (backUp == null) {
-                log.info("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message);
-            } else {
+            if (backUp != null) {
                 log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, backUp);
             }
         }
