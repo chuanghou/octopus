@@ -2,7 +2,6 @@ package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.DoubleSerialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.stellariver.milky.common.base.DoubleSerializer;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 

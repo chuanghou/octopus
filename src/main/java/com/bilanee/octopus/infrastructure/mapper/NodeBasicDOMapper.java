@@ -1,7 +1,6 @@
 package com.bilanee.octopus.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.bilanee.octopus.infrastructure.entity.AnswerDO;
 import com.bilanee.octopus.infrastructure.entity.NodeBasicDO;
 import org.apache.ibatis.annotations.Mapper;
 
