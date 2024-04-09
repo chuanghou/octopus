@@ -22,6 +22,7 @@ import com.stellariver.milky.common.tool.util.StreamMap;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +43,7 @@ import java.util.stream.Stream;
  * 管理页面
  */
 
+@CustomLog
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/manage")
@@ -320,10 +322,6 @@ public class ManageFacade {
         return Result.success();
     }
 
-
-    public static void main(String[] args) {
-        Ssh.exec("python manage.py annual_default_bid");
-    }
     /**
      * 查看算例参数
      */

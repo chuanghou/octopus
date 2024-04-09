@@ -32,14 +32,14 @@ public class WebSocket {
     private static final Map<String, Set<Session>> sessions = new ConcurrentHashMap<>();
  
     @OnOpen
-    public void OnOpen(Session session){
+    public void onOpen(Session session){
         this.session = session;
         this.userId = TokenUtils.getUserId(session.getRequestParameterMap().get("token").get(0));
         sessions.computeIfAbsent(this.userId, k -> Sets.newConcurrentHashSet()).add(this.session);
     }
 
     @OnClose
-    public void OnClose(){
+    public void onClose(){
         log.info("close session, userId: {}, session : {}", userId, session);
         if (userId == null) {
             return;
@@ -60,7 +60,9 @@ public class WebSocket {
     public void onMessage(Session session, String message) {
         Throwable backUp = null;
         try {
-            session.getBasicRemote().sendText(message);
+            synchronized (lock) {
+                session.getBasicRemote().sendText(message);
+            }
         } catch (Throwable e) {
             backUp = e;
         }finally {
@@ -70,12 +72,16 @@ public class WebSocket {
         }
     }
 
+    static private final Object lock = new Object();
+
     @SneakyThrows
     public static void cast(WsMessage wsMessage) {
         sessions.values().stream().flatMap(Collection::stream).forEach(s -> {
             Throwable backUp = null;
             try {
-                s.getBasicRemote().sendText(Json.toJson(wsMessage));
+                synchronized (lock) {
+                    s.getBasicRemote().sendText(Json.toJson(wsMessage));
+                }
             } catch (Throwable e) {
                 backUp = e;
             } finally {

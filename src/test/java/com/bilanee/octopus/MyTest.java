@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
+import com.bilanee.octopus.adapter.facade.po.CompCreatePO;
 import com.bilanee.octopus.adapter.facade.vo.IntraSymbolBidVO;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.InterClearance;
@@ -62,10 +63,10 @@ public class MyTest {
     @Autowired
     Tunnel tunnel;
 
+
     @Test
     public void interPointTest() {
-        unitFacade.listInterBidsVOs("324370.TRADE.0.AN_INTER.BID", TokenUtils.sign("1000"));
-
+        manageFacade.createComp(new CompCreatePO());
     }
 
 

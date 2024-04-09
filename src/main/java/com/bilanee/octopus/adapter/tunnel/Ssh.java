@@ -18,7 +18,7 @@ public class Ssh {
 
     @SneakyThrows
     public static void exec(String command) {
-        long l = System.currentTimeMillis();
+        log.info("begin " + command );
         final SSHClient ssh = new SSHClient();
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
@@ -30,6 +30,7 @@ public class Ssh {
             final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperimentv2 & " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), "GBK"));
         } finally {
+            log.info("end " + command );
             try {
                 if (session != null) {
                     session.close();
@@ -41,12 +42,5 @@ public class Ssh {
         }
     }
 
-    public static void main(String[] args) throws ExecutionException, InterruptedException {
-        try {
-            exec("python manage.py annual_default_bid");
-        } catch (Throwable throwable) {
-            throwable.printStackTrace();
-        }
-    }
 
 }
