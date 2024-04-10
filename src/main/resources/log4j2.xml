@@ -15,7 +15,7 @@
         </Console>
         <RollingFile name="RollingFile" fileName="logs/app.log" filePattern="logs/app-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
-                <Pattern>${PATTERN}</Pattern>
+                <Pattern>${BASIC}%n${MSG}%n${MDC}%n</Pattern>
             </PatternLayout>
             <Policies>
                 <SizeBasedTriggeringPolicy size="10MB" />
