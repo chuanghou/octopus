@@ -17,7 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 
 @Data
@@ -28,6 +29,7 @@ public class WebSocket {
 
     private String userId;
     private Session session;
+    private static final Executor executor = Executors.newFixedThreadPool(100);
 
     private static final Map<String, Set<Session>> sessions = new ConcurrentHashMap<>();
  
@@ -60,7 +62,7 @@ public class WebSocket {
     public void onMessage(Session session, String message) {
         Throwable backUp = null;
         try {
-            synchronized (lock) {
+            synchronized (session) {
                 session.getBasicRemote().sendText(message);
             }
         } catch (Throwable e) {
@@ -72,25 +74,24 @@ public class WebSocket {
         }
     }
 
-    static private final Object lock = new Object();
-
     @SneakyThrows
     public static void cast(WsMessage wsMessage) {
         sessions.values().stream().flatMap(Collection::stream).forEach(s -> {
-            Throwable backUp = null;
-            try {
-                synchronized (lock) {
-                    s.getBasicRemote().sendText(Json.toJson(wsMessage));
+            executor.execute(() -> {
+                Throwable backUp = null;
+                try {
+                    synchronized (s) {
+                        s.getBasicRemote().sendText(Json.toJson(wsMessage));
+                    }
+                } catch (Throwable e) {
+                    backUp = e;
+                } finally {
+                    if (backUp != null) {
+                        log.error("cast session : {}, wsMessage: {}", s, wsMessage, backUp);
+                    }
                 }
-            } catch (Throwable e) {
-                backUp = e;
-            } finally {
-                if (backUp == null) {
-                    log.info("cast session : {}, wsMessage: {}", s, wsMessage);
-                } else {
-                    log.error("cast session : {}, wsMessage: {}", s, wsMessage, backUp);
-                }
-            }
+            });
+
         });
     }
 

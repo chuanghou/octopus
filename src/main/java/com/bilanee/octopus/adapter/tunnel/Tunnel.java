@@ -202,18 +202,26 @@ public class Tunnel {
             IntraCost intraCost = intraCostMapper.selectOne(eq);
             return 2 * intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
-            return -400D;
+            LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
+                    .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
+                    .eq(SystemReleaseParametersDO::getPrd, 1);
+            return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
     }
+
+    final SystemReleaseParametersDOMapper systemReleaseParametersDOMapper;
 
     public Double cost(Long unitId, Double startQuantity, Double endQuantity) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
             return (cost(unitId, startQuantity) + cost(unitId, endQuantity)) / 2;
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
-            return -400D;
+            LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
+                    .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
+                    .eq(SystemReleaseParametersDO::getPrd, 1);
+            return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
