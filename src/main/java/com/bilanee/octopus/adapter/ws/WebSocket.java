@@ -39,7 +39,7 @@ public class WebSocket {
 
     @OnError
     public void onError(Session session, Throwable error) {
-        String userId = sessions.remove(session);
+        String userId = sessions.get(session);
         log.error("onError userId: {}, session : {}", userId, session, error);
     }
 
@@ -50,7 +50,9 @@ public class WebSocket {
         String userId = sessions.get(session);
         try {
             synchronized (session) {
-                session.getBasicRemote().sendText(message);
+                if(session.isOpen()) {
+                    session.getBasicRemote().sendText(message);
+                }
             }
         } catch (Throwable error) {
             log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, error);
@@ -63,7 +65,9 @@ public class WebSocket {
             String userId = sessions.get(session);
             try {
                 synchronized (session) {
-                    session.getBasicRemote().sendText(Json.toJson(wsMessage));
+                    if(session.isOpen()) {
+                        session.getBasicRemote().sendText(Json.toJson(wsMessage));
+                    }
                 }
             } catch (Throwable error) {
                 log.error("cast userId : {}, session : {}, wsMessage: {}", userId, session, wsMessage, error);
