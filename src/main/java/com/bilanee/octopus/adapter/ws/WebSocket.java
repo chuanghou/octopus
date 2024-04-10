@@ -52,8 +52,8 @@ public class WebSocket {
             synchronized (session) {
                 session.getBasicRemote().sendText(message);
             }
-        } catch (Throwable e) {
-            log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, e);
+        } catch (Throwable error) {
+            log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, error);
         }
     }
 
@@ -66,8 +66,8 @@ public class WebSocket {
                 synchronized (session) {
                     session.getBasicRemote().sendText(Json.toJson(wsMessage));
                 }
-            } catch (Throwable e) {
-                log.error("cast userId : {}, session : {}, wsMessage: {}", userId, session, wsMessage, e);
+            } catch (Throwable error) {
+                log.error("cast userId : {}, session : {}, wsMessage: {}", userId, session, wsMessage, error);
             }
         }));
     }
