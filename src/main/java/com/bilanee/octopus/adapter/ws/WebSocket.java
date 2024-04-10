@@ -61,7 +61,6 @@ public class WebSocket {
     public static void cast(WsMessage wsMessage) {
         sessions.keySet().forEach(session -> executor.execute(() -> {
             String userId = sessions.get(session);
-            Throwable backUp = null;
             try {
                 synchronized (session) {
                     session.getBasicRemote().sendText(Json.toJson(wsMessage));
