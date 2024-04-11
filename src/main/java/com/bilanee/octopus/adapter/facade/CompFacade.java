@@ -14,6 +14,8 @@ import com.bilanee.octopus.domain.IntraSymbol;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.ExceptionType;
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.constraints.NotBlank;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -68,6 +71,9 @@ public class CompFacade {
     final UnitBasicMapper unitBasicMapper;
     final SpotUnitClearedMapper spotUnitClearedMapper;
 
+
+    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.SECONDS).maximumSize(5000L).build();
+
     /**
      * 当前运行竞赛查看
      * 返回result
@@ -90,8 +96,15 @@ public class CompFacade {
      * @param token 访问者token
      * @return 省间出清结果
      */
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("/interClearanceVO")
     public Result<List<InterClearanceVO>> interClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+        List<InterClearanceVO> interClearanceVOs = (List<InterClearanceVO>) cache.get("interClearanceVO" + stageId + token, () -> doInterClearanceVO(stageId, token));
+        return Result.success(interClearanceVOs);
+    }
+    public List<InterClearanceVO> doInterClearanceVO(String stageId ,String token) {
         StageId parsedStageId = StageId.parse(stageId);
 
         // 清算值
@@ -137,7 +150,7 @@ public class CompFacade {
             Optional.ofNullable(interClearVOs.get(timeFrame)).ifPresent(interClearanceVO -> interClearanceVO.setUnitDealVOS(unitDealVOS));
         });
 
-        return Result.success(new ArrayList<>(interClearVOs.values()));
+        return new ArrayList<>(interClearVOs.values());
     }
 
     /**
@@ -146,8 +159,14 @@ public class CompFacade {
      * @param token 访问者token
      * @return 省间出清结果
      */
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("/intraClearanceVO")
     public Result<List<IntraClearanceVO>> intraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+        List<IntraClearanceVO> intraClearanceVOs = (List<IntraClearanceVO>) cache.get("intraClearanceVO" + stageId + token, () -> doIntraClearanceVO(stageId, token));
+        return Result.success(intraClearanceVOs);
+    }
+    public List<IntraClearanceVO> doIntraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
 
         Comp comp = tunnel.runningComp();
         StageId parsed = StageId.parse(stageId);
@@ -243,7 +262,7 @@ public class CompFacade {
                     .dealHists(dealHists)
                     .build();
         }).collect(Collectors.toList());
-        return Result.success(intraClearanceVOs);
+        return intraClearanceVOs;
     }
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
@@ -269,8 +288,15 @@ public class CompFacade {
      * @param province 查看省份
      * @return 现货供需曲线
      */
+
+    @SneakyThrows
     @GetMapping("listSpotMarketVOs")
     public Result<SpotMarketVO> listSpotMarketVOs(String stageId, String province, @RequestHeader String token) {
+        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get("listSpotMarketVOs" + stageId + province + token, () -> doListSpotMarketVOs(stageId, province, token));
+        return Result.success(spotMarketVO);
+    }
+
+    public SpotMarketVO doListSpotMarketVOs(String stageId, String province, @RequestHeader String token) {
         StageId parsed = StageId.parse(stageId);
         Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
 
@@ -378,8 +404,7 @@ public class CompFacade {
                     .build();
         }).collect(Collectors.toList());
 
-        SpotMarketVO spotMarketVO = builder.rtEntityVOs(rtEntityVOs).build();
-        return Result.success(spotMarketVO);
+        return builder.rtEntityVOs(rtEntityVOs).build();
     }
 
     List<Section> toSections(List<Qp> qps, Comparator<Qp> comparator) {
@@ -574,8 +599,15 @@ public class CompFacade {
      * @param province 查看省份
      *
      */
+
+    @SneakyThrows
     @GetMapping ("listSpotBiddenEntityVOs")
-    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token)  {
+    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token) {
+        SpotBiddenVO spotBiddenVO = (SpotBiddenVO) cache.get("listSpotBiddenEntityVOs" + province + token, () -> doListSpotBiddenEntityVOs(stageId, province, token));
+        return Result.success(spotBiddenVO);
+    }
+
+    public SpotBiddenVO doListSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token)  {
         StageId parsedStageId = StageId.parse(stageId);
         Long compId = parsedStageId.getCompId();
         Integer roundId = parsedStageId.getRoundId();
@@ -589,8 +621,7 @@ public class CompFacade {
 
         SpotBiddenEntityVO daSpotBiddenEntityVO = buildSpotBiddenEntity(parsedStageId, roundId, parsedProvince, unitDOs, true);
         SpotBiddenEntityVO rtSpotBiddenEntityVO = buildSpotBiddenEntity(parsedStageId, roundId, parsedProvince, unitDOs, false);
-        SpotBiddenVO spotBiddenVO = SpotBiddenVO.builder().daSpotBiddenEntityVO(daSpotBiddenEntityVO).rtSpotBiddenEntityVO(rtSpotBiddenEntityVO).build();
-        return Result.success(spotBiddenVO);
+        return SpotBiddenVO.builder().daSpotBiddenEntityVO(daSpotBiddenEntityVO).rtSpotBiddenEntityVO(rtSpotBiddenEntityVO).build();
     }
 
     private SpotBiddenEntityVO buildSpotBiddenEntity(StageId parsedStageId, Integer roundId, Province parsedProvince, List<UnitDO> unitDOs, boolean da) {
@@ -764,9 +795,15 @@ public class CompFacade {
      * 省间现货市场，全天市场成交情况
      * @param stageId 阶段id
      */
+
+    @SneakyThrows
     @GetMapping("getSpotInterClearanceVO")
-    @SuppressWarnings("unchecked")
     public Result<SpotInterClearanceVO> getSpotInterClearanceVO(String stageId, @RequestHeader String token) {
+        SpotInterClearanceVO spotInterClearanceVO = (SpotInterClearanceVO) cache.get("getSpotInterClearanceVO" + stageId + token, () -> doGetSpotInterClearanceVO(stageId, token));
+        return Result.success(spotInterClearanceVO);
+    }
+
+    public SpotInterClearanceVO doGetSpotInterClearanceVO(String stageId, @RequestHeader String token) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
         String userId = TokenUtils.getUserId(token);
@@ -799,7 +836,7 @@ public class CompFacade {
         });
         SpotInterClearanceVO spotInterClearanceVO = SpotInterClearanceVO.builder()
                 .dealTotals(dealTotals).dealPrices(dealPrices).generatorDeals(generatorDeals).build();
-        return Result.success(spotInterClearanceVO);
+        return spotInterClearanceVO;
     }
 
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
@@ -810,8 +847,16 @@ public class CompFacade {
      * 省间现货分时供需曲线:可选择的时刻
      * @param stageId : 阶段id
      */
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("interSpotMarketVOAvailableInstants")
     public Result<List<Integer>> interSpotMarketVOAvailableInstants(String stageId) {
+        List<Integer> ls = (List<Integer>) cache.get("interSpotMarketVOAvailableInstants" + stageId, () -> doInterSpotMarketVOAvailableInstants(stageId));
+        return Result.success(ls);
+    }
+
+    public List<Integer> doInterSpotMarketVOAvailableInstants(String stageId) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
         LambdaQueryWrapper<TieLinePowerDO> eqx
@@ -827,7 +872,7 @@ public class CompFacade {
             UnmetDemand unmetDemand = collect.get(i);
             return unmetDemand.getDaReceivingMw() - already > 0 ? i : null;
         }).filter(Objects::nonNull).collect(Collectors.toList());
-        return Result.success(instants);
+        return instants;
     }
 
     /**
@@ -835,8 +880,13 @@ public class CompFacade {
      * @param stageId 阶段id
      * @param instant 时刻
      */
+    @SneakyThrows
     @GetMapping("getInterSpotMarketVO")
     public Result<InterSpotMarketVO> getInterSpotMarketVO(String stageId, Integer instant, @RequestHeader String token) {
+        InterSpotMarketVO interSpotMarketVO = (InterSpotMarketVO) cache.get("getInterSpotMarketVO" + stageId + instant + token, () -> doGetInterSpotMarketVO(stageId, instant, token));
+        return Result.success(interSpotMarketVO);
+    }
+    public InterSpotMarketVO doGetInterSpotMarketVO(String stageId, Integer instant, @RequestHeader String token) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
 
@@ -907,7 +957,7 @@ public class CompFacade {
                 .requireSections(requireSections)
                 .requireTerminus(requireTerminus)
                 .build();
-         return Result.success(interSpotMarketVO);
+         return interSpotMarketVO;
     }
 
 
@@ -1017,8 +1067,15 @@ public class CompFacade {
      * 结算明细--分机组
      * @param stageId 阶段id
      */
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("listGeneratorResults")
     public Result<List<GeneratorResult>> listGeneratorResults(String stageId, @RequestHeader String token) {
+        List<GeneratorResult> ls = (List<GeneratorResult>) cache.get("listGeneratorResults" + stageId + token, ( ) -> doListGeneratorResults(stageId, token));
+        return Result.success(ls);
+    }
+
+    public List<GeneratorResult> doListGeneratorResults(String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
         List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), tunnel.review() ? null : userId).stream()
@@ -1035,7 +1092,7 @@ public class CompFacade {
         List<GeneratorResult> collect0 = generatorResults.stream().filter(g -> g.getTraderId().equals(userId)).collect(Collectors.toList());
         List<GeneratorResult> collect1 = generatorResults.stream().filter(g -> !g.getTraderId().equals(userId)).collect(Collectors.toList());
         generatorResults = Stream.of(collect0, collect1).flatMap(Collection::stream).collect(Collectors.toList());
-        return Result.success(generatorResults);
+        return generatorResults;
     }
 
     final LoadResultMapper loadResultMapper;
@@ -1043,8 +1100,16 @@ public class CompFacade {
      * 结算明细--分负荷
      * @param stageId 阶段id
      */
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("listLoadsResults")
     Result<List<LoadResult>> listLoadsResults(String stageId, @RequestHeader String token) {
+        List<LoadResult> ls = (List<LoadResult>) cache.get("listLoadsResults" + stageId + token, () -> doListLoadsResults(stageId, token));
+        return Result.success(ls);
+    }
+
+    List<LoadResult> doListLoadsResults(String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
         List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), tunnel.review() ? null : userId).stream()
@@ -1062,7 +1127,7 @@ public class CompFacade {
         List<LoadResult> collect0 = loadResults.stream().filter(g -> g.getTraderId().equals(userId)).collect(Collectors.toList());
         List<LoadResult> collect1 = loadResults.stream().filter(g -> !g.getTraderId().equals(userId)).collect(Collectors.toList());
         loadResults = Stream.of(collect0, collect1).flatMap(Collection::stream).collect(Collectors.toList());
-        return Result.success(loadResults);
+        return loadResults;
     }
 
 

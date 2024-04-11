@@ -15,6 +15,8 @@ import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.domain.UnitCmd;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
@@ -43,6 +45,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -80,20 +83,26 @@ public class UnitFacade {
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
+    static Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.SECONDS).maximumSize(5000L).build();
+
     /**
      * 本轮被分配的机组信息
      * @param stageId 阶段id
      * @param token 前端携带的token
      * @return 本轮被分配的机组信息
      */
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("listAssignUnitVOs")
     public Result<List<UnitVO>> listAssignUnitVOs(@NotBlank String stageId, @RequestHeader String token) {
-        StageId parsedStageId = StageId.parse(stageId);
-        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
-        List<UnitVO> unitVOs = Collect.transfer(units, unit -> UnitVO.builder()
-                .unitId(unit.getUnitId())
-                .unitName(unit.getMetaUnit().getName())
-                .metaUnit(unit.getMetaUnit()).build());
+        List<UnitVO> unitVOs = (List<UnitVO>) cache.get("listAssignUnitVOs" + stageId + token, () -> {
+            StageId parsedStageId = StageId.parse(stageId);
+            List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
+            return Collect.transfer(units, unit -> UnitVO.builder()
+                    .unitId(unit.getUnitId())
+                    .unitName(unit.getMetaUnit().getName())
+                    .metaUnit(unit.getMetaUnit()).build());
+        });
         return Result.success(unitVOs);
     }
 
@@ -706,21 +715,25 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param unitType 机组列表，或者负荷列表
      */
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("listClearedUnitVOs")
     public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
-        UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
-        boolean equals = tunnel.review();
-        StageId parsed = StageId.parse(stageId);
-        Long compId = parsed.getCompId();
-        Integer roundId = parsed.getRoundId();
-        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
-                .eq(UnitDO::getCompId, compId)
-                .eq(UnitDO::getRoundId, roundId)
-                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
-        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
-                .filter(u -> u.getMetaUnit().getUnitType().equals(uType)).collect(Collectors.toList());
-        List<UnitVO> unitVOs = Collect.transfer(unitDOs,
-                unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getMetaUnit().getName(), unitDO.getMetaUnit()));
+        List<UnitVO> unitVOs = (List<UnitVO>) cache.get("listClearedUnitVOs" + stageId + unitType + token, () -> {
+            UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
+            boolean equals = tunnel.review();
+            StageId parsed = StageId.parse(stageId);
+            Long compId = parsed.getCompId();
+            Integer roundId = parsed.getRoundId();
+            LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                    .eq(UnitDO::getCompId, compId)
+                    .eq(UnitDO::getRoundId, roundId)
+                    .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+            List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
+                    .filter(u -> u.getMetaUnit().getUnitType().equals(uType)).collect(Collectors.toList());
+            return Collect.transfer(unitDOs,
+                    unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getMetaUnit().getName(), unitDO.getMetaUnit()));
+        });
         return Result.success(unitVOs);
     }
 
@@ -731,9 +744,15 @@ public class UnitFacade {
      * 现货中标量量价曲线-分机组
      * @param stageId 阶段id
      * @param unitId 待查看的机组unitId
-     */
+|     */
+    @SneakyThrows
     @GetMapping("listGeneratorClearances")
     public Result<GeneratorClearVO> listGeneratorClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+        GeneratorClearVO clearVO = (GeneratorClearVO) cache.get("listGeneratorClearances" + stageId + unitId, () -> doListGeneratorClearances(stageId, unitId));
+        return Result.success(clearVO);
+    }
+
+    private GeneratorClearVO doListGeneratorClearances(String stageId, Long unitId) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         Integer sourceId = unit.getMetaUnit().getSourceId();
@@ -892,8 +911,7 @@ public class UnitFacade {
             builder.daClearedSections(daSections);
             builder.rtClearedSections(rtSections);
         }
-        GeneratorClearVO generatorClearVO = builder.build();
-        return Result.success(generatorClearVO);
+        return builder.build();
     }
 
     /**
@@ -901,8 +919,14 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param unitId 待查看的负荷unitId
      */
+
+    @SneakyThrows
     @GetMapping("listLoadClearances")
     public Result<LoadClearVO> listLoadClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+        LoadClearVO loadClearVO = (LoadClearVO) cache.get("listLoadClearances" + stageId + unitId, () -> doListLoadClearances(stageId, unitId));
+        return Result.success(loadClearVO);
+    }
+    public LoadClearVO doListLoadClearances(String stageId, Long unitId) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         Integer sourceId = unit.getMetaUnit().getSourceId();
@@ -929,9 +953,7 @@ public class UnitFacade {
         builder.daPrice(Collect.transfer(subregionPrices, SubregionPrice::getDaLmp));
         builder.rtPrice(Collect.transfer(subregionPrices, SubregionPrice::getRtLmp));
 
-        LoadClearVO loadClearVO = builder.build();
-
-        return Result.success(loadClearVO);
+        return builder.build();
     }
 
     final LoadBasicMapper loadBasicMapper;
