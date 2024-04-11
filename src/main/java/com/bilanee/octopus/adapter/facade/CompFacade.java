@@ -122,7 +122,8 @@ public class CompFacade {
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
         List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                 .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
-        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
+                .stream().sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId())).collect(Collectors.toList());
         interClearVOs.values().forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
 
         // 委托及成交信息
@@ -230,7 +231,8 @@ public class CompFacade {
             List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                     .filter(unit -> review || unit.getUserId().equals(userId))
                     .filter(unit -> unit.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
-            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
+                    .stream().sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId())).collect(Collectors.toList());
 
             List<UnitDealVO> unitDealVOs = bids.stream().filter(unit -> review || unit.getUserId().equals(userId))
                     .collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(ee -> {
