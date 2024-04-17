@@ -23,10 +23,10 @@ public class Ssh {
         Session session = null;
         long s;
         try {
-            ssh.connect("118.184.179.113");
-            ssh.authPassword("administrator", "gjdtsjtu@public0313");
+            ssh.connect("106.15.54.213");
+            ssh.authPassword("root", "SJTU2024");
             session = ssh.startSession();
-            final Command cmd0 = session.exec("cd C:\\Users\\Administrator\\Desktop\\PowerMarketExperimentv2 & " + command);
+            final Command cmd0 = session.exec("cd /home/sjtu/PowerMarketExperiment & " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), "GBK"));
         } finally {
             log.info("end " + command );

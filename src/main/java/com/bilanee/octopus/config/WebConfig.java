@@ -64,9 +64,14 @@ public class WebConfig implements WebMvcConfigurer{
         registry.addInterceptor(new TokenInterceptor()).addPathPatterns("/api/**").excludePathPatterns("/api/user/login");
     }
 
+//    @Override
+//    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
+//        registry.addResourceHandler("/**").addResourceLocations("file:C:/Users/Administrator/octopus/static/").addResourceLocations("classpath:static/");
+//    }
+
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**").addResourceLocations("file:C:/Users/Administrator/octopus/static/").addResourceLocations("classpath:static/");
+        registry.addResourceHandler("/static/**").addResourceLocations("file:/home/sjtu/octopus/static");
     }
 
 
