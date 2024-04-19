@@ -9,6 +9,7 @@ import net.schmizz.sshj.transport.verification.PromiscuousVerifier;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 
@@ -19,15 +20,17 @@ public class Ssh {
     public static void exec(String command) {
         log.info("begin " + command );
         final SSHClient ssh = new SSHClient();
+        final SSHClient ssh1 = new SSHClient();
+
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
         long s;
         try {
             ssh.connect("106.15.54.213");
-            ssh.authPassword("root", "SJTU2024");
+            ssh.authPassword("sjtu", "SJTU2024");
             session = ssh.startSession();
-            final Command cmd0 = session.exec("cd /home/sjtu/PowerMarketExperiment && " + command);
-            System.out.println(IOUtils.toString(cmd0.getInputStream(), "GBK"));
+            final Command cmd0 = session.exec("source ~/.bashrc; conda activate powermarket; cd /home/sjtu/PowerMarketExperiment; " + command);
+            System.out.println(IOUtils.toString(cmd0.getInputStream(), StandardCharsets.UTF_8));
         } finally {
             log.info("end " + command );
             try {
@@ -42,7 +45,7 @@ public class Ssh {
     }
 
     public static void main(String[] args) {
-        exec("pwd");
+        exec("echo $PATH");
     }
 
 
