@@ -76,9 +76,6 @@ public class ManageFacade {
         return Collect.transfer(userDOs, userDO -> new UserVO(userDO.getUserId(), userDO.getUserName(), userDO.getPortrait(), userDO.getPassword()));
     }
 
-
-
-
     /**
      * 管理员页面RunningVO接口，当data为null时候，表示当前没有竞赛
      */
@@ -154,6 +151,7 @@ public class ManageFacade {
         List<String> robotUserIds = userDOs.subList(traderNum, traderNum + robotNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
         userDOMapper.selectList(null).forEach(userDO -> {
                     userDO.setUserType(null);
+                    userDO.setGroupId(null);
                     userDOMapper.updateById(userDO);
                 }
         );
@@ -161,14 +159,12 @@ public class ManageFacade {
             UserDO userDO = userDOMapper.selectById(traderUserId);
             userDO.setUserType(UserType.TRADER);
             userDO.setUserName("交易员" + traderUserId);
-            userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
         });
         robotUserIds.forEach(robotUserId -> {
             UserDO userDO = userDOMapper.selectById(robotUserId);
             userDO.setUserName("机器人" + robotUserId);
             userDO.setUserType(UserType.ROBOT);
-            userDO.setGroupId(null);
             userDOMapper.updateById(userDO);
         });
 

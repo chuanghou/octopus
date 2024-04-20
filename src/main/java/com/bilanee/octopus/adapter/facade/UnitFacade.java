@@ -149,6 +149,7 @@ public class UnitFacade {
             Unit unit = e.getValue();
             Collection<Bid> bs = groupedByUnitId.get(uId);
             Map<TimeFrame, List<BalanceVO>> sumCap = new HashMap<>();
+            Map<TimeFrame, Double> capacityMap = new HashMap<>();
             GridLimit priceLimit = unit.getMetaUnit().getPriceLimit();
             if (unit.getMetaUnit().getUnitType() == UnitType.GENERATOR) {
                 LambdaQueryWrapper<ForwardUnitOffer> eq = new LambdaQueryWrapper<ForwardUnitOffer>().eq(ForwardUnitOffer::getRoundId, parsedStageId.getRoundId() + 1)
@@ -159,6 +160,7 @@ public class UnitFacade {
                     Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
                     List<BalanceVO> balanceVOs = Collections.singletonList(new BalanceVO(Direction.SELL, maxCleared));
                     sumCap.put(t, balanceVOs);
+                    capacityMap.put(t, maxCleared);
                 });
 
             } else {
@@ -170,6 +172,7 @@ public class UnitFacade {
                     Double maxCleared = b ? fs.get(0).getMaxAnnualClearedMw() : fs.get(0).getMaxMonthlyClearedMw();
                     List<BalanceVO> balanceVOs = Collections.singletonList(new BalanceVO(Direction.BUY, maxCleared));
                     sumCap.put(t, balanceVOs);
+                    capacityMap.put(t, maxCleared);
                 });
             }
 
@@ -180,7 +183,7 @@ public class UnitFacade {
                 TimeFrame timeFrame = ee.getKey();
                 Double capacity = unit.getMetaUnit().getCapacity().get(timeFrame).get(unit.getMetaUnit().getUnitType().generalDirection());
                 return InterBidVO.builder().timeFrame(timeFrame)
-                        .capacity(capacity)
+                        .capacity(capacityMap.get(timeFrame))
                         .bidVOs(Collect.transfer(ee.getValue(), Convertor.INST::to))
                         .balanceVOs(realTime ? sumCap.get(timeFrame) : Collections.EMPTY_LIST)
                         .build();
@@ -448,7 +451,9 @@ public class UnitFacade {
         Long endTimeStamp = stepRecord.getEndTimeStamp();
         if (now >= startTimeStamp && now < startTimeStamp + 180_000) {
             return Collect.asList(Direction.BUY);
-        } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 300_000) {
+        } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 210_000) {
+            return Collections.EMPTY_LIST;
+        } else if (now >= startTimeStamp + 210_000 && now < startTimeStamp + 300_000) {
             return Collect.asList(Direction.SELL);
         } else {
             return Collect.asList(Direction.BUY, Direction.SELL);

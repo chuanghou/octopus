@@ -120,4 +120,17 @@ public class GeneratorResult {
      **/
     Double revenue;
 
+
+    /**
+     * 发电侧偏差收益回收资金（元）
+     */
+    @JsonProperty("rDeviationOutgoing") @TableField("R_deviation_outgoing")
+    Double rDeviationOutgoing;
+
+    /**
+     * 发电侧偏差收益返还资金（元）
+     */
+    @JsonProperty("rDeviationIncoming") @TableField("R_deviation_incoming")
+    Double rDeviationIncoming;
+
 }

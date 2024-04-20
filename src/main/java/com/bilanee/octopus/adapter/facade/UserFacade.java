@@ -6,7 +6,9 @@ import com.bilanee.octopus.adapter.facade.vo.UserVO;
 import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.TokenUtils;
 import com.bilanee.octopus.basic.enums.UserType;
+import com.bilanee.octopus.infrastructure.entity.AdminDO;
 import com.bilanee.octopus.infrastructure.entity.UserDO;
+import com.bilanee.octopus.infrastructure.mapper.AdminDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserFacade {
 
     final UserDOMapper userDOMapper;
+    final AdminDOMapper adminDOMapper;
 
     /**
      * 用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
@@ -46,6 +49,25 @@ public class UserFacade {
         }
         if (Kit.eq(userDO.getUserType(), UserType.ROBOT)) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("机器人不允许登陆"));
+        }
+        return Result.success(TokenUtils.sign(loginPO.getUserId()));
+    }
+
+
+    /**
+     * 用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
+     * @see ErrorEnums
+     * @param loginPO 登录账号和密码
+     * @return 用户token
+     */
+    @PostMapping("adminLogin")
+    public Result<String> adminLogin(@RequestBody LoginPO loginPO) {
+        AdminDO adminDO = adminDOMapper.selectById(loginPO.getUserId());
+        if (adminDO == null) {
+            throw new BizEx(ErrorEnums.ACCOUNT_NOT_EXISTED);
+        }
+        if (Kit.notEq(adminDO.getPassword(), loginPO.getPassword())) {
+            throw new BizEx(ErrorEnums.PASSWORD_ERROR);
         }
         return Result.success(TokenUtils.sign(loginPO.getUserId()));
     }

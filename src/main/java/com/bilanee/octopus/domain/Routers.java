@@ -326,6 +326,19 @@ public class Routers implements EventRouters {
             }
         }, 180_000L, TimeUnit.MILLISECONDS);
 
+
+        scheduledExecutorService.schedule(() -> {
+            TradeStage tradeStage = tunnel.runningComp().getTradeStage();
+            WsTopic  wsTopic;
+            if (tradeStage == TradeStage.AN_INTRA) {
+                wsTopic = WsTopic.AN_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.MO_INTRA) {
+                wsTopic = WsTopic.MO_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            }
+        }, 210_000L, TimeUnit.MILLISECONDS);
+
         scheduledExecutorService.schedule(() -> {
             TradeStage tradeStage = tunnel.runningComp().getTradeStage();
             WsTopic wsTopic;
