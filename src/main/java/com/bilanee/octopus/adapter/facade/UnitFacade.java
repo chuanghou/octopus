@@ -338,6 +338,7 @@ public class UnitFacade {
                 tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
         return units.stream().map(unit -> {
             UnitIntraBidVO.UnitIntraBidVOBuilder builder = UnitIntraBidVO.builder().unitId(unit.getUnitId())
+                    .capacity(unit.getMetaUnit().getMaxCapacity())
                     .priceLimit(unit.getMetaUnit().getPriceLimit())
                     .unitName(unit.getMetaUnit().getName())
                     .unitType(unit.getMetaUnit().getUnitType())

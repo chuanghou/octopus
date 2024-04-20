@@ -21,6 +21,12 @@ public class UnitIntraBidVO {
      */
     Long unitId;
 
+
+    /**
+     * 容量
+     */
+    Double capacity;
+
     /**
      * 价格约束
      */
