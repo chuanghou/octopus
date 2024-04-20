@@ -33,7 +33,7 @@ public class UserFacade {
     final AdminDOMapper adminDOMapper;
 
     /**
-     * 用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
+     * 普通用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
      * @see ErrorEnums
      * @param loginPO 登录账号和密码
      * @return 用户token
@@ -55,7 +55,7 @@ public class UserFacade {
 
 
     /**
-     * 用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
+     * 管理员用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
      * @see ErrorEnums
      * @param loginPO 登录账号和密码
      * @return 用户token

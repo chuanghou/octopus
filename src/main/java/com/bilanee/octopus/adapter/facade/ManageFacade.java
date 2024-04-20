@@ -88,6 +88,17 @@ public class ManageFacade {
         return Result.success(CompFacade.Convertor.INST.to(comp));
     }
 
+    final AdminDOMapper adminDOMapper;
+
+    /**
+     * 获取所有管理员信息
+     */
+    @GetMapping("listAdmins")
+    public Result<List<AdminDO>> listAdmins() {
+        List<AdminDO> adminDOS = adminDOMapper.selectList(null);
+        return Result.success(adminDOS);
+    }
+
     /**
      * 管理员页面查看机组负荷分配结果
      */
