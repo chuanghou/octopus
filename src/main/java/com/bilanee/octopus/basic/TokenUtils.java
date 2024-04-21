@@ -4,6 +4,11 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.bilanee.octopus.infrastructure.entity.AdminDO;
+import com.bilanee.octopus.infrastructure.entity.UserDO;
+import com.bilanee.octopus.infrastructure.mapper.AdminDOMapper;
+import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
+import com.stellariver.milky.common.base.BeanUtil;
 import lombok.SneakyThrows;
 
 import java.util.Date;
@@ -26,7 +31,7 @@ public class TokenUtils {
 
 
     @SneakyThrows
-    public static Boolean verify(String token){
+    public static Boolean verify(String key, String token){
 
         try {
             JWTVerifier jwtVerifier=JWT.require(Algorithm.HMAC256(TOKEN_SECRET)).withIssuer("auth0").build();
@@ -34,7 +39,15 @@ public class TokenUtils {
         } catch (IllegalArgumentException | JWTVerificationException e) {
             return false;
         }
-        return true;
+        if (key.equals("token")) {
+            UserDO userDO = BeanUtil.getBean(UserDOMapper.class).selectById(TokenUtils.getUserId(token));
+            return userDO != null;
+        } else if (key.equals("adminToken")) {
+            AdminDO adminDO = BeanUtil.getBean(AdminDOMapper.class).selectById(TokenUtils.getUserId(token));
+            return adminDO != null;
+        } else {
+            return false;
+        }
     }
 
     @SneakyThrows

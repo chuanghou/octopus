@@ -61,13 +61,18 @@ public class WebConfig implements WebMvcConfigurer{
 
     @Override
     public void addInterceptors(@NonNull InterceptorRegistry registry) {
-        registry.addInterceptor(new TokenInterceptor())
+        registry.addInterceptor(new TokenInterceptor("token"))
                 .addPathPatterns("/api/**")
-                .addPathPatterns("/manage/**")
                 .excludePathPatterns("/api/user/login")
-                .excludePathPatterns("/api/user/adminLogin")
+                .excludePathPatterns("/api/user/adminLogin");
+
+        registry.addInterceptor(new TokenInterceptor("adminToken"))
+                .addPathPatterns("/manage/**")
                 .excludePathPatterns("/manage/listUserVOs");
     }
+
+
+
 
 //    @Override
 //    public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {

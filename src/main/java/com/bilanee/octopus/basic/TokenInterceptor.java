@@ -12,8 +12,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@Component
 public class TokenInterceptor implements HandlerInterceptor {
+
+    final private String key;
+
+    public TokenInterceptor(String key) {
+        this.key = key;
+    }
 
     @Override
     public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull Object handler) throws IOException {
@@ -25,8 +30,8 @@ public class TokenInterceptor implements HandlerInterceptor {
 
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json; charset=utf-8");
-        String token = request.getHeader("token");
-        if (StringUtils.isBlank(token) || !TokenUtils.verify(token)) {
+        String token = request.getHeader(key);
+        if (StringUtils.isBlank(token) || !TokenUtils.verify(key, token)) {
             Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
             response.getWriter().append(Json.toJson(result));
             return false;
