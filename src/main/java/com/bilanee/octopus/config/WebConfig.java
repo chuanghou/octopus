@@ -68,7 +68,8 @@ public class WebConfig implements WebMvcConfigurer{
 
         registry.addInterceptor(new TokenInterceptor("adminToken"))
                 .addPathPatterns("/manage/**")
-                .excludePathPatterns("/manage/listUserVOs");
+                .excludePathPatterns("/manage/listUserVOs")
+                .excludePathPatterns("/manage/getSimulateSetting");
     }
 
 
