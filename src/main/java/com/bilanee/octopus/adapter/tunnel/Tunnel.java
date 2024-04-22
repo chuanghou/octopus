@@ -54,7 +54,8 @@ public class Tunnel {
     final RestTemplate restTemplate;
 
     public boolean review() {
-        return marketSettingMapper.selectById(1).getIsEnteringReviewStage() && runningComp() != null && CompStage.RANKING.equals(runningComp().getCompStage());
+        return marketSettingMapper.selectById(1).getIsEnteringReviewStage() && runningComp() != null
+                && (CompStage.RANKING.equals(runningComp().getCompStage()) || CompStage.REVIEW.equals(runningComp().getCompStage()));
     }
 
     @Data

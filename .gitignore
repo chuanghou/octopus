@@ -39,3 +39,4 @@ nbdist/
 .flattened-pom.xml
 
 arthas-output
+/logs/app.log
