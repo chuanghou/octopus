@@ -58,5 +58,12 @@ public class FinalRankVO {
          * 绝对利润
          */
         Double profit;
+
+        /**
+         * 各轮利润
+         */
+        List<Double> roundProfits;
+
+
     }
 }

@@ -1,6 +1,7 @@
 package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.basic.GridLimit;
+import com.bilanee.octopus.basic.enums.UnitType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -17,6 +18,11 @@ public class SpotInterBidVO {
      * 单元id
      */
     Long unitId;
+
+    /**
+     * 单元类型
+     */
+    UnitType unitType;
 
     /**
      * 单元名称

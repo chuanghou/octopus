@@ -1015,7 +1015,7 @@ public class UnitFacade {
         List<SpotInterBidVO> spotInterBidVOs = generatorUnitDOs.stream().map(unitDO -> {
             Integer sourceId = unitDO.getMetaUnit().getSourceId();
             SpotInterBidVO.SpotInterBidVOBuilder builder = SpotInterBidVO.builder().sourceId(sourceId)
-                    .unitId(unitDO.getUnitId()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
+                    .unitId(unitDO.getUnitId()).unitType(unitDO.getMetaUnit().getUnitType()).unitName(unitDO.getMetaUnit().getName()).priceLimit(priceLimit);
             Map<Integer, SpotUnitCleared> unitClearedMap = Collect.toMap(clearResult.get(sourceId), SpotUnitCleared::getPrd);
             List<Double> capacities = maxCapacities.get(sourceId);
             Map<Integer, InterSpotUnitOfferDO> collect = spotOfferMap.get(sourceId).stream().collect(Collectors.toMap(InterSpotUnitOfferDO::getPrd, i -> i));

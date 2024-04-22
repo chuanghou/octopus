@@ -1031,7 +1031,7 @@ public class CompFacade {
      * @param stageId 阶段id
      */
     @GetMapping("getFinalRankVO")
-    Result<FinalRankVO> getFinalRankVO(String stageId, @RequestHeader String token) {
+    public Result<FinalRankVO> getFinalRankVO(String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
         LambdaQueryWrapper<GameRanking> eq0 = new LambdaQueryWrapper<GameRanking>().eq(GameRanking::getTraderId, userId);
@@ -1055,6 +1055,13 @@ public class CompFacade {
                 .collect(Collectors.groupingBy(FinalRankVO.Ranking::getGroupId))
                 .values().stream().map(rankings -> rankings.subList(0, (rankings.size() + 1) / 2))
                 .flatMap(Collection::stream).collect(Collectors.toList());
+
+        Map<String, List<GameResult>> gameResultMap = gameResultMapper.selectList(null).stream().collect(Collectors.groupingBy(GameResult::getTraderId));
+        finalRankVORankings.forEach(r -> {
+            List<Double> profits = gameResultMap.get(r.getUserId()).stream()
+                    .sorted(Comparator.comparing(GameResult::getRoundId)).map(GameResult::getProfit).collect(Collectors.toList());
+            r.setRoundProfits(profits);
+        });
 
         FinalRankVO finalRankVO = FinalRankVO.builder()
                 .myFinalRanking(Convertor.INST.to(gameRanking))

@@ -65,6 +65,8 @@ public class StageId {
             stageId.setRoundId(0);
             stageId.setTradeStage(TradeStage.AN_INTER);
             stageId.setMarketStatus(MarketStatus.BID);
+        } else if (compStage == CompStage.REVIEW) {
+            stageId.setCompStage(CompStage.RANKING);
         } else if (compStage == CompStage.RANKING) {
             stageId.setCompStage(CompStage.END);
         } else if (compStage == CompStage.END) {
@@ -72,7 +74,7 @@ public class StageId {
         } else if (compStage == CompStage.TRADE) {
             if (tradeStage == TradeStage.END) {
                 if (stageId.getRoundId() == comp.getRoundTotal() - 1) {
-                    stageId.setCompStage(CompStage.RANKING);
+                    stageId.setCompStage(CompStage.REVIEW);
                     stageId.setRoundId(null);
                     stageId.setTradeStage(null);
                     stageId.setMarketStatus(null);
@@ -103,8 +105,6 @@ public class StageId {
             return delayConfig.getQuitCompeteLength();
         } else if (compStage == CompStage.QUIT_RESULT) {
             return delayConfig.getQuitResultLength();
-        } else if (compStage == CompStage.RANKING) {
-            return delayConfig.getRankingLength();
         } else if (compStage == CompStage.TRADE) {
             if (tradeStage != TradeStage.END) {
                 if (marketStatus == MarketStatus.BID) {

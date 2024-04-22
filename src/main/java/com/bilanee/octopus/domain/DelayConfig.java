@@ -18,6 +18,5 @@ public class DelayConfig {
     Map<TradeStage, Integer> marketStageBidLengths;
     Map<TradeStage, Integer> marketStageClearLengths;
     Integer tradeResultLength;
-    Integer rankingLength;
 
 }

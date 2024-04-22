@@ -254,7 +254,6 @@ public class ManageFacade {
                 .quitCompeteLength(marketSettingDO.getQuizCompeteDuration())
                 .quitResultLength(marketSettingDO.getQuizResultDuration())
                 .tradeResultLength(marketSettingDO.getSettleResultDuration())
-                .rankingLength(marketSettingDO.getReviewDuration())
                 .build();
 
 
