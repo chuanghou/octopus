@@ -736,7 +736,9 @@ public class UnitFacade {
                     .eq(UnitDO::getRoundId, roundId)
                     .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
             List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper).stream()
-                    .filter(u -> u.getMetaUnit().getUnitType().equals(uType)).collect(Collectors.toList());
+                    .filter(u -> u.getMetaUnit().getUnitType().equals(uType))
+                    .sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId()))
+                    .collect(Collectors.toList());
             return Collect.transfer(unitDOs,
                     unitDO -> new UnitVO(unitDO.getUnitId(), unitDO.getMetaUnit().getName(), unitDO.getMetaUnit()));
         });
