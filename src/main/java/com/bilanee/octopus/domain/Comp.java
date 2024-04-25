@@ -134,29 +134,25 @@ public class Comp extends AggregateRoot {
         RangeMap<Double, Range<Double>> sellBrokenLine = ClearUtil.buildRangeMap(sortedSellBids, 0D, Double.MAX_VALUE);
 
         Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
-
-        //  当没有报价的时候，此时相当于交点处于y轴上，因为成交量是0，所以此时成交价格没有意义
-        if (interPoint == null) {
-            interPoint = new Point<>(0D, null);
-        }
-
         GridLimit transLimit = tunnel.transLimit(getStageId(), timeFrame);
-
-        double nonMarketQuantity = 0D;
-        if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
-            nonMarketQuantity = transLimit.getLow() - interPoint.x;
-        }else if (interPoint.x > transLimit.getHigh()) { // // 当出清点大于最大传输量限制时
-            interPoint.x = transLimit.getHigh();
-            Range<Double> bR = buyBrokenLine.get(interPoint.x);
-            Range<Double> sR = sellBrokenLine.get(interPoint.x);
-            if (bR == null || sR == null) {
-                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        double nonMarketQuantity = 0D, marketQuantity = 0D;
+        if (interPoint != null) {
+            if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
+                nonMarketQuantity = transLimit.getLow() - interPoint.x;
+            }else if (interPoint.x > transLimit.getHigh()) { // // 当出清点大于最大传输量限制时
+                interPoint.x = transLimit.getHigh();
+                Range<Double> bR = buyBrokenLine.get(interPoint.x);
+                Range<Double> sR = sellBrokenLine.get(interPoint.x);
+                if (bR == null || sR == null) {
+                    throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+                }
+                interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
             }
-            interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
+            marketQuantity = interPoint.x;
         }
-        double marketQuantity = interPoint.x;
 
-        if (!Kit.eq(interPoint.x, 0D)) {
+
+        if (interPoint != null) {
             ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
             ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
         }
@@ -172,7 +168,7 @@ public class Comp extends AggregateRoot {
         interClearBOBuilder.buyDeclaredQuantity(buyDeclaredQuantity)
                 .sellDeclaredQuantity(sellDeclaredQuantity)
                 .dealQuantity(marketQuantity)
-                .dealPrice(interPoint.y);
+                .dealPrice(interPoint == null ? null : interPoint.y);
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
 
