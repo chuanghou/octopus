@@ -1,7 +1,9 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.bilanee.octopus.basic.enums.Choice;
 import com.bilanee.octopus.infrastructure.handlers.ListChoiceHandler;
@@ -18,6 +20,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SystemReleaseParametersDO {
 
+    @TableId(type = IdType.INPUT)
+    Long id;
     Integer prov;
     Integer prd;
     Double renewableGovernmentSubsidy;
