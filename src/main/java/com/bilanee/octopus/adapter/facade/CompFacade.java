@@ -72,7 +72,7 @@ public class CompFacade {
     final SpotUnitClearedMapper spotUnitClearedMapper;
 
 
-    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.SECONDS).maximumSize(5000L).build();
+    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(30L, TimeUnit.SECONDS).maximumSize(5000L).build();
 
     /**
      * 当前运行竞赛查看
@@ -294,11 +294,33 @@ public class CompFacade {
     @SneakyThrows
     @GetMapping("listSpotMarketVOs")
     public Result<SpotMarketVO> listSpotMarketVOs(String stageId, String province, @RequestHeader String token) {
-        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get("listSpotMarketVOs" + stageId + province + token, () -> doListSpotMarketVOs(stageId, province, token));
+        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get(
+                "listSpotMarketVOs" + stageId + province + TokenUtils.getUserId(token), () -> doListSpotMarketVOs(stageId, province, token));
         return Result.success(spotMarketVO);
     }
 
-    public SpotMarketVO doListSpotMarketVOs(String stageId, String province, @RequestHeader String token) {
+    @SneakyThrows
+    public SpotMarketVO doListSpotMarketVOs(String stageId, String province, String token) {
+        StageId parsed = StageId.parse(stageId);
+        Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
+        // 搜索的单元列表
+        boolean equals = tunnel.review();
+        LambdaQueryWrapper<UnitDO> queryWrapper1 = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsed.getCompId())
+                .eq(UnitDO::getRoundId, parsed.getRoundId())
+                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper1);
+        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                .filter(unit -> unit.getMetaUnit().getProvince().equals(parsedProvince))
+                .filter(unit -> unit.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
+                .collect(Collectors.toList());
+        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
+        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get("doListSpotMarketVOs" + stageId + province, () -> doListSpotMarketVOs(stageId, province));
+        spotMarketVO.setUnitVOs(unitVOs);
+        return spotMarketVO;
+    }
+
+    public SpotMarketVO doListSpotMarketVOs(String stageId, String province) {
         StageId parsed = StageId.parse(stageId);
         Province parsedProvince = Kit.enumOfMightEx(Province::name, province);
 
@@ -348,22 +370,6 @@ public class CompFacade {
                 .minLoad(rtInstantLoadBids.stream().min(Double::compareTo).orElse(null))
                 .maxLoad(rtInstantLoadBids.stream().max(Double::compareTo).orElse(null)).build();
         builder.rtIntraSpotDealVO(rtIntraSpotDealVO);
-
-        // 搜索的单元列表
-        boolean equals = tunnel.review();
-        LambdaQueryWrapper<UnitDO> queryWrapper1 = new LambdaQueryWrapper<UnitDO>()
-                .eq(UnitDO::getCompId, parsed.getCompId())
-                .eq(UnitDO::getRoundId, parsed.getRoundId())
-                .eq(!equals, UnitDO::getUserId, TokenUtils.getUserId(token));
-        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper1);
-        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
-                .filter(unit -> unit.getMetaUnit().getProvince().equals(parsedProvince))
-                .filter(unit -> unit.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
-                .collect(Collectors.toList());
-        List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
-
-
-        builder.unitVOs(unitVOs);
 
         Qps supply = supply(parsed, parsedProvince);
         Qps demand = demand(parsed, parsedProvince);
