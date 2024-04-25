@@ -5,6 +5,7 @@ import com.bilanee.octopus.basic.StageId;
 import com.stellariver.milky.domain.support.event.Event;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
 import java.util.Collection;
 import java.util.List;
@@ -32,7 +33,7 @@ public class CompEvent {
 
 
     @Data
-    @Builder
+    @SuperBuilder
     @NoArgsConstructor
     @AllArgsConstructor
     @EqualsAndHashCode(callSuper = true)

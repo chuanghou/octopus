@@ -9,9 +9,10 @@ import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.Bid;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.Point;
-import com.bilanee.octopus.basic.enums.Direction;
-import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.ClearUtil;
+import com.bilanee.octopus.domain.CompEvent;
 import com.bilanee.octopus.domain.Routers;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.google.common.collect.Range;
@@ -19,6 +20,7 @@ import com.google.common.collect.RangeMap;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.domain.support.ErrorEnums;
+import com.stellariver.milky.domain.support.invocation.InvokeTrace;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -56,7 +58,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() {
-        manageFacade.createComp(new CompCreatePO());
+        manageFacade.step();
     }
 
 
