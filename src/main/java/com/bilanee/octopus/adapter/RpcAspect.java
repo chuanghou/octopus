@@ -94,10 +94,11 @@ public class RpcAspect {
                 }
                 if (exceptionType == ExceptionType.BIZ) {
                     ((Result<?>) result).setMessage(t.getMessage());
+                } else {
+                    IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
+                    String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
+                    log.result(result).cost((System.nanoTime() - start)/1000_000).log(logTag, t);
                 }
-                IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
-                String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
-                log.result(result).cost((System.nanoTime() - start)/1000_000).log(logTag, t);
             }
      ;
         }
