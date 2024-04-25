@@ -13,19 +13,18 @@
                 <Pattern>${BASIC}%n${MSG}%n${MDC}%n</Pattern>
             </PatternLayout>
         </Console>
-        <RollingFile name="RollingFile" fileName="logs/app.log" filePattern="logs/app-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="RollingFile" fileName="/mnt/logs/octopus.log" filePattern="logs/app-%d{yyyy-MM-dd}-%i.log.gz">
             <PatternLayout>
                 <Pattern>${BASIC}%n${MSG}%n${MDC}%n</Pattern>
             </PatternLayout>
             <Policies>
-                <SizeBasedTriggeringPolicy size="10MB" />
+                <SizeBasedTriggeringPolicy size="100MB" />
             </Policies>
             <DefaultRolloverStrategy max="10" />
         </RollingFile>
     </Appenders>
     <Loggers>
         <Root level="INFO">
-            <AppenderRef ref="Console" />
             <AppenderRef ref="RollingFile" />
         </Root>
     </Loggers>
