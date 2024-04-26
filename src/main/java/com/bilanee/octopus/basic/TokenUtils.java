@@ -15,8 +15,8 @@ import java.util.Date;
 
 public class TokenUtils {
 
-    private static final long EXPIRE_TIME = 12 * 60 * 60 * 1000 * 10000L;
-    private static final String TOKEN_SECRET="ljdyaishijin**zxxzddaa3nkjnj??";
+    private static final long EXPIRE_TIME = 60 * 60 * 1000 * 10000L;
+    private static final String TOKEN_SECRET="ljdyaishi**zxxzddaa3nkjnj??";
 
     public static String sign(String userId){
         String token;
