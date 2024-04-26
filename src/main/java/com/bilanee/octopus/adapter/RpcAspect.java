@@ -105,7 +105,6 @@ public class RpcAspect {
                     log.result(result).cost(cost).log(logTag, t);
                 }
             }
-     ;
         }
         return result;
     }
