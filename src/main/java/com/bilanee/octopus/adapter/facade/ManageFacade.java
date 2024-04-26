@@ -67,6 +67,13 @@ public class ManageFacade {
     final UnitDOMapper unitDOMapper;
     final GameRankingMapper gameRankingMapper;
     final GameResultMapper gameResultMapper;
+
+
+    @GetMapping("resetToken")
+    public Result<Void> resetToken() {
+        TokenUtils.TOKEN_SECRET = new Date().toString();
+        return Result.success();
+    }
     /**
      * 获取所有用户信息
      */
