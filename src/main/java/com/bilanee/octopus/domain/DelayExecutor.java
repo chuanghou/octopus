@@ -22,7 +22,7 @@ public class DelayExecutor {
     ScheduledFuture<Object> scheduledFuture;
 
     public void schedule(Command command, long length, TimeUnit timeUnit) {
-        scheduledFuture = scheduledExecutorService.schedule(() -> CommandBus.accept(command, new HashMap<>()), length, timeUnit);
+        scheduledFuture = scheduledExecutorService.schedule(() -> CommandBus.acceptMemoryTransactional(command, new HashMap<>()), length, timeUnit);
     }
 
     public void removeStepCommand() {

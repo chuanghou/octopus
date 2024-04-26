@@ -1,6 +1,7 @@
 package com.bilanee.octopus.domain;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.bilanee.octopus.adapter.facade.CompFacade;
 import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
@@ -24,6 +25,7 @@ import com.stellariver.milky.domain.support.context.Context;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import com.stellariver.milky.domain.support.event.EventRouter;
 import com.stellariver.milky.domain.support.event.EventRouters;
+import com.stellariver.milky.domain.support.event.FinalEventRouter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -500,8 +502,17 @@ public class Routers implements EventRouters {
         }
     }
 
-    @EventRouter(order = 2L)
+    final CompFacade compFacade;
+
+    @FinalEventRouter
     public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+
+        compFacade.listSpotBiddenEntityVOs(now.toString(), Province.TRANSFER.name());
+        compFacade.listSpotBiddenEntityVOs(now.toString(), Province.RECEIVER.name());
+        compFacade.prepareCacheSpotMarketVO(now.toString(), Province.TRANSFER.name());
+        compFacade.prepareCacheSpotMarketVO(now.toString(), Province.RECEIVER.name());
+
         WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 

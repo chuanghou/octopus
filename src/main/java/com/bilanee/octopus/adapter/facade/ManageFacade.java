@@ -319,7 +319,7 @@ public class ManageFacade {
         }
         delayExecutor.removeStepCommand();
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
-        CommandBus.accept(command, new HashMap<>());
+        CommandBus.acceptMemoryTransactional(command, new HashMap<>());
         return Result.success();
     }
 

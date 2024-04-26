@@ -72,7 +72,7 @@ public class CompFacade {
     final SpotUnitClearedMapper spotUnitClearedMapper;
 
 
-    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(30L, TimeUnit.SECONDS).maximumSize(5000L).build();
+    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(10L, TimeUnit.SECONDS).maximumSize(5000L).build();
 
     /**
      * 当前运行竞赛查看
@@ -101,7 +101,8 @@ public class CompFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("/interClearanceVO")
     public Result<List<InterClearanceVO>> interClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
-        List<InterClearanceVO> interClearanceVOs = (List<InterClearanceVO>) cache.get("interClearanceVO" + stageId + token, () -> doInterClearanceVO(stageId, token));
+        List<InterClearanceVO> interClearanceVOs = (List<InterClearanceVO>)
+                cache.get("interClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doInterClearanceVO(stageId, token));
         return Result.success(interClearanceVOs);
     }
     public List<InterClearanceVO> doInterClearanceVO(String stageId ,String token) {
@@ -164,7 +165,8 @@ public class CompFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("/intraClearanceVO")
     public Result<List<IntraClearanceVO>> intraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
-        List<IntraClearanceVO> intraClearanceVOs = (List<IntraClearanceVO>) cache.get("intraClearanceVO" + stageId + token, () -> doIntraClearanceVO(stageId, token));
+        List<IntraClearanceVO> intraClearanceVOs = (List<IntraClearanceVO>)
+                cache.get("intraClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doIntraClearanceVO(stageId, token));
         return Result.success(intraClearanceVOs);
     }
     public List<IntraClearanceVO> doIntraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
@@ -187,7 +189,7 @@ public class CompFacade {
 
         ListMultimap<IntraSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream()
                 .collect(Collect.listMultiMap(i -> new IntraSymbol(i.getProvince(), i.getTimeFrame())));
-        List<IntraClearanceVO> intraClearanceVOs = IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
+        return IntraSymbol.intraSymbols().stream().map(intraSymbol -> {
             List<Bid> bids = groupedBids.get(intraSymbol);
             List<Deal> deals = bids.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
             Double maxPrice = deals.stream().max(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
@@ -264,7 +266,6 @@ public class CompFacade {
                     .dealHists(dealHists)
                     .build();
         }).collect(Collectors.toList());
-        return intraClearanceVOs;
     }
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
@@ -283,6 +284,28 @@ public class CompFacade {
     final SubRegionBasicMapper subRegionBasicMapper;
     final SubregionPriceMapper subregionPriceMapper;
 
+
+
+    /**
+     * 省内现货市场：市场成交概况，市场供需曲线，分时间点取
+     * @param stageId 当前页面所处stageId
+     * @param province 查看省份
+     * @return 现货供需曲线
+     */
+    @SneakyThrows
+    @GetMapping("listSpotMarketVOByInstant")
+    public Result<InstantSpotMarketVO> getSpotMarketVOs(String stageId, String province, Integer instant, @RequestHeader String token) {
+        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get(
+                "listSpotMarketVOs" + stageId + province + TokenUtils.getUserId(token), () -> doListSpotMarketVOs(stageId, province, token));
+        InstantSpotMarketVO instantSpotMarketVO = InstantSpotMarketVO.builder()
+                .daEntityVO(spotMarketVO.getDaEntityVOs().get(instant))
+                .rtEntityVO(spotMarketVO.getRtEntityVOs().get(instant))
+                .daIntraSpotDealVO(spotMarketVO.getDaIntraSpotDealVO())
+                .rtIntraSpotDealVO(spotMarketVO.getRtIntraSpotDealVO())
+                .unitVOs(spotMarketVO.getUnitVOs())
+                .build();
+        return Result.success(instantSpotMarketVO);
+    }
 
     /**
      * 省内现货市场：市场成交概况，市场供需曲线
@@ -315,9 +338,14 @@ public class CompFacade {
                 .filter(unit -> unit.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
                 .collect(Collectors.toList());
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()));
-        SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get("doListSpotMarketVOs" + stageId + province, () -> doListSpotMarketVOs(stageId, province));
+        SpotMarketVO spotMarketVO = prepareCacheSpotMarketVO(stageId, province);
         spotMarketVO.setUnitVOs(unitVOs);
         return spotMarketVO;
+    }
+
+    @SneakyThrows
+    public SpotMarketVO prepareCacheSpotMarketVO(String stageId, String province) {
+        return (SpotMarketVO) cache.get("doListSpotMarketVOs" + stageId + province, () -> doListSpotMarketVOs(stageId, province));
     }
 
     public SpotMarketVO doListSpotMarketVOs(String stageId, String province) {
@@ -610,12 +638,12 @@ public class CompFacade {
 
     @SneakyThrows
     @GetMapping ("listSpotBiddenEntityVOs")
-    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token) {
-        SpotBiddenVO spotBiddenVO = (SpotBiddenVO) cache.get("listSpotBiddenEntityVOs" + province + token, () -> doListSpotBiddenEntityVOs(stageId, province, token));
+    public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province) {
+        SpotBiddenVO spotBiddenVO = (SpotBiddenVO) cache.get("listSpotBiddenEntityVOs" + province, () -> doListSpotBiddenEntityVOs(stageId, province));
         return Result.success(spotBiddenVO);
     }
 
-    public SpotBiddenVO doListSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province, @RequestHeader String token)  {
+    public SpotBiddenVO doListSpotBiddenEntityVOs(String stageId, String province)  {
         StageId parsedStageId = StageId.parse(stageId);
         Long compId = parsedStageId.getCompId();
         Integer roundId = parsedStageId.getRoundId();
@@ -807,7 +835,8 @@ public class CompFacade {
     @SneakyThrows
     @GetMapping("getSpotInterClearanceVO")
     public Result<SpotInterClearanceVO> getSpotInterClearanceVO(String stageId, @RequestHeader String token) {
-        SpotInterClearanceVO spotInterClearanceVO = (SpotInterClearanceVO) cache.get("getSpotInterClearanceVO" + stageId + token, () -> doGetSpotInterClearanceVO(stageId, token));
+        SpotInterClearanceVO spotInterClearanceVO = (SpotInterClearanceVO) cache.get(
+                "getSpotInterClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doGetSpotInterClearanceVO(stageId, token));
         return Result.success(spotInterClearanceVO);
     }
 
@@ -890,11 +919,11 @@ public class CompFacade {
      */
     @SneakyThrows
     @GetMapping("getInterSpotMarketVO")
-    public Result<InterSpotMarketVO> getInterSpotMarketVO(String stageId, Integer instant, @RequestHeader String token) {
-        InterSpotMarketVO interSpotMarketVO = (InterSpotMarketVO) cache.get("getInterSpotMarketVO" + stageId + instant + token, () -> doGetInterSpotMarketVO(stageId, instant, token));
+    public Result<InterSpotMarketVO> getInterSpotMarketVO(String stageId, Integer instant) {
+        InterSpotMarketVO interSpotMarketVO = (InterSpotMarketVO) cache.get("getInterSpotMarketVO" + stageId + instant, () -> doGetInterSpotMarketVO(stageId, instant));
         return Result.success(interSpotMarketVO);
     }
-    public InterSpotMarketVO doGetInterSpotMarketVO(String stageId, Integer instant, @RequestHeader String token) {
+    public InterSpotMarketVO doGetInterSpotMarketVO(String stageId, Integer instant) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
 
@@ -973,8 +1002,16 @@ public class CompFacade {
      * 省间现货分设备成交量价
      * @param stageId 阶段id
      */
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
     @GetMapping("listInterSpotDeals")
     public Result<List<InterSpotUnitDealVO>> listInterSpotDeals(String stageId, Integer instant, @RequestHeader String token) {
+        List<InterSpotUnitDealVO> data = (List<InterSpotUnitDealVO>) cache.
+                get("doListInterSpotDeals" + stageId + instant + TokenUtils.getUserId(token), () -> doListInterSpotDeals(stageId, instant, token));
+        return Result.success(data);
+    }
+    public List<InterSpotUnitDealVO> doListInterSpotDeals(String stageId, Integer instant, String token) {
         Integer roundId = StageId.parse(stageId).getRoundId();
         Long compId = StageId.parse(stageId).getCompId();
         String userId = TokenUtils.getUserId(token);
@@ -996,7 +1033,7 @@ public class CompFacade {
             double quantity = deals.stream().collect(Collectors.summarizingDouble(InterSpotUnitDealVO.Deal::getQuantity)).getSum();
             return new InterSpotUnitDealVO(name, deals, quantity == 0D ? null : sumMoney/quantity);
         }).collect(Collectors.toList());
-        return Result.success(interSpotUnitDealVOs);
+        return interSpotUnitDealVOs;
     }
 
     final GameResultMapper gameResultMapper;

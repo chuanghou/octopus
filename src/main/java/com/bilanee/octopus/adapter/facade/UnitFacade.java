@@ -83,7 +83,8 @@ public class UnitFacade {
 
     final Executor executor = Executors.newFixedThreadPool(100);
 
-    static Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.SECONDS).maximumSize(5000L).build();
+    static private Cache<String, Object> shortCache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.SECONDS).maximumSize(1000L).build();
+    static private Cache<String, Object> longCache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.MINUTES).maximumSize(1000L).build();
 
     /**
      * 本轮被分配的机组信息
@@ -95,7 +96,7 @@ public class UnitFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("listAssignUnitVOs")
     public Result<List<UnitVO>> listAssignUnitVOs(@NotBlank String stageId, @RequestHeader String token) {
-        List<UnitVO> unitVOs = (List<UnitVO>) cache.get("listAssignUnitVOs" + stageId + token, () -> {
+        List<UnitVO> unitVOs = (List<UnitVO>) shortCache.get("listAssignUnitVOs" + stageId + TokenUtils.getUserId(token), () -> {
             StageId parsedStageId = StageId.parse(stageId);
             List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
             return Collect.transfer(units, unit -> UnitVO.builder()
@@ -725,7 +726,7 @@ public class UnitFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("listClearedUnitVOs")
     public Result<List<UnitVO>> listClearedUnitVOs(@NotBlank String stageId, @NotBlank String unitType, @RequestHeader String token) {
-        List<UnitVO> unitVOs = (List<UnitVO>) cache.get("listClearedUnitVOs" + stageId + unitType + token, () -> {
+        List<UnitVO> unitVOs = (List<UnitVO>) shortCache.get("listClearedUnitVOs" + stageId + unitType + TokenUtils.getUserId(token), () -> {
             UnitType uType = Kit.enumOf(UnitType::name, unitType).orElse(null);
             boolean equals = tunnel.review();
             StageId parsed = StageId.parse(stageId);
@@ -756,7 +757,7 @@ public class UnitFacade {
     @SneakyThrows
     @GetMapping("listGeneratorClearances")
     public Result<GeneratorClearVO> listGeneratorClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
-        GeneratorClearVO clearVO = (GeneratorClearVO) cache.get("listGeneratorClearances" + stageId + unitId, () -> doListGeneratorClearances(stageId, unitId));
+        GeneratorClearVO clearVO = (GeneratorClearVO) shortCache.get("listGeneratorClearances" + stageId + unitId, () -> doListGeneratorClearances(stageId, unitId));
         return Result.success(clearVO);
     }
 
@@ -931,7 +932,7 @@ public class UnitFacade {
     @SneakyThrows
     @GetMapping("listLoadClearances")
     public Result<LoadClearVO> listLoadClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
-        LoadClearVO loadClearVO = (LoadClearVO) cache.get("listLoadClearances" + stageId + unitId, () -> doListLoadClearances(stageId, unitId));
+        LoadClearVO loadClearVO = (LoadClearVO) shortCache.get("listLoadClearances" + stageId + unitId, () -> doListLoadClearances(stageId, unitId));
         return Result.success(loadClearVO);
     }
     public LoadClearVO doListLoadClearances(String stageId, Long unitId) {

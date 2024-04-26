@@ -207,7 +207,6 @@ public class Comp extends AggregateRoot {
 
     @MethodHandler
     public void step(CompCmd.Step command, Context context) {
-        log.info(Json.toJson(command));
         StageId last = getStageId();
         this.compStage = command.getStageId().getCompStage();
         this.roundId = command.getStageId().getRoundId();

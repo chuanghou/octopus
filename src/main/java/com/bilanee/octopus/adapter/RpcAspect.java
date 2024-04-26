@@ -68,7 +68,7 @@ public class RpcAspect {
         MethodSignature signature = (MethodSignature) pjp.getSignature();
         Method method = signature.getMethod();
         Class<?> returnType = method.getReturnType();
-        long start = System.nanoTime();
+        long start = System.currentTimeMillis();
         List<ErrorEnum> errorEnums = Collections.emptyList();
         Throwable t = null;
         try {
@@ -94,10 +94,15 @@ public class RpcAspect {
                 }
                 if (exceptionType == ExceptionType.BIZ) {
                     ((Result<?>) result).setMessage(t.getMessage());
-                } else {
-                    IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
-                    String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
-                    log.result(result).cost((System.nanoTime() - start)/1000_000).log(logTag, t);
+                }
+
+                IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
+                String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
+                long cost = (System.currentTimeMillis() - start);
+                if (exceptionType != ExceptionType.BIZ) {
+                    log.result(result).cost(cost).log(logTag, t);
+                } else if (cost > 3000) {
+                    log.result(result).cost(cost).log(logTag, t);
                 }
             }
      ;
