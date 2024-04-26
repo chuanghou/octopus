@@ -505,8 +505,8 @@ public class Routers implements EventRouters {
     final CompFacade compFacade;
 
     @FinalEventRouter
-    public void routeStageIdChanged(CompEvent.Stepped stepped, Context context) {
-        StageId now = stepped.getNow();
+    public void routeStageIdChanged(List<CompEvent.Stepped> stepped, Context context) {
+        StageId now = stepped.get(0).getNow();
 
         compFacade.listSpotBiddenEntityVOs(now.toString(), Province.TRANSFER.name());
         compFacade.listSpotBiddenEntityVOs(now.toString(), Province.RECEIVER.name());
