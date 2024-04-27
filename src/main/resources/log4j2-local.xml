@@ -1,22 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
-
-    <properties>
-        <property name="BASIC">%d{yyyy-MM-dd HH:mm:ss.SSS} [t:%t] [C:%C{1.}] [L:%L] [M:%M] </property>
-        <property name="MSG">%-5level %msg </property>
-        <property name="MDC">|arg0:%X{arg0}| |arg1:%X{arg1}| |arg2:%X{arg2}| |arg3:%X{arg3}| |arg4:%X{arg4}| |result:%X{result}| |cost:%X{cost}|</property>
-    </properties>
-
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout>
-                <Pattern>${BASIC}%n${MSG}%n${MDC}%n</Pattern>
-            </PatternLayout>
+<!--            本地一般使用-->
+<!--            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>-->
+<!--            本地验证日志效果使用-->
+            <JsonTemplateLayout eventTemplateUri="classpath:layout.json" locationInfoEnabled="true"/>
         </Console>
     </Appenders>
+
     <Loggers>
-        <Root level="INFO">
-            <AppenderRef ref="Console" />
-        </Root>
+        <AsyncRoot level="INFO">
+            <AppenderRef ref="Console"/>
+        </AsyncRoot>
     </Loggers>
 </Configuration>
