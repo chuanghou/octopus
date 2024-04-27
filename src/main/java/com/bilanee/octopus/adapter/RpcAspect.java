@@ -99,11 +99,7 @@ public class RpcAspect {
                 IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
                 String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
                 long cost = (System.currentTimeMillis() - start);
-                if (exceptionType != ExceptionType.BIZ) {
-                    log.result(result).cost(cost).log(logTag, t);
-                } else if (cost > 3000) {
-                    log.result(result).cost(cost).log(logTag, t);
-                }
+                log.result(result).cost(System.currentTimeMillis() - start).log(logTag, t);
             }
         }
         return result;
