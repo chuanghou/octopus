@@ -42,7 +42,12 @@ public class TokenInterceptor implements HandlerInterceptor {
         }
         String userId = TokenUtils.getUserId(token);
         String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
-        return !Objects.equals(currentToken, token);
+        if (!Objects.equals(token, currentToken)) {
+            Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
+            response.getWriter().append(Json.toJson(result));
+            return false;
+        }
+        return true;
     }
 
 }
