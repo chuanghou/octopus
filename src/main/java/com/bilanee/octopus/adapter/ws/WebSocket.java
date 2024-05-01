@@ -62,7 +62,8 @@ public class WebSocket {
         try {
             synchronized (session) {
                 String token = session.getRequestParameterMap().get("token").get(0);
-                boolean equals = Objects.equals(BeanUtil.getBean(userId), token);
+                String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+                boolean equals = Objects.equals(currentToken, token);
                 if (!equals) {
                     session.close(closeReason);
                     return;

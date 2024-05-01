@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
     <Appenders>
-        <RollingFile name="RollingFile" fileName="/mnt/octopus/app.log" filePattern="/mnt/octopus/archive/app-%d{yyyy-MM-dd}-%i.log.gz">
+        <RollingFile name="RollingFile" fileName="/mnt/octopus/app.log" filePattern="archive/app-%d{yyyy-MM-dd}-%i.log.gz">
             <JsonTemplateLayout eventTemplateUri="classpath:layout.json" locationInfoEnabled="true"/>
             <Policies>
-                <SizeBasedTriggeringPolicy size="100MB"/>
+                <SizeBasedTriggeringPolicy size="64MB"/>
             </Policies>
             <DefaultRolloverStrategy max="10" />
         </RollingFile>
