@@ -1,5 +1,7 @@
 package com.bilanee.octopus.basic;
 
+import com.bilanee.octopus.adapter.facade.UserFacade;
+import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Json;
@@ -11,6 +13,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Objects;
 
 public class TokenInterceptor implements HandlerInterceptor {
 
@@ -31,12 +34,15 @@ public class TokenInterceptor implements HandlerInterceptor {
         response.setCharacterEncoding("utf-8");
         response.setContentType("application/json; charset=utf-8");
         String token = request.getHeader(key);
+
         if (StringUtils.isBlank(token) || !TokenUtils.verify(key, token)) {
             Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
             response.getWriter().append(Json.toJson(result));
             return false;
         }
-        return true;
+        String userId = TokenUtils.getUserId(token);
+        String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+        return !Objects.equals(currentToken, token);
     }
 
 }

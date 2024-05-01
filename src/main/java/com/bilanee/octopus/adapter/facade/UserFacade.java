@@ -14,10 +14,14 @@ import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.common.Kit;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 用户身份
@@ -31,6 +35,9 @@ public class UserFacade {
 
     final UserDOMapper userDOMapper;
     final AdminDOMapper adminDOMapper;
+
+    @Getter
+    final Map<String, String> tokens = new ConcurrentHashMap<>();
 
     /**
      * 普通用户登录接口，返回错误码为 NOT_LOGIN 时，路由到登录
@@ -50,7 +57,11 @@ public class UserFacade {
         if (Kit.eq(userDO.getUserType(), UserType.ROBOT)) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("机器人不允许登陆"));
         }
-        return Result.success(TokenUtils.sign(loginPO.getUserId()));
+        String token = TokenUtils.sign(loginPO.getUserId());
+
+        tokens.put(loginPO.getUserId(), token);
+
+        return Result.success(token);
     }
 
 

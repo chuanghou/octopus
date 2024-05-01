@@ -1,7 +1,9 @@
 package com.bilanee.octopus.adapter.ws;
 
 
+import com.bilanee.octopus.adapter.facade.UserFacade;
 import com.bilanee.octopus.basic.TokenUtils;
+import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import lombok.Data;
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Component;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 import java.io.EOFException;
+import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -25,10 +29,17 @@ public class WebSocket {
 
     private static final Executor executor = Executors.newFixedThreadPool(100);
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
+    private  static  final CloseReason closeReason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "一个用户ID不能同时登录两个页面");
 
     @OnOpen
-    public void onOpen(Session session){
-        String userId = TokenUtils.getUserId(session.getRequestParameterMap().get("token").get(0));
+    public void onOpen(Session session) throws IOException {
+        String token = session.getRequestParameterMap().get("token").get(0);
+        String userId = TokenUtils.getUserId(token);
+        String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+        if (!Objects.equals(currentToken, token)) {
+            session.close(closeReason);
+            return;
+        }
         sessions.put(session, userId);
     }
 
@@ -47,10 +58,15 @@ public class WebSocket {
     @OnMessage
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     public void onMessage(Session session, String message) {
-        Throwable backUp;
         String userId = sessions.get(session);
         try {
             synchronized (session) {
+                String token = session.getRequestParameterMap().get("token").get(0);
+                boolean equals = Objects.equals(BeanUtil.getBean(userId), token);
+                if (!equals) {
+                    session.close(closeReason);
+                    return;
+                }
                 if(session.isOpen()) {
                     session.getBasicRemote().sendText(message);
                 }

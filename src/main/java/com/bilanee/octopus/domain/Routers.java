@@ -531,7 +531,6 @@ public class Routers implements EventRouters {
         boolean b1 = now.getMarketStatus() == MarketStatus.BID;
         if (b0 && b1) {
             Ssh.exec("python manage.py intra_pre_clearing 1");
-            Ssh.exec("python manage.py intra_pre_clearing 2");
             LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
                     .eq(StackDiagramDO::getRoundId, stepped.getNow().getRoundId() + 1);
             Boolean required = stackDiagramDOMapper.selectList(eq).stream()
