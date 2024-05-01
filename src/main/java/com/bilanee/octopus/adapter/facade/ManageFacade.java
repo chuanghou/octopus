@@ -72,7 +72,7 @@ public class ManageFacade {
     /**
      * 失效登录令牌
      */
-    @GetMapping("resetToken")
+    @PostMapping("resetToken")
     public Result<Void> invalidToken() {
         TokenUtils.TOKEN_SECRET = new Date().toString();
         return Result.success();
