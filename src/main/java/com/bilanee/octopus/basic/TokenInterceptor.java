@@ -19,8 +19,11 @@ public class TokenInterceptor implements HandlerInterceptor {
 
     final private String key;
 
-    public TokenInterceptor(String key) {
+    final private boolean limit;
+
+    public TokenInterceptor(String key, boolean limit) {
         this.key = key;
+        this.limit = limit;
     }
 
     @Override
@@ -40,12 +43,14 @@ public class TokenInterceptor implements HandlerInterceptor {
             response.getWriter().append(Json.toJson(result));
             return false;
         }
-        String userId = TokenUtils.getUserId(token);
-        String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
-        if (StringUtils.isBlank(currentToken) || !Objects.equals(token, currentToken)) {
-            Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
-            response.getWriter().append(Json.toJson(result));
-            return false;
+        if (limit) {
+            String userId = TokenUtils.getUserId(token);
+            String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+            if (StringUtils.isBlank(currentToken) || !Objects.equals(token, currentToken)) {
+                Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
+                response.getWriter().append(Json.toJson(result));
+                return false;
+            }
         }
         return true;
     }
