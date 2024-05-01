@@ -69,8 +69,11 @@ public class ManageFacade {
     final GameResultMapper gameResultMapper;
 
 
+    /**
+     * 失效登录令牌
+     */
     @GetMapping("resetToken")
-    public Result<Void> resetToken() {
+    public Result<Void> invalidToken() {
         TokenUtils.TOKEN_SECRET = new Date().toString();
         return Result.success();
     }
