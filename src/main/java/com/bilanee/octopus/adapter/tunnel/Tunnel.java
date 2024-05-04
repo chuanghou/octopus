@@ -9,6 +9,8 @@ import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
@@ -30,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,6 +55,18 @@ public class Tunnel {
     final GeneratorResultMapper generatorResultMapper;
     final LoadResultMapper loadResultMapper;
     final RestTemplate restTemplate;
+
+
+
+    private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.SECONDS).build();
+    @SneakyThrows
+    public boolean singleLoginLimit() {
+        return (boolean) cache.get("singleLoginLimit", () -> {
+            MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+            Boolean singleLoginLimit = marketSettingDO.getSingleLoginLimit();
+            return Boolean.TRUE.equals(singleLoginLimit);
+        });
+    }
 
     public boolean review() {
         return marketSettingMapper.selectById(1).getIsEnteringReviewStage() && runningComp() != null

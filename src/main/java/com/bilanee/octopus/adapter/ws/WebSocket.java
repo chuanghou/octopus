@@ -2,12 +2,14 @@ package com.bilanee.octopus.adapter.ws;
 
 
 import com.bilanee.octopus.adapter.facade.UserFacade;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.TokenUtils;
 import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import lombok.Data;
 import lombok.SneakyThrows;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -35,12 +37,23 @@ public class WebSocket {
     public void onOpen(Session session) throws IOException {
         String token = session.getRequestParameterMap().get("token").get(0);
         String userId = TokenUtils.getUserId(token);
-        String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
-        if (!Objects.equals(currentToken, token)) {
+
+        if (StringUtils.isBlank(token) || !TokenUtils.verify("token", token)) {
             session.close(closeReason);
             return;
         }
+
+        boolean singleLoginLimit = BeanUtil.getBean(Tunnel.class).singleLoginLimit();
+        if (singleLoginLimit) {
+            String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+            if (!Objects.equals(currentToken, token)) {
+                session.close(closeReason);
+                return;
+            }
+        }
+
         sessions.put(session, userId);
+
     }
 
     @OnClose
@@ -61,12 +74,15 @@ public class WebSocket {
         String userId = sessions.get(session);
         try {
             synchronized (session) {
-                String token = session.getRequestParameterMap().get("token").get(0);
-                String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
-                boolean equals = Objects.equals(currentToken, token);
-                if (!equals) {
-                    session.close(closeReason);
-                    return;
+                boolean singleLoginLimit = BeanUtil.getBean(Tunnel.class).singleLoginLimit();
+                if (singleLoginLimit) {
+                    String token = session.getRequestParameterMap().get("token").get(0);
+                    String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
+                    boolean equals = Objects.equals(currentToken, token);
+                    if (!equals) {
+                        session.close(closeReason);
+                        return;
+                    }
                 }
                 if(session.isOpen()) {
                     session.getBasicRemote().sendText(message);

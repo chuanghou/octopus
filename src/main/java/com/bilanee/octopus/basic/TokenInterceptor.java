@@ -1,6 +1,7 @@
 package com.bilanee.octopus.basic;
 
 import com.bilanee.octopus.adapter.facade.UserFacade;
+import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
@@ -43,7 +44,7 @@ public class TokenInterceptor implements HandlerInterceptor {
             response.getWriter().append(Json.toJson(result));
             return false;
         }
-        if (limit) {
+        if (limit && BeanUtil.getBean(Tunnel.class).singleLoginLimit()) {
             String userId = TokenUtils.getUserId(token);
             String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
             if (StringUtils.isBlank(currentToken) || !Objects.equals(token, currentToken)) {
