@@ -485,6 +485,7 @@ public class ManageFacade {
                 .interprovClearingMode(tradingMode.get(marketSettingDO.getInterprovClearingMode()))
                 .interprovTradingMode(marketSettingDO.getInterprovTradingMode())
                 .retailPriceForecastMultiple(marketSettingDO.getRetailPriceForecastMultiple())
+                .singleLoginLimit(marketSettingDO.getSingleLoginLimit())
                 .build();
         return Result.success(electricMarketSettingVO);
     }
@@ -523,6 +524,7 @@ public class ManageFacade {
         marketSettingDO.setDaCoalPrice(electricMarketSetting.getDaCoalPrice());
         marketSettingDO.setCapacityPrice(electricMarketSetting.getCapacityPrice());
         marketSettingDO.setRetailPriceForecastMultiple(electricMarketSetting.getRetailPriceForecastMultiple());
+        marketSettingDO.setSingleLoginLimit(electricMarketSetting.getSingleLoginLimit());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

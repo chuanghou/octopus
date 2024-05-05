@@ -112,6 +112,11 @@ public class ElectricMarketSettingVO {
      */
     Double retailPriceForecastMultiple;
 
+    /**
+     * 使能单点登录限制
+     */
+    Boolean singleLoginLimit;
+
 
 }
 

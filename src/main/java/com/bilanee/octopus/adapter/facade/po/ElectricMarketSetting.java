@@ -100,5 +100,10 @@ public class ElectricMarketSetting {
     @Min(value = 1, message = "最小为1") @Max(value = 6, message = "最大为6")
     Double retailPriceForecastMultiple;
 
+    /**
+     * 使能单点登录限制
+     */
+    Boolean singleLoginLimit;
+
 
 }
