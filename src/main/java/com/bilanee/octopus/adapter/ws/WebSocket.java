@@ -36,12 +36,13 @@ public class WebSocket {
     @OnOpen
     public void onOpen(Session session) throws IOException {
         String token = session.getRequestParameterMap().get("token").get(0);
-        String userId = TokenUtils.getUserId(token);
 
         if (StringUtils.isBlank(token) || !TokenUtils.verify("token", token)) {
             session.close(closeReason);
             return;
         }
+
+        String userId = TokenUtils.getUserId(token);
 
         boolean singleLoginLimit = BeanUtil.getBean(Tunnel.class).singleLoginLimit();
         if (singleLoginLimit) {
@@ -65,7 +66,9 @@ public class WebSocket {
     @OnError
     public void onError(Session session, Throwable error) {
         String userId = sessions.get(session);
-        log.error("onError userId: {}, session : {}", userId, session, error);
+        if (!(error instanceof EOFException)) {
+            log.error("onError userId: {}, session : {}", userId, session, error);
+        }
     }
 
     @OnMessage
