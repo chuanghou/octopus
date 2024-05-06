@@ -149,6 +149,8 @@ public class Comp extends AggregateRoot {
                 interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
             }
             marketQuantity = interPoint.x;
+        } else if (transLimit.getLow() > 0){
+            nonMarketQuantity = transLimit.getLow();
         }
 
 
