@@ -85,22 +85,20 @@ public class RpcAspect {
             }
             t = throwable;
         } finally {
-            if (t != null) {
-                ExceptionType exceptionType = t instanceof BizEx ? ExceptionType.BIZ : ExceptionType.SYS;
-                if (returnType == Result.class) {
-                    result = Result.error(errorEnums, exceptionType);
-                } else {
-                    result = PageResult.pageError(errorEnums, exceptionType);
-                }
-                if (exceptionType == ExceptionType.BIZ) {
-                    ((Result<?>) result).setMessage(t.getMessage());
-                }
-
-                IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
-                String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
-                long cost = (System.currentTimeMillis() - start);
-                log.result(result).cost(System.currentTimeMillis() - start).log(logTag, t);
+            ExceptionType exceptionType = t instanceof BizEx ? ExceptionType.BIZ : ExceptionType.SYS;
+            if (returnType == Result.class) {
+                result = Result.error(errorEnums, exceptionType);
+            } else {
+                result = PageResult.pageError(errorEnums, exceptionType);
             }
+            if (exceptionType == ExceptionType.BIZ) {
+                ((Result<?>) result).setMessage(t.getMessage());
+            }
+
+            IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
+            String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
+            long cost = (System.currentTimeMillis() - start);
+            log.result(result).cost(System.currentTimeMillis() - start).log(logTag, t);
         }
         return result;
     }
