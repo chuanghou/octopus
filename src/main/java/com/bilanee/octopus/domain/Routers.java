@@ -507,12 +507,6 @@ public class Routers implements EventRouters {
     @FinalEventRouter
     public void routeStageIdChanged(List<CompEvent.Stepped> stepped, Context context) {
         StageId now = stepped.get(0).getNow();
-
-        compFacade.listSpotBiddenEntityVOs(now.toString(), Province.TRANSFER.name());
-        compFacade.listSpotBiddenEntityVOs(now.toString(), Province.RECEIVER.name());
-        compFacade.prepareCacheSpotMarketVO(now.toString(), Province.TRANSFER.name());
-        compFacade.prepareCacheSpotMarketVO(now.toString(), Province.RECEIVER.name());
-
         WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
     }
 
