@@ -8,7 +8,6 @@ import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
