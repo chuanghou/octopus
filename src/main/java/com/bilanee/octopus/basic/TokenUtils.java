@@ -9,10 +9,12 @@ import com.bilanee.octopus.infrastructure.entity.UserDO;
 import com.bilanee.octopus.infrastructure.mapper.AdminDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.UserDOMapper;
 import com.stellariver.milky.common.base.BeanUtil;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
 
 import java.util.Date;
 
+@CustomLog
 public class TokenUtils {
 
     private static final long EXPIRE_TIME = 3600 * 1000L;
@@ -37,27 +39,34 @@ public class TokenUtils {
             JWTVerifier jwtVerifier=JWT.require(Algorithm.HMAC256(TOKEN_SECRET)).withIssuer("auth0").build();
             jwtVerifier.verify(token);
         } catch (IllegalArgumentException | JWTVerificationException e) {
+            log.info("verify failure , not valid token " + token);
             return false;
         }
         if (key.equals("token")) {
+            String userId = TokenUtils.getUserId(token);
             UserDO userDO = BeanUtil.getBean(UserDOMapper.class).selectById(TokenUtils.getUserId(token));
-            return userDO != null;
+            if (userDO == null) {
+                log.info("verify failure , thanks to userId of trader " + userId + " not existed!");
+                return false;
+            }
         } else if (key.equals("adminToken")) {
+            String userId = TokenUtils.getUserId(token);
             AdminDO adminDO = BeanUtil.getBean(AdminDOMapper.class).selectById(TokenUtils.getUserId(token));
-            return adminDO != null;
+            if (adminDO == null) {
+                log.info("verify failure , thanks to userId of admin" + userId + "not existed!");
+                return false;
+            }
         } else {
+            log.info("verify failure , thanks to key " + key);
             return false;
         }
+        return true;
     }
 
     @SneakyThrows
     public static String getUserId(String token){
         JWTVerifier jwtVerifier=JWT.require(Algorithm.HMAC256(TOKEN_SECRET)).withIssuer("auth0").build();
         return jwtVerifier.verify(token).getClaim("userId").asString();
-    }
-
-    public static void main(String[] args) {
-        System.out.println(TokenUtils.sign("1000"));
     }
 
 }

@@ -38,6 +38,7 @@ public class WebSocket {
         String token = session.getRequestParameterMap().get("token").get(0);
 
         if (StringUtils.isBlank(token) || !TokenUtils.verify("token", token)) {
+            log.info("active close by " + token);
             session.close(closeReason);
             return;
         }
@@ -48,6 +49,7 @@ public class WebSocket {
         if (singleLoginLimit) {
             String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
             if (!Objects.equals(currentToken, token)) {
+                log.info("active close by current token " + token + "input token " + token);
                 session.close(closeReason);
                 return;
             }
@@ -60,15 +62,13 @@ public class WebSocket {
     @OnClose
     public void onClose(Session session){
         String userId = sessions.remove(session);
-        log.debug("onClose userId: {}, session : {}", userId, session);
+        log.info("onClose userId: {}, session : {}", userId, session);
     }
 
     @OnError
     public void onError(Session session, Throwable error) {
         String userId = sessions.get(session);
-        if (!(error instanceof EOFException)) {
-            log.error("onError userId: {}, session : {}", userId, session, error);
-        }
+        log.error("onError userId: {}, session : {}", userId, session, error);
     }
 
     @OnMessage
@@ -92,9 +92,7 @@ public class WebSocket {
                 }
             }
         } catch (Throwable error) {
-            if (!(error instanceof EOFException)) {
-                log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, error);
-            }
+            log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, error);
         }
     }
 
