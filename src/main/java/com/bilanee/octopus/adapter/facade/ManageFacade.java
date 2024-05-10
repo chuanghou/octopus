@@ -317,7 +317,7 @@ public class ManageFacade {
      */
     @SneakyThrows
     @PostMapping("/step")
-    public Result<Void> step() {
+    public synchronized Result<Void> step() {
         Comp comp = tunnel.runningComp();
         if (comp == null) {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("没有运行中的竞赛"));
@@ -329,6 +329,8 @@ public class ManageFacade {
         SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.acceptMemoryTransactional(command, new HashMap<>());
+        boolean recover = bidAspect.recover();
+        SysEx.falseThrow(bidAspect.recover(), ErrorEnums.SYS_EX.message("恢复失败"));
         return Result.success();
     }
 

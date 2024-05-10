@@ -53,4 +53,9 @@ public class BidAspect {
         return poll != null;
     }
 
+    @SneakyThrows
+    public boolean recover() {
+        return biddingCounter.addAndGet(1) == 0;
+    }
+
 }
