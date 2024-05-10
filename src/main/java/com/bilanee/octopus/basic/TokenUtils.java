@@ -45,17 +45,22 @@ public class TokenUtils {
         if (key.equals("token")) {
             String userId = TokenUtils.getUserId(token);
             UserDO userDO = BeanUtil.getBean(UserDOMapper.class).selectById(TokenUtils.getUserId(token));
-            log.info("verify failure , thanks to userId of trader" + userId + "not existed!");
-            return userDO != null;
+            if (userDO == null) {
+                log.info("verify failure , thanks to userId of trader " + userId + " not existed!");
+                return false;
+            }
         } else if (key.equals("adminToken")) {
             String userId = TokenUtils.getUserId(token);
             AdminDO adminDO = BeanUtil.getBean(AdminDOMapper.class).selectById(TokenUtils.getUserId(token));
-            log.info("verify failure , thanks to userId of admin" + userId + "not existed!");
-            return adminDO != null;
+            if (adminDO == null) {
+                log.info("verify failure , thanks to userId of admin" + userId + "not existed!");
+                return false;
+            }
         } else {
             log.info("verify failure , thanks to key " + key);
             return false;
         }
+        return true;
     }
 
     @SneakyThrows
