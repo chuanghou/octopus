@@ -99,7 +99,14 @@ public class RpcAspect {
             IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
             String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
             long cost = (System.currentTimeMillis() - start);
-            log.result(result).cost(System.currentTimeMillis() - start).log(logTag, t);
+            log.result(result).cost(System.currentTimeMillis() - start);
+            if (t == null) {
+                log.success(true).info(logTag);
+            } else if (t instanceof BizEx) {
+                log.success(false).warn(logTag, t);
+            } else {
+                log.success(false).error(logTag, t);
+            }
         }
         return result;
     }
