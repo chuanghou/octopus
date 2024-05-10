@@ -38,6 +38,7 @@ public class WebSocket {
         String token = session.getRequestParameterMap().get("token").get(0);
 
         if (StringUtils.isBlank(token) || !TokenUtils.verify("token", token)) {
+            log.info("active close by " + token);
             session.close(closeReason);
             return;
         }
@@ -48,6 +49,7 @@ public class WebSocket {
         if (singleLoginLimit) {
             String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
             if (!Objects.equals(currentToken, token)) {
+                log.info("active close by current token " + token + "input token " + token);
                 session.close(closeReason);
                 return;
             }
