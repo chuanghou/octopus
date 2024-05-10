@@ -266,14 +266,12 @@ public class Routers implements EventRouters {
      */
     @EventRouter(order = 1L)
     public void routeForInterClear(CompEvent.Stepped stepped, Context context) {
-        log.info("routeForInterClear A " + stepped);
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
         boolean b1 = now.getTradeStage() == TradeStage.MO_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
         if (!(b0 || b1)) {
             return;
         }
-        log.info("routeForInterClear B " + stepped);
         CompCmd.Clear command = CompCmd.Clear.builder().compId(now.getCompId()).build();
         CommandBus.driveByEvent(command, stepped);
         List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
@@ -281,7 +279,6 @@ public class Routers implements EventRouters {
             UnitCmd.InterDeduct interDeduct = UnitCmd.InterDeduct.builder().unitId(unit.getUnitId()).build();
             CommandBus.driveByEvent(interDeduct, stepped);
         } );
-        log.info("routeForInterClear C" + stepped);
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
         String dt = tunnel.runningComp().getDt();
@@ -305,9 +302,7 @@ public class Routers implements EventRouters {
                 interDealDOMapper.insert(interDealDO);
             }));
         });
-        log.info("routeForInterClear D" + stepped);
         storeDb(now);
-        log.info("routeForInterClear E " + stepped);
 
     }
 

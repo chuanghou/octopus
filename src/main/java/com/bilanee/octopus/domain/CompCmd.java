@@ -69,6 +69,23 @@ public class CompCmd {
     static public class Clear extends Command {
 
         Long compId;
+        @Override
+        public String getAggregateId() {
+            return compId.toString();
+        }
+
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class Forbid extends Command {
+
+        Long compId;
+        Boolean forbid;
 
         @Override
         public String getAggregateId() {

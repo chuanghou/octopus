@@ -42,6 +42,8 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
 
     String dt;
 
+    Boolean forbid;
+
     Boolean enableQuiz;
 
     Integer roundTotal;

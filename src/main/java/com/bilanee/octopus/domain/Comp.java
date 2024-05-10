@@ -57,6 +57,8 @@ public class Comp extends AggregateRoot {
 
     String dt;
 
+    Boolean forbid;
+
     List<StepRecord> stepRecords = new ArrayList<>();
 
     @StaticWire
@@ -108,6 +110,12 @@ public class Comp extends AggregateRoot {
     }
 
     @MethodHandler
+    public void forbid(CompCmd.Forbid command, Context context) {
+       forbid = command.getForbid();
+       context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
     public void clear(CompCmd.Clear command, Context context) {
         SysEx.trueThrow((tradeStage != TradeStage.AN_INTER) && (tradeStage != TradeStage.MO_INTER), ErrorEnums.SYS_EX);
         SysEx.trueThrow(marketStatus != MarketStatus.CLEAR, ErrorEnums.SYS_EX);
@@ -117,8 +125,10 @@ public class Comp extends AggregateRoot {
             List<Bid> timeFrameBids = bids.stream().filter(b -> b.getTimeFrame().equals(t)).collect(Collectors.toList());
             doClear(timeFrameBids, t);
         });
-
+        context.publishPlaceHolderEvent(getAggregateId());
     }
+
+
     @SuppressWarnings("UnstableApiUsage")
     private void doClear(List<Bid> bids, TimeFrame timeFrame) {
 
@@ -155,8 +165,8 @@ public class Comp extends AggregateRoot {
 
 
         if (interPoint != null) {
-            ClearUtil.deal(sortedBuyBids, interPoint, uniqueIdGetter);
-            ClearUtil.deal(sortedSellBids, interPoint, uniqueIdGetter);
+            ClearUtil.deal(sortedBuyBids, interPoint, false);
+            ClearUtil.deal(sortedSellBids, interPoint, true);
         }
 
         InterClearance.InterClearanceBuilder interClearBOBuilder = InterClearance.builder()

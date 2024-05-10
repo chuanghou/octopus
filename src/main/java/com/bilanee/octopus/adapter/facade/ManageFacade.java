@@ -312,6 +312,7 @@ public class ManageFacade {
     /**
      * 手动下一阶段
      */
+    @SneakyThrows
     @PostMapping("/step")
     public Result<Void> step() {
         Comp comp = tunnel.runningComp();
@@ -321,6 +322,9 @@ public class ManageFacade {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
+        CompCmd.Forbid forbidCommand = CompCmd.Forbid.builder().forbid(true).compId(comp.getCompId()).build();
+        CommandBus.accept(forbidCommand, new HashMap<>());
+        Thread.sleep(1_000);
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.acceptMemoryTransactional(command, new HashMap<>());
         return Result.success();

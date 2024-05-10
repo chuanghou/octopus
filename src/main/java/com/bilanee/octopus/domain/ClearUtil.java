@@ -12,8 +12,7 @@ import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -87,45 +86,32 @@ public class ClearUtil {
         return Range.closed(min, max);
     }
 
-    public static void deal(List<Bid> bids, Point<Double> interPoint, UniqueIdGetter uniqueIdGetter) {
+    public static void deal(List<Bid> bids, Point<Double> interPoint, boolean natural) {
+        bids = bids.stream().filter(b -> b.getQuantity() > 0D).collect(Collectors.toList());
         Double dealPrice = interPoint.y;
         Double totalDealQuantity = interPoint.x;
-
+        List<List<Bid>> sortedBids = bids.stream().collect(Collectors.groupingBy(Bid::getPrice)).entrySet()
+                .stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue).collect(Collectors.toList());
+        if (!natural) {
+            Collections.reverse(sortedBids);
+        }
+   ;
         Double accumulateQuantity = 0D;
         int endIndex = 0;
-        for (int i = 0; i < bids.size(); i++) {
-            accumulateQuantity += bids.get(i).getQuantity();
+        for (int i = 0; i < sortedBids.size(); i++) {
+            accumulateQuantity += sortedBids.get(i).stream().map(Bid::getQuantity).reduce(0D, Doubles::add);
             if (accumulateQuantity >= totalDealQuantity) {
                 endIndex = i;
                 break;
             }
         }
 
-        Double price = bids.get(endIndex).getPriceAfterTariff();
+        List<Bid> averageBids = sortedBids.get(endIndex);
+        List<Bid> notAverageBids = sortedBids.subList(0, endIndex).stream().flatMap(Collection::stream).collect(Collectors.toList());
 
-        for (int i = endIndex + 1; i < bids.size(); i++) {
-            if (!bids.get(i).getPriceAfterTariff().equals(bids.get(endIndex).getPriceAfterTariff())) {
-                break;
-            }
-            endIndex = i;
-        }
-
-        Integer startIndex = null;
-        for (int i = 0; i < endIndex + 1; i++) {
-            if (bids.get(i).getPriceAfterTariff().equals(price)) {
-                startIndex = i;
-                break;
-            }
-        }
-        if (startIndex == null) {
-            throw new RuntimeException();
-        }
-
-        List<Bid> averageBids = bids.subList(startIndex, endIndex + 1);
-        List<Bid> notAverageBids = bids.subList(0, startIndex);
-        Double notAverageQuantity = notAverageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
+        Double notAverageQuantity = notAverageBids.stream().map(Bid::getQuantity).reduce(0D, Doubles::add);
         double averageBidsQuantity = totalDealQuantity - notAverageQuantity;
-        Double originalAverageBidsQuantity = averageBids.stream().map(Bid::getQuantity).reduce(0D, Double::sum);
+        Double originalAverageBidsQuantity = averageBids.stream().map(Bid::getQuantity).reduce(0D, Doubles::add);
         averageBids.forEach(b -> {
             double averageQuantity = (averageBidsQuantity / originalAverageBidsQuantity) * b.getQuantity();
             Deal deal = Deal.builder().quantity(averageQuantity).price(Doubles.add(dealPrice, b.getTariff())).timeStamp(Clock.currentTimeMillis()).build();
@@ -137,8 +123,8 @@ public class ClearUtil {
         });
 
         bids.forEach(bid -> {
-            Double dealQuantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-            if (dealQuantity > 0) {
+            Double dealQuantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Doubles::add);
+            if (dealQuantity > 0D) {
                 bid.setBidStatus(dealQuantity < bid.getQuantity() ? BidStatus.PART_DEAL : BidStatus.COMPLETE_DEAL);
             }
         });
