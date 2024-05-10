@@ -76,21 +76,4 @@ public class CompCmd {
 
     }
 
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @EqualsAndHashCode(callSuper = true)
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class Forbid extends Command {
-
-        Long compId;
-        Boolean forbid;
-
-        @Override
-        public String getAggregateId() {
-            return compId.toString();
-        }
-
-    }
 }

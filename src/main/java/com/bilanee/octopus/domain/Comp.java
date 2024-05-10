@@ -57,8 +57,6 @@ public class Comp extends AggregateRoot {
 
     String dt;
 
-    Boolean forbid;
-
     List<StepRecord> stepRecords = new ArrayList<>();
 
     @StaticWire
@@ -107,12 +105,6 @@ public class Comp extends AggregateRoot {
         context.publish(event);
         return comp;
 
-    }
-
-    @MethodHandler
-    public void forbid(CompCmd.Forbid command, Context context) {
-       forbid = command.getForbid();
-       context.publishPlaceHolderEvent(getAggregateId());
     }
 
     @MethodHandler

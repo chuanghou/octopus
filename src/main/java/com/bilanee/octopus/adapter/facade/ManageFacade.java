@@ -15,6 +15,7 @@ import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
@@ -32,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -67,6 +69,7 @@ public class ManageFacade {
     final UnitDOMapper unitDOMapper;
     final GameRankingMapper gameRankingMapper;
     final GameResultMapper gameResultMapper;
+    final BidAspect bidAspect;
 
 
     /**
@@ -322,9 +325,8 @@ public class ManageFacade {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
-        CompCmd.Forbid forbidCommand = CompCmd.Forbid.builder().forbid(true).compId(comp.getCompId()).build();
-        CommandBus.accept(forbidCommand, new HashMap<>());
-        Thread.sleep(1_000);
+        boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
+        SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.acceptMemoryTransactional(command, new HashMap<>());
         return Result.success();

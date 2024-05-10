@@ -210,6 +210,7 @@ public class UnitFacade {
      * @param interBidsPO 省间报价请求结构体
      * @return 报单结果
      */
+    @ToBid
     @PostMapping("submitInterBidsPO")
     public Result<Void> submitInterBidsPO(@RequestBody InterBidsPO interBidsPO, @RequestHeader String token) {
 
@@ -420,6 +421,7 @@ public class UnitFacade {
      * @param intraBidPO 省内报价请求结构体
      * @return 报单结果
      */
+    @ToBid
     @PostMapping("submitIntraBidPO")
     public Result<Void> submitIntraBidPO(@RequestBody IntraBidPO intraBidPO) {
         StageId pStageId = StageId.parse(intraBidPO.getStageId());
@@ -466,6 +468,7 @@ public class UnitFacade {
      * @param intraCancelPO 省内撤单请求结构体
      * @return 报单结果
      */
+    @ToBid
     @PostMapping("submitIntraCancelPO")
     public Result<Void> submitIntraCancelPO(@RequestBody IntraCancelPO intraCancelPO) {
         StageId pStageId = StageId.parse(intraCancelPO.getStageId());
@@ -601,6 +604,7 @@ public class UnitFacade {
      * @param stageId 当前阶段id
      * @param intraDaBidPO 省内现货报单结构体
      */
+    @ToBid
     @PostMapping("submitDaBidVO")
     public Result<Void> submitDaBidVO(@NotBlank String stageId,
                                       @RequestBody IntraDaBidPO intraDaBidPO, @RequestHeader String token) {
@@ -1075,6 +1079,7 @@ public class UnitFacade {
      * 省间现货报价
      * @param spotBidPO 省间现货报价结构体
      */
+    @ToBid
     @PostMapping("submitInterSpotBid")
     public Result<Void> submitInterSpotBid(@RequestBody SpotBidPO spotBidPO, @RequestHeader String token) {
 

@@ -60,49 +60,4 @@ public class MyTest {
     public void interPointTest() {
         manageFacade.step();
     }
-
-
-    @SuppressWarnings("UnstableApiUsage")
-    private void doClear(List<Bid> bids, TimeFrame timeFrame) {
-
-        bids = bids.stream().filter(bid -> bid.getQuantity() > 0).collect(Collectors.toList());
-        List<Bid> sortedBuyBids = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
-                .sorted(Comparator.comparing(Bid::getPrice).reversed())
-                .collect(Collectors.toList());
-        List<Bid> sortedSellBids = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
-                .sorted(Comparator.comparing(Bid::getPrice))
-                .collect(Collectors.toList());
-
-        RangeMap<Double, Range<Double>> buyBrokenLine = ClearUtil.buildRangeMap(sortedBuyBids, Double.MAX_VALUE, 0D);
-        RangeMap<Double, Range<Double>> sellBrokenLine = ClearUtil.buildRangeMap(sortedSellBids, 0D, Double.MAX_VALUE);
-
-        Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
-
-        //  当没有报价的时候，此时相当于交点处于y轴上，因为成交量是0，所以此时成交价格没有意义
-        if (interPoint == null) {
-            interPoint = new Point<>(0D, null);
-        }
-
-        GridLimit transLimit = GridLimit.builder().low(62.23).high(92.79).build();
-
-        double nonMarketQuantity = 0D;
-        if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
-            nonMarketQuantity = transLimit.getLow() - interPoint.x;
-        }else if (interPoint.x > transLimit.getHigh()) { // // 当出清点大于最大传输量限制时
-            interPoint.x = transLimit.getHigh();
-            Range<Double> bR = buyBrokenLine.get(interPoint.x);
-            Range<Double> sR = sellBrokenLine.get(interPoint.x);
-            if (bR == null || sR == null) {
-                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
-            }
-            interPoint.y = ((bR.upperEndpoint() + bR.lowerEndpoint()) + (sR.upperEndpoint() + sR.lowerEndpoint()))/4;
-        }
-
-        if (!Kit.eq(interPoint.x, 0D)) {
-            ClearUtil.deal(sortedBuyBids, interPoint, null);
-            ClearUtil.deal(sortedSellBids, interPoint, null);
-        }
-
-    }
-
 }
