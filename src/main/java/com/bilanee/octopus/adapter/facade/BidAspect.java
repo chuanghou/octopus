@@ -51,7 +51,7 @@ public class BidAspect {
         }
         Object poll = queue.poll(length, timeUnit);
         if (poll != null) {
-            biddingCounter.getAndDecrement();
+            biddingCounter.getAndIncrement();
         }
         return false;
     }
