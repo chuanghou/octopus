@@ -330,7 +330,7 @@ public class ManageFacade {
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.acceptMemoryTransactional(command, new HashMap<>());
         boolean recover = bidAspect.recover();
-        SysEx.falseThrow(bidAspect.recover(), ErrorEnums.SYS_EX.message("恢复失败"));
+        SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
         return Result.success();
     }
 
