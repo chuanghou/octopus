@@ -41,6 +41,7 @@ public class MarketSettingDO {
   Double offerPriceFloor;
   Double bidPriceCap;
   Double bidPriceFloor;
+  Double clearedPriceCap;
   Integer balanceConstraintPenaltyFactor;
   Integer branchConstraintPenaltyFactor;
   Integer sectionConstraintPenaltyFactor;

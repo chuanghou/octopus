@@ -568,14 +568,14 @@ public class CompFacade {
         LambdaQueryWrapper<SprDO> eq0 = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, province.getDbCode());
         List<Qp> rtInstantQps = sprDOMapper.selectList(eq0).stream()
                 .sorted(Comparator.comparing(SprDO::getPrd))
-                .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getBidPriceCap())).collect(Collectors.toList());
+                .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getClearedPriceCap())).collect(Collectors.toList());
 
         List<Qp> tielineQps = new ArrayList<>();
         if (province == Province.TRANSFER) {
             LambdaQueryWrapper<TieLinePowerDO> eq1 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1);
             tielineQps = tieLinePowerDOMapper.selectList(eq1).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
-                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getBidPriceCap());
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getClearedPriceCap());
             }).collect(Collectors.toList());
         }
 
@@ -677,13 +677,13 @@ public class CompFacade {
         List<Double> intraLoads;
         // 日前
         if (da) {
-            LambdaQueryWrapper<LoadDaForecastBidDO> wrapper0 = new LambdaQueryWrapper<LoadDaForecastBidDO>()
-                    .eq(LoadDaForecastBidDO::getRoundId, roundId + 1)
-                    .in(LoadDaForecastBidDO::getLoadId, unitIds.keySet());
-            List<LoadDaForecastBidDO> loadDaForecastBidDOs = Collect.isEmpty(unitIds.keySet()) ? Collections.EMPTY_LIST : loadDaForecastBidMapper.selectList(wrapper0);
-                intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
+            LambdaQueryWrapper<SpotLoadCleared> wrapper0 = new LambdaQueryWrapper<SpotLoadCleared>()
+                    .eq(SpotLoadCleared::getRoundId, roundId + 1)
+                    .in(SpotLoadCleared::getLoadId, unitIds.keySet());
+            List<SpotLoadCleared> loadDaForecastBidDOs = Collect.isEmpty(unitIds.keySet()) ? Collections.EMPTY_LIST : loadDaForecastBidMapper.selectList(wrapper0);
+                intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(SpotLoadCleared::getPrd))
                     .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
-                    .map(bs -> bs.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum())
+                    .map(bs -> bs.stream().collect(Collectors.summarizingDouble(SpotLoadCleared::getDaClearedMw)).getSum())
                     .collect(Collectors.toList());
         } else {
             LambdaQueryWrapper<SprDO> eq = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());

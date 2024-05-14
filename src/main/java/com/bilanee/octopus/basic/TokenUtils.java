@@ -17,7 +17,7 @@ import java.util.Date;
 @CustomLog
 public class TokenUtils {
 
-    private static final long EXPIRE_TIME = 3600 * 1000L;
+    private static final long EXPIRE_TIME = 24 * 3600 * 1000L;
     public static String TOKEN_SECRET = new Date().toString();
 
     public static String sign(String userId){
