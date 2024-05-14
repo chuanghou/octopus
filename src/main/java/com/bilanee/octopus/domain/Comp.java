@@ -136,7 +136,7 @@ public class Comp extends AggregateRoot {
         Point<Double> interPoint = ClearUtil.analyzeInterPoint(buyBrokenLine, sellBrokenLine);
         GridLimit transLimit = tunnel.transLimit(getStageId(), timeFrame);
         double nonMarketQuantity = 0D, marketQuantity = 0D;
-        if (interPoint != null) {
+        if (interPoint != null && interPoint.getX() > 0D) {
             if (interPoint.x <= transLimit.getLow()) { // 当出清点小于等于最小传输量限制时
                 nonMarketQuantity = transLimit.getLow() - interPoint.x;
             }else if (interPoint.x > transLimit.getHigh()) { // // 当出清点大于最大传输量限制时
@@ -154,7 +154,7 @@ public class Comp extends AggregateRoot {
         }
 
 
-        if (interPoint != null) {
+        if (interPoint != null && interPoint.getX() > 0D) {
             ClearUtil.deal(sortedBuyBids, interPoint, false);
             ClearUtil.deal(sortedSellBids, interPoint, true);
         }
