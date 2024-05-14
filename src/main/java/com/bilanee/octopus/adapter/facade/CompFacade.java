@@ -660,6 +660,8 @@ public class CompFacade {
         return SpotBiddenVO.builder().daSpotBiddenEntityVO(daSpotBiddenEntityVO).rtSpotBiddenEntityVO(rtSpotBiddenEntityVO).build();
     }
 
+    final SpotLoadClearedMapper spotLoadClearedMapper;
+
     private SpotBiddenEntityVO buildSpotBiddenEntity(StageId parsedStageId, Integer roundId, Province parsedProvince, List<UnitDO> unitDOs, boolean da) {
         Map<Integer, Long> unitIds = unitDOs.stream().collect(Collectors.toMap(unitDO -> unitDO.getMetaUnit().getSourceId(), UnitDO::getUnitId));
 
@@ -680,7 +682,7 @@ public class CompFacade {
             LambdaQueryWrapper<SpotLoadCleared> wrapper0 = new LambdaQueryWrapper<SpotLoadCleared>()
                     .eq(SpotLoadCleared::getRoundId, roundId + 1)
                     .in(SpotLoadCleared::getLoadId, unitIds.keySet());
-            List<SpotLoadCleared> loadDaForecastBidDOs = Collect.isEmpty(unitIds.keySet()) ? Collections.EMPTY_LIST : loadDaForecastBidMapper.selectList(wrapper0);
+            List<SpotLoadCleared> loadDaForecastBidDOs = Collect.isEmpty(unitIds.keySet()) ? Collections.EMPTY_LIST : spotLoadClearedMapper.selectList(wrapper0);
                 intraLoads = loadDaForecastBidDOs.stream().collect(Collectors.groupingBy(SpotLoadCleared::getPrd))
                     .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
                     .map(bs -> bs.stream().collect(Collectors.summarizingDouble(SpotLoadCleared::getDaClearedMw)).getSum())
