@@ -170,7 +170,7 @@ public class Comp extends AggregateRoot {
         interClearBOBuilder.buyDeclaredQuantity(buyDeclaredQuantity)
                 .sellDeclaredQuantity(sellDeclaredQuantity)
                 .dealQuantity(marketQuantity)
-                .dealPrice(interPoint == null ? null : interPoint.y);
+                .dealPrice((interPoint == null || interPoint.getX() == 0D) ? null : interPoint.y);
 
         GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
 
