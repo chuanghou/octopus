@@ -6,6 +6,7 @@ import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.ExceptionType;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.tool.util.Json;
+import lombok.CustomLog;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Objects;
 
+@CustomLog
 public class TokenInterceptor implements HandlerInterceptor {
 
     final private String key;
@@ -39,6 +41,12 @@ public class TokenInterceptor implements HandlerInterceptor {
         String token = request.getHeader(key);
 
         if (StringUtils.isBlank(token) || !TokenUtils.verify(key, token)) {
+            log.arg0(token);
+            if (StringUtils.isNotBlank(token)) {
+                String userId = TokenUtils.getUserId(token);
+                log.arg1(userId);
+            }
+            log.info("TOKEN_ERROR");
             Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
             response.getWriter().append(Json.toJson(result));
             return false;
@@ -47,6 +55,7 @@ public class TokenInterceptor implements HandlerInterceptor {
             String userId = TokenUtils.getUserId(token);
             String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
             if (StringUtils.isBlank(currentToken) || !Objects.equals(token, currentToken)) {
+                log.arg0(userId).arg1(currentToken).arg2(token).info("TOKEN_ERROR_SINGLE_LIMIT");
                 Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
                 response.getWriter().append(Json.toJson(result));
                 return false;
