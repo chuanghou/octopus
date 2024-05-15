@@ -83,6 +83,7 @@ public class WebSocket {
                     String currentToken = BeanUtil.getBean(UserFacade.class).getTokens().get(userId);
                     boolean equals = Objects.equals(currentToken, token);
                     if (!equals) {
+                        log.info("active close by current token " + token + "input token " + token);
                         session.close(closeReason);
                         return;
                     }
