@@ -28,6 +28,7 @@ public class TokenUtils {
                 .withClaim("userId", userId)
                 .withExpiresAt(expireAt)
                 .sign(Algorithm.HMAC256(TOKEN_SECRET));
+        log.info("sign userId: " + userId + " by " + TOKEN_SECRET + "  " + token);
         return token;
     }
 
