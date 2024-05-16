@@ -31,7 +31,14 @@ public class WebSocket {
 
     private static final Executor executor = Executors.newFixedThreadPool(100);
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
-    private  static  final CloseReason closeReason = new CloseReason(CloseReason.CloseCodes.NORMAL_CLOSURE, "一个用户ID不能同时登录两个页面");
+
+
+    private  static  final CloseReason closeReason = new CloseReason(new CloseReason.CloseCode() {
+        @Override
+        public int getCode() {
+            return 2024;
+        }
+    }, "一个用户ID不能同时登录两个页面");
 
     @OnOpen
     public void onOpen(Session session) throws IOException {
