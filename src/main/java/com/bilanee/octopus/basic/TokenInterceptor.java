@@ -42,10 +42,6 @@ public class TokenInterceptor implements HandlerInterceptor {
 
         if (StringUtils.isBlank(token) || !TokenUtils.verify(key, token)) {
             log.arg0(token);
-            if (StringUtils.isNotBlank(token)) {
-                String userId = TokenUtils.getUserId(token);
-                log.arg1(userId);
-            }
             log.info("TOKEN_ERROR");
             Result<Void> result = Result.error(ErrorEnums.NOT_LOGIN, ExceptionType.BIZ);
             response.getWriter().append(Json.toJson(result));
