@@ -47,7 +47,13 @@ public class BidAspect {
             int counter = biddingCounter.addAndGet(-2);
             log.info("biddingCounter.addAndGet(-2) then get {}", counter);
             if (counter < 0) {
-                queue.add(new Object());
+                if (queue.isEmpty()) {
+                    synchronized (queue) {
+                        if (queue.isEmpty()) {
+                            queue.add(new Object());
+                        }
+                    }
+                }
             }
         }
     }
