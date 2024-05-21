@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -55,7 +56,7 @@ public class Comp extends AggregateRoot {
 
     String dt;
 
-    List<StepRecord> stepRecords = new ArrayList<>();
+    Map<String, StepRecord> stepRecords = new HashMap<>();
 
     @StaticWire
     static private DelayExecutor delayExecutor;
@@ -229,7 +230,7 @@ public class Comp extends AggregateRoot {
 
         StepRecord stepRecord = StepRecord.builder().stageId(getStageId().toString())
                 .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
-        stepRecords.add(stepRecord);
+        stepRecords.put(command.getStageId().toString(), stepRecord);
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);

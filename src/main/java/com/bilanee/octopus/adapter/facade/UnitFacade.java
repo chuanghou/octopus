@@ -275,7 +275,7 @@ public class UnitFacade {
     public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
         Comp comp = tunnel.runningComp();
-        StepRecord stepRecord = comp.getStepRecords().get(comp.getStepRecords().size() - 1);
+        StepRecord stepRecord = comp.getStepRecords().get(stageId);
 
 
         CompletableFuture<Map<IntraSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
@@ -335,7 +335,7 @@ public class UnitFacade {
     private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol, Comp comp) {
         Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
         String currentStageId = comp.getStageId().toString();
-        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId.toString())).findFirst().orElseThrow(SysEx::unreachable);
+        StepRecord stepRecord = comp.getStepRecords().get(stageId.toString());
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame()).build();
@@ -437,7 +437,7 @@ public class UnitFacade {
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
-        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(intraBidPO.getStageId())).findFirst().orElseThrow(SysEx::unreachable);
+        StepRecord stepRecord = comp.getStepRecords().get(intraBidPO.getStageId());
         List<Direction> directions = enableDirections(stepRecord);
         BizEx.falseThrow(directions.contains(intraBidPO.getBidPO().getDirection()), PARAM_FORMAT_WRONG.message("当前不允许此方向报单"));
         UnitCmd.IntraBidDeclare command = UnitCmd.IntraBidDeclare.builder()

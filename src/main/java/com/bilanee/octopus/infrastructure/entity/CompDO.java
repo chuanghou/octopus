@@ -7,13 +7,17 @@ import com.bilanee.octopus.basic.enums.MarketStatus;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.domain.DelayConfig;
 import com.bilanee.octopus.infrastructure.handlers.ListStepRecordHandler;
+import com.bilanee.octopus.infrastructure.handlers.MapStepRecordHandler;
 import com.stellariver.milky.domain.support.base.BaseDataObject;
 import com.stellariver.milky.infrastructure.base.database.AbstractMpDO;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Data
 @Builder
@@ -46,8 +50,8 @@ public class CompDO extends AbstractMpDO implements BaseDataObject<Long> {
 
     Integer roundTotal;
 
-    @TableField(typeHandler = ListStepRecordHandler.class)
-    List<StepRecord> stepRecords = new ArrayList<>();
+    @TableField(typeHandler = MapStepRecordHandler.class)
+    Map<String, StepRecord> stepRecords = new HashMap<>();
 
     @Override
     public Long getPrimaryId() {
