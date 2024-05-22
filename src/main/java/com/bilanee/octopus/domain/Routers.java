@@ -548,6 +548,7 @@ public class Routers implements EventRouters {
     final UnmetDemandMapper unmetDemandMapper;
     final TieLinePowerDOMapper tieLinePowerDOMapper;
     final InterSpotTransactionDOMapper interSpotTransactionDOMapper;
+    final MarketSettingMapper marketSettingMapper;
 
     /**
      * 填充省间现货报价
@@ -561,6 +562,8 @@ public class Routers implements EventRouters {
             return;
         }
         Integer roundId = now.getRoundId();
+        String dt = marketSettingMapper.selectById(1).getDt();
+
         LambdaQueryWrapper<TieLinePowerDO> eq
                 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         Map<Integer, Double> already = tieLinePowerDOMapper.selectList(eq).stream()
@@ -635,7 +638,7 @@ public class Routers implements EventRouters {
                             .clearedMw(dealTotal)
                             .clearedPrice(price)
                             .id(uniqueIdGetter.get())
-                            .dt(Clock.todayString())
+                            .dt(dt)
                             .build();
                     interSpotTransactionDOMapper.insert(spotTransactionDO);
                 } else {
