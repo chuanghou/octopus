@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeUnit;
 
+@CustomLog
 @RestController
 @RequiredArgsConstructor
 public class TransferController {
@@ -28,8 +30,14 @@ public class TransferController {
         return cache.get(requestUri + request.getQueryString(), () -> {
             URI uri = new URI("http", null, "106.15.54.213", 8002, requestUri, request.getQueryString(), null);
             ResponseEntity<String> responseEntity = restTemplate.exchange(uri, method, null, String.class);
+            log.info("restTemplate.exchange(uri, method, null, String.class), response body {}", responseEntity.getBody());
+            if (responseEntity.getBody() == null) {
+                responseEntity = restTemplate.exchange(uri, method, null, String.class);
+                log.info("restTemplate.exchange(uri, method, null, String.class), response body {}", responseEntity.getBody());
+            }
             return responseEntity.getBody();
         });
     }
+
 
 }
