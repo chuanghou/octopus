@@ -157,7 +157,10 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             }
             return false;
         });
-        BizEx.falseThrow(b, ErrorEnums.SYS_EX.message("无可撤报单" + cancelBidId));
+
+        if (!b) {
+            return;
+        }
 
         // 实时
         List<Bid> sortedBuyBids = buyPriorityQueue.stream()
