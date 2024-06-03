@@ -275,7 +275,7 @@ public class UnitFacade {
     public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
         Comp comp = tunnel.runningComp();
-        StepRecord stepRecord = comp.getStepRecords().get(comp.getStepRecords().size() - 1);
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
 
 
         CompletableFuture<Map<IntraSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
