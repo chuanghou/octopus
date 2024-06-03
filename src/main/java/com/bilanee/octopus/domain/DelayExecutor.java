@@ -1,9 +1,13 @@
 package com.bilanee.octopus.domain;
 
+import com.bilanee.octopus.adapter.facade.BidAspect;
+import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.domain.support.ErrorEnums;
 import com.stellariver.milky.domain.support.command.Command;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
 import lombok.CustomLog;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
 
@@ -15,14 +19,21 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @CustomLog
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DelayExecutor {
-
+    final BidAspect bidAspect;
     final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(1);
     ScheduledFuture<Object> scheduledFuture;
 
+    @SuppressWarnings("unchecked")
     public void schedule(Command command, long length, TimeUnit timeUnit) {
-        scheduledFuture = scheduledExecutorService.schedule(() -> CommandBus.acceptMemoryTransactional(command, new HashMap<>()), length, timeUnit);
+        scheduledFuture = (ScheduledFuture<Object>) scheduledExecutorService.schedule(() -> {
+            bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
+            CommandBus.acceptMemoryTransactional(command, new HashMap<>());
+            boolean recover = bidAspect.recover();
+            SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+        }, length, timeUnit);
     }
 
     public void removeStepCommand() {

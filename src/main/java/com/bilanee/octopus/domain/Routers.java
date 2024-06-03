@@ -503,6 +503,16 @@ public class Routers implements EventRouters {
     public void routeStageIdChanged(List<CompEvent.Stepped> stepped, Context context) {
         StageId now = stepped.get(0).getNow();
         WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
+        boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
+        boolean b1 = now.getMarketStatus() == MarketStatus.BID;
+        LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
+                .eq(StackDiagramDO::getRoundId, now.getRoundId() + 1);
+        Boolean required = stackDiagramDOMapper.selectList(eq).stream()
+                .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
+                .reduce(false, (a, b) -> a || b);
+        if (!required) {
+            manageFacade.step();
+        }
     }
 
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
@@ -525,23 +535,10 @@ public class Routers implements EventRouters {
             Boolean required = stackDiagramDOMapper.selectList(eq).stream()
                     .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
                     .reduce(false, (a, b) -> a || b);
-            if (!required) {
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        Thread.sleep(1_000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    manageFacade.step();
-                });
-            } else {
+            if (required) {
                 Ssh.exec("python manage.py inter_spot_default_bid");
             }
         }
-
-
-
-
     }
 
     final StackDiagramDOMapper stackDiagramDOMapper;
