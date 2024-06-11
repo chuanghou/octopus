@@ -505,14 +505,19 @@ public class Routers implements EventRouters {
         WebSocket.cast(WsMessage.builder().wsTopic(WsTopic.STAGE_ID).build());
         boolean b0 = now.getTradeStage() == TradeStage.DA_INTER;
         boolean b1 = now.getMarketStatus() == MarketStatus.BID;
-        LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
-                .eq(StackDiagramDO::getRoundId, now.getRoundId() + 1);
-        Boolean required = stackDiagramDOMapper.selectList(eq).stream()
-                .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
-                .reduce(false, (a, b) -> a || b);
-        if (!required) {
-            manageFacade.step();
+        if (b0 && b1) {
+            CompletableFuture.runAsync(() -> {
+                LambdaQueryWrapper<StackDiagramDO> eq = new LambdaQueryWrapper<StackDiagramDO>()
+                        .eq(StackDiagramDO::getRoundId, now.getRoundId() + 1);
+                Boolean required = stackDiagramDOMapper.selectList(eq).stream()
+                        .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
+                        .reduce(false, (a, b) -> a || b);
+                if (!required) {
+                    manageFacade.step();
+                }
+            });
         }
+
     }
 
     final InterSpotUnitOfferDOMapper interSpotUnitOfferDOMapper;
