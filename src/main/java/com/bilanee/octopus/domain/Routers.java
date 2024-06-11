@@ -1,7 +1,10 @@
 package com.bilanee.octopus.domain;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.bilanee.octopus.adapter.facade.*;
+import com.bilanee.octopus.adapter.facade.CompFacade;
+import com.bilanee.octopus.adapter.facade.ManageFacade;
+import com.bilanee.octopus.adapter.facade.QuizFacade;
+import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
@@ -32,8 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.sun.corba.se.impl.ior.iiop.IIOPProfileImpl.LocalCodeBaseSingletonHolder.comp;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -497,8 +498,6 @@ public class Routers implements EventRouters {
     }
 
     final CompFacade compFacade;
-    final DelayExecutor delayExecutor;
-    final BidAspect bidAspect;
 
     @FinalEventRouter
     public void routeStageIdChanged(List<CompEvent.Stepped> stepped, Context context) {
@@ -512,14 +511,7 @@ public class Routers implements EventRouters {
                 .map(s -> s.getIntraprovincialMonthlyTielinePower() < s.getDaReceivingTarget())
                 .reduce(false, (a, b) -> a || b);
         if (!required) {
-            Comp comp = tunnel.runningComp();
-            delayExecutor.removeStepCommand();
-            boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
-            SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
-            CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
-            CommandBus.acceptMemoryTransactional(command, new HashMap<>());
-            boolean recover = bidAspect.recover();
-            SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+            manageFacade.step();
         }
     }
 
