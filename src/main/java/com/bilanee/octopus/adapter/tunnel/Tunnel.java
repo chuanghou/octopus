@@ -55,6 +55,7 @@ public class Tunnel {
     final GeneratorResultMapper generatorResultMapper;
     final LoadResultMapper loadResultMapper;
     final RestTemplate restTemplate;
+    final SShProperties sShProperties;
 
 
 
@@ -88,7 +89,7 @@ public class Tunnel {
 
         String queryString = "trader_id_list=[" + String.join(",", traderIds) + "]&" + "robot_id_list=[" + String.join(",", robotIds) + "]";
 
-        URI uri = new URI("http", null, "106.15.54.213", 8002, "/automatic_assigned/", queryString, null);
+        URI uri = new URI("http", null, sShProperties.getHost(), 8002, "/automatic_assigned/", queryString, null);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
         Message parse = Json.parse(responseEntity.getBody(), Message.class);
         BizEx.falseThrow(Integer.valueOf(0).equals(parse.getCode()), ErrorEnums.SYS_EX.message(queryString + Json.toJson(parse)));

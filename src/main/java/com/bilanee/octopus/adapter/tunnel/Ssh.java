@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.tunnel;
 
+import com.stellariver.milky.common.base.BeanUtil;
 import lombok.CustomLog;
 import lombok.SneakyThrows;
 import net.schmizz.sshj.SSHClient;
@@ -25,9 +26,10 @@ public class Ssh {
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
         long s;
+        SShProperties sShProperties = BeanUtil.getBean(SShProperties.class);
         try {
-            ssh.connect("106.15.54.213");
-            ssh.authPassword("sjtu", "SJTU2024");
+            ssh.connect(sShProperties.getHost(), Integer.parseInt(sShProperties.getPort()));
+            ssh.authPassword(sShProperties.getUser(), sShProperties.getPwd());
             session = ssh.startSession();
             final Command cmd0 = session.exec("source ~/.bashrc; conda activate powermarket; cd /home/sjtu/PowerMarketExperiment; " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), StandardCharsets.UTF_8));
