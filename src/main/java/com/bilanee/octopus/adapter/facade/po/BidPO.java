@@ -41,9 +41,13 @@ public class BidPO {
     Direction direction;
 
     /**
-     * 运行阶段
+     * 峰平谷
      */
-    @NotNull
     TimeFrame timeFrame;
+
+    /**
+     * 时刻，滚动撮合用
+     */
+    Integer instant;
 
 }

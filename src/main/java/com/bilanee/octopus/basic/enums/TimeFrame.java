@@ -5,6 +5,7 @@ import com.bilanee.octopus.infrastructure.mapper.TimeFrameDOMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.stellariver.milky.common.base.BeanUtil;
+import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import lombok.AllArgsConstructor;
@@ -33,20 +34,30 @@ public enum TimeFrame {
         return Arrays.asList(TimeFrame.values());
     }
 
-    static final Cache<TimeFrame, List<Integer>> cache =  CacheBuilder.newBuilder().maximumSize(3)
-            .expireAfterWrite(1, TimeUnit.HOURS)
+    static final Cache<TimeFrame, List<Integer>> cache0 =  CacheBuilder.newBuilder().maximumSize(3)
+            .expireAfterWrite(24, TimeUnit.HOURS)
             .build();
 
     @SneakyThrows
     public final List<Integer> getPrds() {
         TimeFrame timeFrame = this;
-        return cache.get(this, () -> {
+        return cache0.get(this, () -> {
             TimeFrameDOMapper timeFrameDOMapper = BeanUtil.getBean(TimeFrameDOMapper.class);
             List<TimeFrameDO> timeFrameDOs = timeFrameDOMapper.selectList(null);
             Map<TimeFrame, Collection<TimeFrameDO>> collect = timeFrameDOs.stream()
                     .collect(Collect.listMultiMap(t -> Kit.enumOfMightEx(TimeFrame::getDbCode, t.getSendingPfvPrd()))).asMap();
             return collect.get(timeFrame).stream().map(TimeFrameDO::getPrd).collect(Collectors.toList());
         });
+    }
+
+    static final Cache<Integer, TimeFrame> cache1 =  CacheBuilder.newBuilder().maximumSize(24)
+            .expireAfterWrite(24, TimeUnit.HOURS)
+            .build();
+
+
+    @SneakyThrows
+    static public TimeFrame getByInstant(Integer instant) {
+        return cache1.get(instant, () -> Arrays.stream(TimeFrame.values()).filter(t -> t.getPrds().contains(instant)).findFirst().orElseThrow(SysEx::unreachable));
     }
 
 

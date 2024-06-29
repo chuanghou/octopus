@@ -28,6 +28,7 @@ public class BidDO {
     Long unitId;
     Province province;
     TimeFrame timeFrame;
+    Integer instant;
     TradeStage tradeStage;
     Direction direction;
     Double quantity;

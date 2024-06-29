@@ -12,6 +12,7 @@ public enum TradeType {
 
     INTER("中长期省间竞价"),
     INTRA("中长期省内竞价"),
+    ROLL("日前滚动竞价"),
     SPOT("实时/日前现货");
 
     String desc;

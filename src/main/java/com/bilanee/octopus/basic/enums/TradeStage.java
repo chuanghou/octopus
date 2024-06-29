@@ -5,31 +5,22 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Getter
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum TradeStage {
 
-    AN_INTER(1, "省间年度", true, TradeType.INTER, 1, 1),
-    AN_INTRA(2, "省内年度", true, TradeType.INTRA, 3, 1),
-    MO_INTER(3, "省间月度", true, TradeType.INTER, 2, 2),
-    MO_INTRA(4, "省内月度", true, TradeType.INTRA, 4, 2),
-    DA_INTRA(5, "省内现货", true, TradeType.SPOT, 5, null),
-    DA_INTER(6, "省间现货", true, TradeType.SPOT, 6, null),
-    END(7, "交易结算", false, null, null, null);
+    AN_INTER( "省间年度", TradeType.INTER, 1, 1),
+    AN_INTRA( "省内年度", TradeType.INTRA, 3, 1),
+    MO_INTER( "省间月度", TradeType.INTER, 2, 2),
+    MO_INTRA( "省内月度", TradeType.INTRA, 4, 2),
+    ROLL( "滚动撮合", TradeType.ROLL, 5, null), // 这个地方应该还需要一个定义，存储的成交结果有两个部分
+    DA_INTRA( "省内现货", TradeType.SPOT, null, null),
+    DA_INTER( "省间现货", TradeType.SPOT, null, null),
+    END( "交易结算", null, null, null);
 
-    final Integer dbCode;
     final String desc;
-    final Boolean tradeable;
     final TradeType tradeType;
     final Integer marketType;
     final Integer marketType2;
-
-    static public List<TradeStage> marketStages() {
-        return Arrays.stream(TradeStage.values()).filter(TradeStage::getTradeable).collect(Collectors.toList());
-    }
 }

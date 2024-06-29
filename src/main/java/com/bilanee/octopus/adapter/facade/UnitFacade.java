@@ -9,10 +9,7 @@ import com.bilanee.octopus.adapter.tunnel.BidQuery;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
-import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.IntraSymbol;
-import com.bilanee.octopus.domain.Unit;
-import com.bilanee.octopus.domain.UnitCmd;
+import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.cache.Cache;
@@ -22,6 +19,7 @@ import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.common.ConcurrentTool;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -319,7 +317,7 @@ public class UnitFacade {
                 }
             }
             List<Unit> us = units.stream().filter(u -> u.getMetaUnit().getProvince().equals(intraSymbol.getProvince())).collect(Collectors.toList());
-            builder.unitIntraBidVOs(to(us, StageId.parse(stageId), intraSymbol, comp));
+            builder.unitIntraBidVOs(toUnitIntraBidVOs(us, StageId.parse(stageId), intraSymbol, comp));
 
             List<IntraQuotationDO> intraQuotationDOs = quotationDOMap.get(intraSymbol);
             List<QuotationVO> quotationVOs = intraQuotationDOs.stream()
@@ -332,7 +330,80 @@ public class UnitFacade {
         return Result.success(intraSymbolBidVOs);
     }
 
-    private List<UnitIntraBidVO> to(List<Unit> units, StageId stageId, IntraSymbol intraSymbol, Comp comp) {
+    /**
+     * 滚动报价交易员报价页面
+     * @param stageId 阶段id
+     * @param token 前端携带的token
+     * @return 滚动报价交易员报价页面
+     */
+    @SneakyThrows
+    @GetMapping("listRollSymbolBidVOs")
+    public Result<List<RollSymbolBidVO>> listRollSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
+
+        Comp comp = tunnel.runningComp();
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
+
+        CompletableFuture<Map<RollSymbol, IntraInstantDO>> future0 = CompletableFuture.supplyAsync(() -> {
+            // prepare instant
+            LambdaQueryWrapper<IntraInstantDO> eq0 = new LambdaQueryWrapper<IntraInstantDO>().eq(IntraInstantDO::getStageId, stageId);
+            List<IntraInstantDO> intraInstantDOs = intraInstantDOMapper.selectList(eq0);
+            return Collect.toMap(intraInstantDOs, i -> new RollSymbol(i.getProvince(), i.getInstant()));
+        }, executor);
+
+        CompletableFuture<ListMultimap<RollSymbol, IntraQuotationDO>> future1 = CompletableFuture.supplyAsync(() -> {
+            // prepare quotation
+            LambdaQueryWrapper<IntraQuotationDO> eq1 = new LambdaQueryWrapper<IntraQuotationDO>().eq(IntraQuotationDO::getStageId, stageId);
+            List<IntraQuotationDO> intraQuotationDOs = intraQuotationDOMapper.selectList(eq1);
+            return intraQuotationDOs.stream().collect(Collect.listMultiMap(i -> new RollSymbol(i.getProvince(), i.getInstant())));
+        }, executor);
+
+        CompletableFuture<List<Unit>> future2 = CompletableFuture.supplyAsync(() -> {
+            StageId parsedStageId = StageId.parse(stageId);
+            return tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
+        });
+
+        Map<RollSymbol, IntraInstantDO> instantDOMap = future0.get();
+        ListMultimap<RollSymbol, IntraQuotationDO> quotationDOMap = future1.get();
+        List<Unit> units = future2.get();
+
+        boolean notCurrentStage = !tunnel.runningComp().getStageId().toString().equals(stageId);
+
+        List<RollSymbolBidVO> intraSymbolBidVOs = new ArrayList<>(ConcurrentTool.batchCall(RollSymbol.rollSymbols(), rollSymbol -> {
+            RollSymbolBidVO.RollSymbolBidVOBuilder builder = RollSymbolBidVO.builder()
+                    .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant());
+            IntraInstantDO intraInstantDO = instantDOMap.get(rollSymbol);
+
+            boolean b1 = System.currentTimeMillis() > stepRecord.getStartTimeStamp() + 180_000L;
+            if (intraInstantDO != null) {
+                if (notCurrentStage || b1) {
+                    builder.latestPrice(intraInstantDO.getPrice());
+                    builder.buyAsks(intraInstantDO.getBuyAsks());
+                    builder.sellAsks(intraInstantDO.getSellAsks());
+                    builder.buyVolumes(intraInstantDO.getBuyVolumes());
+                    builder.sellVolumes(intraInstantDO.getSellVolumes());
+                    builder.buyHighestPrice(intraInstantDO.getBuyAsks().stream().max(Comparator.comparing(Ask::getPrice)).map(Ask::getPrice).orElse(null));
+                    builder.buyLowestPrice(intraInstantDO.getBuyAsks().stream().min(Comparator.comparing(Ask::getPrice)).map(Ask::getPrice).orElse(null));
+                    builder.sellHighestPrice(intraInstantDO.getSellAsks().stream().max(Comparator.comparing(Ask::getPrice)).map(Ask::getPrice).orElse(null));
+                    builder.sellLowestPrice(intraInstantDO.getSellAsks().stream().min(Comparator.comparing(Ask::getPrice)).map(Ask::getPrice).orElse(null));
+                }
+            }
+            List<Unit> us = units.stream().filter(u -> u.getMetaUnit().getProvince().equals(rollSymbol.getProvince())).collect(Collectors.toList());
+            builder.unitRollBidVOs(toUnitRollBidVOs(us, StageId.parse(stageId), rollSymbol, comp));
+
+            List<IntraQuotationDO> intraQuotationDOs = quotationDOMap.get(rollSymbol);
+            List<QuotationVO> quotationVOs = intraQuotationDOs.stream()
+                    .map(i -> new QuotationVO(i.getTimeStamp(), i.getLatestPrice(), i.getBuyQuantity(), i.getSellQuantity()))
+                    .sorted(Comparator.comparing(QuotationVO::getTimeStamp)).collect(Collectors.toList());
+            builder.quotationVOs(quotationVOs);
+            builder.stepRecord(stepRecord);
+            return builder.build();
+        }, executor).values());
+        return Result.success(intraSymbolBidVOs);
+    }
+
+
+
+    private List<UnitIntraBidVO> toUnitIntraBidVOs(List<Unit> units, StageId stageId, IntraSymbol intraSymbol, Comp comp) {
         Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
         String currentStageId = comp.getStageId().toString();
         StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId.toString())).findFirst().orElseThrow(SysEx::unreachable);
@@ -415,6 +486,73 @@ public class UnitFacade {
 
     }
 
+    private List<UnitRollBidVO> toUnitRollBidVOs(List<Unit> units, StageId stageId, RollSymbol rollSymbol, Comp comp) {
+        Set<Long> unitIds = units.stream().map(Unit::getUnitId).collect(Collectors.toSet());
+        String currentStageId = comp.getStageId().toString();
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId.toString())).findFirst().orElseThrow(SysEx::unreachable);
+
+        BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
+                .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant()).build();
+        ListMultimap<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
+                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+        return units.stream().map(unit -> {
+            UnitRollBidVO.UnitRollBidVOBuilder builder = UnitRollBidVO.builder().unitId(unit.getUnitId())
+                    .capacity(unit.getMetaUnit().getMaxCapacity())
+                    .priceLimit(unit.getMetaUnit().getPriceLimit())
+                    .unitName(unit.getMetaUnit().getName())
+                    .unitType(unit.getMetaUnit().getUnitType())
+                    .sourceId(unit.getMetaUnit().getSourceId());
+
+            List<Bid> bids = bidMap.get(unit.getUnitId());
+            UnitType unitType = unit.getMetaUnit().getUnitType();
+            Double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            Double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
+
+            bids = bids.stream().filter(bid -> bid.getTradeStage().equals(stageId.getTradeStage())).collect(Collectors.toList());
+            Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
+            builder.transit(transit);
+
+            // 持仓限制
+            List<BalanceVO> balanceVOs = new ArrayList<>();
+            TimeFrame timeFrame = TimeFrame.getByInstant(rollSymbol.getInstant());
+            Map<Direction, Double> balanceMap = unit.getBalance().get(timeFrame);
+            Boolean bidden = unit.getRollBidden().get(rollSymbol.getInstant());
+            if (!Boolean.TRUE.equals(bidden)) {
+                balanceVOs = Arrays.stream(Direction.values()).map(d -> new BalanceVO(d, balanceMap.get(d))).collect(Collectors.toList());
+            }
+
+            List<Direction> directions = enableDirectionsOfRollStage(stepRecord);
+
+            if (Objects.equals(stageId.toString(), currentStageId)) {
+                balanceVOs = balanceVOs.stream().filter(b -> directions.contains(b.getDirection())).collect(Collectors.toList());
+            } else {
+                balanceVOs = new ArrayList<>();
+            }
+            builder.balanceVOs(balanceVOs);
+
+            // 报单内容
+            List<RollBidVO> rollBidVOs = bids.stream().map(bid -> RollBidVO.builder()
+                    .bidId(bid.getBidId())
+                    .quantity(bid.getQuantity())
+                    .transit(bid.getTransit())
+                    .cancelled(bid.getCancelled())
+                    .direction(bid.getDirection())
+                    .bidStatus(bid.getBidStatus())
+                    .price(bid.getPrice())
+                    .declareTimeStamp(bid.getDeclareTimeStamp())
+                    .cancelTimeStamp(bid.getCancelledTimeStamp())
+                    .operations(bid.getBidStatus().operations())
+                    .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
+                    .build()).collect(Collectors.toList());
+
+            return builder.rollBidVOs(rollBidVOs).build();
+        }).collect(Collectors.toList());
+
+    }
+
 
     /**
      * 省内报价接口
@@ -447,6 +585,37 @@ public class UnitFacade {
         return Result.success();
     }
 
+    /**
+     * 滚动报价接口
+     * @param rollBidPO 滚动报价请求结构体
+     * @return 报单结果
+     */
+    @ToBid
+    @PostMapping("submitRollBidPO")
+    public Result<Void> submitRollBidPO(@RequestBody RollBidPO rollBidPO) {
+        StageId pStageId = StageId.parse(rollBidPO.getStageId());
+        Comp comp = tunnel.runningComp();
+        StageId cStageId = comp.getStageId();
+        Long unitId = rollBidPO.getBidPO().getUnitId();
+        UnitType unitType = domainTunnel.getByAggregateId(Unit.class, unitId).getMetaUnit().getUnitType();
+        GridLimit gridLimit = tunnel.priceLimit(unitType);
+        gridLimit.check(rollBidPO.getBidPO().getPrice());
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA,
+                PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+
+        StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(rollBidPO.getStageId())).findFirst().orElseThrow(SysEx::unreachable);
+        List<Direction> directions = enableDirectionsOfRollStage(stepRecord);
+        BizEx.falseThrow(directions.contains(rollBidPO.getBidPO().getDirection()), PARAM_FORMAT_WRONG.message("当前不允许此方向报单"));
+        UnitCmd.RollBidDeclare command = UnitCmd.RollBidDeclare.builder()
+                .bid(Convertor.INST.to(rollBidPO.getBidPO())).stageId(pStageId).build();
+        CommandBus.accept(command, new HashMap<>());
+
+        return Result.success();
+    }
+
 
     public List<Direction> enableDirections(StepRecord stepRecord) {
         long now = System.currentTimeMillis();
@@ -457,6 +626,21 @@ public class UnitFacade {
         } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 210_000) {
             return Collections.EMPTY_LIST;
         } else if (now >= startTimeStamp + 210_000 && now < startTimeStamp + 300_000) {
+            return Collect.asList(Direction.SELL);
+        } else {
+            return Collect.asList(Direction.BUY, Direction.SELL);
+        }
+    }
+
+    public List<Direction> enableDirectionsOfRollStage(StepRecord stepRecord) {
+        long now = System.currentTimeMillis();
+        Long startTimeStamp = stepRecord.getStartTimeStamp();
+        Long endTimeStamp = stepRecord.getEndTimeStamp();
+        if (now >= startTimeStamp && now < startTimeStamp + 180_000) {
+            return Collect.asList(Direction.BUY);
+        } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 240_000) {
+            return Collections.EMPTY_LIST;
+        } else if (now >= startTimeStamp + 240_000 && now < startTimeStamp + 360_000) {
             return Collect.asList(Direction.SELL);
         } else {
             return Collect.asList(Direction.BUY, Direction.SELL);

@@ -5,17 +5,13 @@ import com.bilanee.octopus.adapter.ws.WebSocket;
 import com.bilanee.octopus.adapter.ws.WsMessage;
 import com.bilanee.octopus.adapter.ws.WsTopic;
 import com.bilanee.octopus.basic.*;
-import com.bilanee.octopus.basic.enums.BidStatus;
-import com.bilanee.octopus.basic.enums.Direction;
-import com.bilanee.octopus.basic.enums.Operation;
-import com.bilanee.octopus.basic.enums.TradeStage;
+import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.infrastructure.entity.Ask;
 import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
 import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
-import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
@@ -31,10 +27,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IntraProcessor implements EventHandler<IntraBidContainer> {
+public class Processor implements EventHandler<IntraBidContainer> {
 
     final Tunnel tunnel;
-    final IntraSymbol intraSymbol;
+    final Object symbol;
     final Disruptor<IntraBidContainer> disruptor = new Disruptor<>(IntraBidContainer::new, 1024, DaemonThreadFactory.INSTANCE);
     final PriorityQueue<Bid> buyPriorityQueue = new PriorityQueue<>(buyComparator);
     final PriorityQueue<Bid> sellPriorityQueue = new PriorityQueue<>(sellComparator);
@@ -42,9 +38,9 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
 
     private Double latestPrice = 0D;
 
-    public IntraProcessor(Tunnel tunnel, IntraSymbol intraSymbol, UniqueIdGetter uniqueIdGetter) {
+    public Processor(Tunnel tunnel, Object symbol, UniqueIdGetter uniqueIdGetter) {
         this.tunnel = tunnel;
-        this.intraSymbol = intraSymbol;
+        this.symbol = symbol;
         this.uniqueIdGetter = uniqueIdGetter;
         disruptor.handleEventsWith(this);
         disruptor.start();
@@ -114,6 +110,9 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         } else if (tradeStage == TradeStage.MO_INTRA) {
             wsTopic = WsTopic.MO_INTRA_BID;
             WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+        } else if (tradeStage == TradeStage.ROLL) {
+            wsTopic = WsTopic.ROLL_BID;
+            WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
         }
     }
 
@@ -175,12 +174,19 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
 
         StageId stageId = tunnel.runningComp().getStageId();
-
-        IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
-                .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
-                .build();
-        tunnel.record(null, intraInstantDO);
+        IntraInstantDO.IntraInstantDOBuilder builder = IntraInstantDO.builder().price(latestPrice)
+                .stageId(stageId.toString())
+                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes);
+        if (symbol instanceof IntraSymbol) {
+            Province province = ((IntraSymbol) symbol).getProvince();
+            TimeFrame timeFrame = ((IntraSymbol) symbol).getTimeFrame();
+            builder.province(province).timeFrame(timeFrame);
+        } else if (symbol instanceof RollSymbol){
+            Province province = ((RollSymbol) symbol).getProvince();
+            Integer instant = ((RollSymbol) symbol).getInstant();
+            builder.province(province).instant(instant);
+        }
+        tunnel.record(null, builder.build());
     }
 
     public void doNewBid(Bid declareBid) {
@@ -217,8 +223,17 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
              */
             Double dealPrice = buyBid.getDeclareTimeStamp() > sellBid.getDeclareTimeStamp() ? sellBid.getPrice() : buyBid.getPrice();
             double dealQuantity = Math.min(buyBid.getTransit(), sellBid.getTransit());
-            deal = Deal.builder().id(uniqueIdGetter.get()).timeFrame(intraSymbol.getTimeFrame()).buyUnitId(buyBid.getUnitId()).sellUnitId(sellBid.getUnitId())
-                    .quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis()).build();
+
+            Deal.DealBuilder<?, ?> builder = Deal.builder().id(uniqueIdGetter.get()).buyUnitId(buyBid.getUnitId()).sellUnitId(sellBid.getUnitId())
+                    .quantity(dealQuantity).price(dealPrice).timeStamp(Clock.currentTimeMillis());
+            if (symbol instanceof IntraSymbol) {
+                builder.timeFrame(((IntraSymbol) symbol).getTimeFrame());
+            } else if (symbol instanceof RollSymbol) {
+                builder.instant(((RollSymbol) symbol).getInstant());
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+            deal = builder.build();
             buyBid.getDeals().add(deal);
             sellBid.getDeals().add(deal);
             double buyBalance = buyBid.getTransit();
@@ -242,16 +257,23 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
             latestPrice = dealPrice;
 
             if (deal != null) {
-                IntraQuotationDO.IntraQuotationDOBuilder builder = IntraQuotationDO.builder()
-                        .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
+                IntraQuotationDO.IntraQuotationDOBuilder intraQuotationDOBuilder = IntraQuotationDO.builder()
+                        .stageId(stageId.toString())
                         .latestPrice(latestPrice)
                         .timeStamp(Clock.currentTimeMillis());
-                if (declareBid.getDirection() == Direction.BUY) {
-                    builder.sellQuantity(0D).buyQuantity(deal.getQuantity());
+                if (symbol instanceof IntraSymbol) {
+                    intraQuotationDOBuilder.province(((IntraSymbol) symbol).getProvince())
+                            .timeFrame(((IntraSymbol) symbol).getTimeFrame());
                 } else {
-                    builder.sellQuantity(deal.getQuantity()).buyQuantity(0D);
+                    intraQuotationDOBuilder.province(((RollSymbol) symbol).getProvince())
+                            .instant(((RollSymbol) symbol).getInstant());
                 }
-                tunnel.recordIntraQuotationDO(builder.build());
+                if (declareBid.getDirection() == Direction.BUY) {
+                    intraQuotationDOBuilder.sellQuantity(0D).buyQuantity(deal.getQuantity());
+                } else {
+                    intraQuotationDOBuilder.sellQuantity(deal.getQuantity()).buyQuantity(0D);
+                }
+                tunnel.recordIntraQuotationDO(intraQuotationDOBuilder.build());
             }
         }
 
@@ -267,11 +289,17 @@ public class IntraProcessor implements EventHandler<IntraBidContainer> {
         List<Volume> buyVolumes = extractVolumes(buyPriorityQueue, false);
         List<Volume> sellVolumes = extractVolumes(sellPriorityQueue, true);
 
-        IntraInstantDO intraInstantDO = IntraInstantDO.builder().price(latestPrice)
-                .stageId(stageId.toString()).province(intraSymbol.getProvince()).timeFrame(intraSymbol.getTimeFrame())
-                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes)
-                .build();
-        tunnel.recordIntraInstantDO(intraInstantDO);
+        IntraInstantDO.IntraInstantDOBuilder builder = IntraInstantDO.builder().price(latestPrice).stageId(stageId.toString())
+                .buyAsks(buyAsks).sellAsks(sellAsks).buyVolumes(buyVolumes).sellVolumes(sellVolumes);
+        if (symbol instanceof IntraSymbol) {
+            builder.province(((IntraSymbol) symbol).getProvince()).timeFrame(((IntraSymbol) symbol).getTimeFrame());
+        } else if (symbol instanceof RollSymbol) {
+            builder.province(((RollSymbol) symbol).getProvince()).instant(((RollSymbol) symbol).getInstant());
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+
+        tunnel.recordIntraInstantDO(builder.build());
 
 
     }

@@ -21,6 +21,7 @@ public class BidQuery {
     TradeStage tradeStage;
     Direction direction;
     TimeFrame timeFrame;
+    Integer instant;
     BidStatus bidStatus;
 
 }

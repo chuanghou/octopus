@@ -21,6 +21,7 @@ public class IntraQuotationDO {
     String stageId;
     Province province;
     TimeFrame timeFrame;
+    Integer instant;
     Double buyQuantity;
     Double sellQuantity;
     Double latestPrice;

@@ -16,7 +16,6 @@ import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -306,52 +305,6 @@ public class Routers implements EventRouters {
 
     }
 
-
-    public void routeForInterClear(CompEvent.Stepped stepped) {
-        log.info("routeForInterClear A " + stepped);
-        StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
-        boolean b1 = now.getTradeStage() == TradeStage.MO_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
-        if (!(b0 || b1)) {
-            return;
-        }
-        log.info("routeForInterClear B" + stepped);
-        CompCmd.Clear command = CompCmd.Clear.builder().compId(now.getCompId()).build();
-        CommandBus.driveByEvent(command, stepped);
-        List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
-        units.forEach(unit -> {
-            UnitCmd.InterDeduct interDeduct = UnitCmd.InterDeduct.builder().unitId(unit.getUnitId()).build();
-            CommandBus.driveByEvent(interDeduct, stepped);
-        } );
-        log.info("routeForInterClear C" + stepped);
-        BidQuery bidQuery = BidQuery.builder()
-                .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
-        String dt = tunnel.runningComp().getDt();
-        Map<Long, Collection<Bid>> bidMap = tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap();
-        bidMap.forEach((unitId, bids) -> {
-            Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
-            bids.stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach(((tf, bs) -> {
-                List<Deal> deals = bs.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
-                if (Collect.isEmpty(deals)) {
-                    return;
-                }
-                InterDealDO interDealDO = InterDealDO.builder().roundId(now.getRoundId() + 1)
-                        .resourceId(unit.getMetaUnit().getSourceId())
-                        .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
-                        .dt(dt)
-                        .pfvPrd(tf.getDbCode())
-                        .marketType(now.getTradeStage().getMarketType2())
-                        .clearedMw(deals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
-                        .clearedPrice(deals.get(0).getPrice())
-                        .build();
-                interDealDOMapper.insert(interDealDO);
-            }));
-        });
-        storeDb(now);
-
-
-    }
-
     @EventRouter(order = 1L)
     public void routeForIntraBid(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
@@ -492,6 +445,20 @@ public class Routers implements EventRouters {
             List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
             units.forEach(unit -> {
                 UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(unit.getUnitId()).build();
+                CommandBus.driveByEvent(command, stepped);
+            });
+        }
+    }
+
+
+    @EventRouter(order = 1L)
+    public void rollBalance(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.BID;
+        if (b0) {
+            List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
+            units.forEach(unit -> {
+                UnitCmd.RollBalance command = UnitCmd.RollBalance.builder().unitId(unit.getUnitId()).build();
                 CommandBus.driveByEvent(command, stepped);
             });
         }

@@ -91,6 +91,24 @@ public class UnitCmd {
 
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class RollBidDeclare extends Command {
+
+        StageId stageId;
+        Bid bid;
+
+        @Override
+        public String getAggregateId() {
+            return bid.getUnitId().toString();
+        }
+
+    }
+
 
     @Data
     @Builder
@@ -99,6 +117,23 @@ public class UnitCmd {
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class IntraBidCancel extends Command{
+
+        Long unitId;
+        Long cancelBidId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class RollBidCancel extends Command{
 
         Long unitId;
         Long cancelBidId;
@@ -126,6 +161,22 @@ public class UnitCmd {
         }
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class RollBidCancelled extends Command{
+
+        Long unitId;
+        Long cancelBidId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+    }
 
     @Data
     @Builder
@@ -134,6 +185,23 @@ public class UnitCmd {
     @EqualsAndHashCode(callSuper = true)
     @FieldDefaults(level = AccessLevel.PRIVATE)
     static public class FillBalance extends Command {
+
+        Long unitId;
+
+        @Override
+        public String getAggregateId() {
+            return unitId.toString();
+        }
+
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class RollBalance extends Command {
 
         Long unitId;
 

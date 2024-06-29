@@ -28,6 +28,7 @@ public class IntraInstantDO {
     String stageId;
     Province province;
     TimeFrame timeFrame;
+    Integer instant;
     Double price;
     @TableField(typeHandler = ListAskJsonHandler.class)
     List<Ask> buyAsks;

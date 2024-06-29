@@ -10,6 +10,8 @@ import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
+import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.tool.Doubles;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
@@ -23,10 +25,8 @@ import org.mapstruct.Builder;
 import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -44,6 +44,7 @@ public class Unit extends AggregateRoot {
     String userId;
     MetaUnit metaUnit;
     Map<TimeFrame, Map<Direction, Double>> balance;
+    Map<Integer, Boolean> rollBidden;
     Map<TimeFrame, Direction> moIntraDirection;
 
     @StaticWire
@@ -143,12 +144,8 @@ public class Unit extends AggregateRoot {
         bid.setBidStatus(BidStatus.NEW_DECELERATED);
 
         TradeStage tradeStage = tunnel.runningComp().getStageId().getTradeStage();
-        if (tradeStage == TradeStage.MO_INTRA) {
-            Direction direction = moIntraDirection.computeIfAbsent(bid.getTimeFrame(), k -> bid.getDirection());
-            BizEx.trueThrow(bid.getDirection() != direction, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
-        } else {
-            BizEx.trueThrow(bid.getDirection() != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("省内年度报单方向错误"));
-        }
+
+
 
         Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
         BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
@@ -161,6 +158,46 @@ public class Unit extends AggregateRoot {
 
     @MethodHandler
     public void handle(UnitCmd.IntraBidCancel command, Context context) {
+        intraManager.cancel(command.getCancelBidId());
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
+    public void handle(UnitCmd.RollBidDeclare command, Context context) {
+        Bid bid = command.getBid();
+        boolean bidden = Boolean.TRUE.equals(rollBidden.get(bid.getInstant()));
+        BizEx.trueThrow(bidden, PARAM_FORMAT_WRONG.message("时刻" + bid.getInstant() + "已有报单"));
+        bid.setBidId(uniqueIdGetter.get());
+        bid.setUserId(userId);
+        bid.setCompId(command.getStageId().getCompId());
+        bid.setProvince(metaUnit.getProvince());
+        bid.setRoundId(tunnel.runningComp().getRoundId());
+        bid.setTradeStage(command.getStageId().getTradeStage());
+        bid.setDeclareTimeStamp(Clock.currentTimeMillis());
+        bid.setBidStatus(BidStatus.NEW_DECELERATED);
+        Integer instant = bid.getInstant();
+        TimeFrame timeFrame = Arrays.stream(TimeFrame.values()).filter(t -> t.getPrds().contains(instant)).findFirst().orElseThrow(SysEx::unreachable);
+        Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
+
+        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getTransit());
+        intraManager.declare(bid);
+        rollBidden.put(instant, true);
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
+    public void handle(UnitCmd.RollBidCancelled command, Context context) {
+        Bid bid = tunnel.getByBidId(command.getCancelBidId());
+        double returnBalance = bid.getQuantity() - bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+        if (returnBalance < 1E-8) {
+            rollBidden.remove(bid.getInstant());
+        }
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
+    public void handle(UnitCmd.RollBidCancel command, Context context) {
         intraManager.cancel(command.getCancelBidId());
         context.publishPlaceHolderEvent(getAggregateId());
     }
@@ -181,6 +218,24 @@ public class Unit extends AggregateRoot {
             Double reverseBalance = metaUnit.getCapacity().get(timeFrame).get(generalDirection) - balances.get(generalDirection);
             balances.put(generalDirection.opposite(), reverseBalance);
         }));
+        context.publishPlaceHolderEvent(getAggregateId());
+    }
+
+    @MethodHandler
+    public void handle(UnitCmd.RollBalance command, Context context) {
+        BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(unitId)).tradeStage(TradeStage.MO_INTRA).build();
+        List<Bid> bids = tunnel.listBids(bidQuery).stream().filter(bid -> !Collect.isEmpty(bid.getDeals())).collect(Collectors.toList());
+        if (Collect.isEmpty(bids)) {
+            return;
+        }
+        Direction direction = bids.get(0).getDirection();
+        if (direction == metaUnit.getUnitType().generalDirection()) {
+            Arrays.stream(TimeFrame.values()).forEach(t -> {
+                double sum = bids.stream().filter(b -> b.getTimeFrame() == t).flatMap(b -> b.getDeals().stream())
+                        .collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+                balance.get(t).put(direction, balance.get(t).get(direction) + sum);
+            });
+        }
         context.publishPlaceHolderEvent(getAggregateId());
     }
 

@@ -35,7 +35,8 @@ public class UnitDO extends AbstractMpDO implements BaseDataObject<Long> {
     Map<TimeFrame, Map<Direction, Double>> balance;
     @TableField(typeHandler = MoIntraDirectionHandler.class)
     Map<TimeFrame, Direction> moIntraDirection;
-
+    @TableField(typeHandler = RollBiddenHandler.class)
+    Map<Integer, Boolean> rollBidden;
 
     @Override
     public Long getPrimaryId() {

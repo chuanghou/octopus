@@ -15,7 +15,14 @@ public enum WsTopic {
     /**
      * 月度省内竞价
      */
-    MO_INTRA_BID
+    MO_INTRA_BID,
 
 
-}
+    /**
+     * 滚动撮合
+     */
+    ROLL_BID
+
+
+
+    }
