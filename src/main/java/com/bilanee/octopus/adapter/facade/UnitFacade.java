@@ -506,16 +506,6 @@ public class UnitFacade {
                     .unitType(unit.getMetaUnit().getUnitType())
                     .sourceId(unit.getMetaUnit().getSourceId());
 
-            Bid bid = bidMap.get(unit.getUnitId());
-            UnitType unitType = unit.getMetaUnit().getUnitType();
-            Double general = 0D, opposite = 0D;
-            if (bid.getDirection() == unitType.generalDirection()) {
-                general = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-            } else {
-                opposite = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-            }
-            builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
-            builder.transit(bid.getTransit());
 
             // 持仓限制
             List<BalanceVO> balanceVOs = new ArrayList<>();
@@ -534,23 +524,39 @@ public class UnitFacade {
                 balanceVOs = new ArrayList<>();
             }
             builder.balanceVOs(balanceVOs);
+            Bid bid = bidMap.get(unit.getUnitId());
+            if (bid != null) {
+                UnitType unitType = unit.getMetaUnit().getUnitType();
+                Double general = 0D, opposite = 0D;
+                if (bid.getDirection() == unitType.generalDirection()) {
+                    general = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                } else {
+                    opposite = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                }
+                builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
+                builder.transit(bid.getTransit());
 
-            // 报单内容
-            RollBidVO rollBidVO = RollBidVO.builder()
-                    .bidId(bid.getBidId())
-                    .quantity(bid.getQuantity())
-                    .transit(bid.getTransit())
-                    .cancelled(bid.getCancelled())
-                    .direction(bid.getDirection())
-                    .bidStatus(bid.getBidStatus())
-                    .price(bid.getPrice())
-                    .declareTimeStamp(bid.getDeclareTimeStamp())
-                    .cancelTimeStamp(bid.getCancelledTimeStamp())
-                    .operations(bid.getBidStatus().operations())
-                    .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
-                    .build();
 
-            return builder.rollBidVO(rollBidVO).build();
+
+                // 报单内容
+                RollBidVO rollBidVO = RollBidVO.builder()
+                        .bidId(bid.getBidId())
+                        .quantity(bid.getQuantity())
+                        .transit(bid.getTransit())
+                        .cancelled(bid.getCancelled())
+                        .direction(bid.getDirection())
+                        .bidStatus(bid.getBidStatus())
+                        .price(bid.getPrice())
+                        .declareTimeStamp(bid.getDeclareTimeStamp())
+                        .cancelTimeStamp(bid.getCancelledTimeStamp())
+                        .operations(bid.getBidStatus().operations())
+                        .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
+                        .build();
+                builder.rollBidVO(rollBidVO);
+            }
+
+
+            return builder.build();
         }).collect(Collectors.toList());
 
     }
