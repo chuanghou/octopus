@@ -8,10 +8,7 @@ import com.bilanee.octopus.adapter.tunnel.InterClearance;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
-import com.bilanee.octopus.domain.Comp;
-import com.bilanee.octopus.domain.DelayExecutor;
-import com.bilanee.octopus.domain.IntraSymbol;
-import com.bilanee.octopus.domain.Unit;
+import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.cache.Cache;
@@ -169,6 +166,7 @@ public class CompFacade {
                 cache.get("intraClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doIntraClearanceVO(stageId, token));
         return Result.success(intraClearanceVOs);
     }
+
     public List<IntraClearanceVO> doIntraClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
 
         Comp comp = tunnel.runningComp();
@@ -267,6 +265,122 @@ public class CompFacade {
                     .build();
         }).collect(Collectors.toList());
     }
+
+
+    /**
+     * 滚动结算结果
+     * @param stageId 阶段id
+     * @param token 访问者token
+     * @return 滚动出清结果
+     */
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    @GetMapping("/rollClearanceVO")
+    public Result<List<RollClearanceVO>> rollClearanceVO(@NotBlank String stageId, @RequestHeader String token) {
+        List<RollClearanceVO> intraClearanceVOs = (List<RollClearanceVO>)
+                cache.get("rollClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doRollClearanceVO(stageId, token));
+        return Result.success(intraClearanceVOs);
+    }
+
+    public List<RollClearanceVO> doRollClearanceVO(String stageId, String token) {
+
+        Comp comp = tunnel.runningComp();
+        StageId parsed = StageId.parse(stageId);
+        boolean review = tunnel.review();
+
+        String userId = TokenUtils.getUserId(token);
+
+        BidQuery bidQuery = BidQuery.builder().compId(parsed.getCompId())
+                .roundId(parsed.getRoundId()).tradeStage(parsed.getTradeStage())
+                .build();
+
+        LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
+                .eq(UnitDO::getCompId, parsed.getCompId())
+                .eq(UnitDO::getRoundId, parsed.getRoundId());
+        List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
+
+
+        ListMultimap<RollSymbol, Bid> groupedBids = tunnel.listBids(bidQuery).stream()
+                .collect(Collect.listMultiMap(i -> new RollSymbol(i.getProvince(), i.getInstant())));
+        return RollSymbol.rollSymbols().stream().map(rollSymbol -> {
+            List<Bid> bids = groupedBids.get(rollSymbol);
+            List<Deal> deals = bids.stream().flatMap(b -> b.getDeals().stream()).collect(Collectors.toList());
+            Double maxPrice = deals.stream().max(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
+            Double minPrice = deals.stream().min(Comparator.comparing(Deal::getPrice)).map(Deal::getPrice).orElse(null);
+            Double totalVolume = deals.stream().map(d -> d.getPrice() * d.getQuantity()).reduce(0D, Double::sum);
+            Double totalQuantity = deals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            Double averagePrice = totalQuantity.equals(0D) ? null : (totalVolume / totalQuantity);
+            Double buyTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY)
+                    .map(Bid::getCloseBalance).filter(Objects::nonNull).reduce(0D, Double::sum);
+            Double sellTransit = bids.stream().filter(bid -> bid.getDirection() == Direction.SELL)
+                    .map(Bid::getCloseBalance).filter(Objects::nonNull).reduce(0D, Double::sum);
+
+
+            List<Pair<Double, Double>> cDeals = bids.stream().filter(bid -> bid.getDirection() == Direction.BUY).flatMap(bid -> bid.getDeals().stream())
+                    .collect(Collectors.groupingBy(Deal::getPrice)).entrySet().stream()
+                    .map(ee -> Pair.of(ee.getKey(), ee.getValue().stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum()))
+                    .collect(Collectors.toList());
+
+            cDeals = cDeals.stream().sorted(Map.Entry.comparingByKey()).collect(Collectors.toList());
+
+            List<DealHist> dealHists = new ArrayList<>();
+            if (cDeals.size() > 10) {
+                double min = cDeals.stream().min(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft() - 1;
+                double max = cDeals.stream().max(Map.Entry.comparingByKey()).orElseThrow(SysEx::unreachable).getLeft() + 1;
+                double v = (max - min) / 10;
+                for (int i = 0; i < 10; i++) {
+                    Double left = min + i * v;
+                    Double right = min + (i + 1) * v;
+                    List<Pair<Double, Double>> collectDeals = cDeals.stream()
+                            .filter(cDeal -> cDeal.getLeft() >= left && cDeal.getLeft() < right)
+                            .collect(Collectors.toList());
+                    double sum = collectDeals.stream().collect(Collectors.summarizingDouble(Pair::getRight)).getSum();
+                    DealHist dealHist = DealHist.builder().left(left).right(right).value(sum).build();
+                    dealHists.add(dealHist);
+                }
+            } else {
+                dealHists = cDeals.stream().sorted(Map.Entry.comparingByKey())
+                        .map(d -> DealHist.builder().left(d.getLeft()).right(d.getLeft()).value(d.getRight()).build()).collect(Collectors.toList());
+            }
+
+            List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                    .filter(unit -> review || unit.getUserId().equals(userId))
+                    .filter(unit -> unit.getMetaUnit().getProvince().equals(rollSymbol.getProvince())).collect(Collectors.toList());
+            List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
+                    .stream().sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId())).collect(Collectors.toList());
+
+            List<UnitDealVO> unitDealVOs = bids.stream().filter(unit -> review || unit.getUserId().equals(userId))
+                    .collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(ee -> {
+                        Long unitId = ee.getKey();
+                        Collection<Bid> unitBids = ee.getValue();
+                        List<Deal> unitDeals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+                        Double unitTotalVolume = unitDeals.stream().map(deal -> deal.getQuantity() * deal.getPrice()).reduce(0D, Double::sum);
+                        Double unitTotalQuantity = unitDeals.stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                        return UnitDealVO.builder()
+                                .unitId(unitId)
+                                .averagePrice(unitTotalVolume.equals(0D) ? null : unitTotalVolume / unitTotalQuantity)
+                                .totalQuantity(unitTotalQuantity)
+                                .deals(unitDeals)
+                                .build();
+                    }).collect(Collectors.toList());
+
+
+            return RollClearanceVO.builder()
+                    .province(rollSymbol.getProvince())
+                    .instant(rollSymbol.getInstant())
+                    .averageDealPrice(averagePrice)
+                    .maxDealPrice(maxPrice)
+                    .minDealPrice(minPrice)
+                    .buyTotalTransit(buyTransit)
+                    .sellTotalTransit(sellTransit)
+                    .totalDealQuantity(totalQuantity/2)
+                    .unitVOs(unitVOs)
+                    .unitDealVOS(unitDealVOs)
+                    .dealHists(dealHists)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
 
     private List<Section> buildSections(List<Bid> bids, Comparator<Bid> comparator) {
         List<Bid> sortedBids = bids.stream().sorted(comparator).collect(Collectors.toList());
