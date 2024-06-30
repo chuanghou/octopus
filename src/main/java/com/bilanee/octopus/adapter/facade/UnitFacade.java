@@ -535,9 +535,6 @@ public class UnitFacade {
                 }
                 builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
                 builder.transit(bid.getTransit());
-
-
-
                 // 报单内容
                 RollBidVO rollBidVO = RollBidVO.builder()
                         .bidId(bid.getBidId())
@@ -554,8 +551,6 @@ public class UnitFacade {
                         .build();
                 builder.rollBidVO(rollBidVO);
             }
-
-
             return builder.build();
         }).collect(Collectors.toList());
 
