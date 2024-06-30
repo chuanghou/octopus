@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.basic.TokenUtils;
 import com.bilanee.octopus.domain.Routers;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() {
-        manageFacade.step();
+        unitFacade.listRollSymbolBidVOs("751718.TRADE.0.ROLL.BID", TokenUtils.sign("1000"));
     }
 }

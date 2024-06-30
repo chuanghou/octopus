@@ -44,6 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -368,7 +369,7 @@ public class UnitFacade {
 
         boolean notCurrentStage = !tunnel.runningComp().getStageId().toString().equals(stageId);
 
-        List<RollSymbolBidVO> intraSymbolBidVOs = new ArrayList<>(ConcurrentTool.batchCall(RollSymbol.rollSymbols(), rollSymbol -> {
+        List<RollSymbolBidVO> rollSymbolBidVOs = new ArrayList<>(ConcurrentTool.batchCall(RollSymbol.rollSymbols(), rollSymbol -> {
             RollSymbolBidVO.RollSymbolBidVOBuilder builder = RollSymbolBidVO.builder()
                     .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant());
             IntraInstantDO intraInstantDO = instantDOMap.get(rollSymbol);
@@ -398,7 +399,7 @@ public class UnitFacade {
             builder.stepRecord(stepRecord);
             return builder.build();
         }, executor).values());
-        return Result.success(intraSymbolBidVOs);
+        return Result.success(rollSymbolBidVOs);
     }
 
 
@@ -493,8 +494,10 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant()).build();
-        ListMultimap<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
-                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+        Map<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
+                tunnel.listBids(bidQuery).stream().collect(Collectors.groupingBy(Bid::getInstant)).values().stream()
+                        .map(instantBids -> instantBids.stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElseThrow(SysEx::unreachable))
+                        .collect(Collectors.toMap(Bid::getUnitId, Function.identity()));
         return units.stream().map(unit -> {
             UnitRollBidVO.UnitRollBidVOBuilder builder = UnitRollBidVO.builder().unitId(unit.getUnitId())
                     .capacity(unit.getMetaUnit().getMaxCapacity())
@@ -503,20 +506,16 @@ public class UnitFacade {
                     .unitType(unit.getMetaUnit().getUnitType())
                     .sourceId(unit.getMetaUnit().getSourceId());
 
-            List<Bid> bids = bidMap.get(unit.getUnitId()).stream()
-                    .collect(Collectors.groupingBy(Bid::getInstant)).values().stream()
-                    .map(instantBids -> instantBids.stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElseThrow(SysEx::unreachable))
-                    .collect(Collectors.toList());
+            Bid bid = bidMap.get(unit.getUnitId());
             UnitType unitType = unit.getMetaUnit().getUnitType();
-            Double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
-                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
-            Double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
-                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            Double general = 0D, opposite = 0D;
+            if (bid.getDirection() == unitType.generalDirection()) {
+                general = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            } else {
+                opposite = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+            }
             builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
-
-            bids = bids.stream().filter(bid -> bid.getTradeStage().equals(stageId.getTradeStage())).collect(Collectors.toList());
-            Double transit = bids.stream().map(Bid::getTransit).reduce(0D, Double::sum);
-            builder.transit(transit);
+            builder.transit(bid.getTransit());
 
             // 持仓限制
             List<BalanceVO> balanceVOs = new ArrayList<>();
@@ -537,7 +536,7 @@ public class UnitFacade {
             builder.balanceVOs(balanceVOs);
 
             // 报单内容
-            List<RollBidVO> rollBidVOs = bids.stream().map(bid -> RollBidVO.builder()
+            RollBidVO rollBidVO = RollBidVO.builder()
                     .bidId(bid.getBidId())
                     .quantity(bid.getQuantity())
                     .transit(bid.getTransit())
@@ -549,9 +548,9 @@ public class UnitFacade {
                     .cancelTimeStamp(bid.getCancelledTimeStamp())
                     .operations(bid.getBidStatus().operations())
                     .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
-                    .build()).collect(Collectors.toList());
+                    .build();
 
-            return builder.rollBidVOs(rollBidVOs).build();
+            return builder.rollBidVO(rollBidVO).build();
         }).collect(Collectors.toList());
 
     }

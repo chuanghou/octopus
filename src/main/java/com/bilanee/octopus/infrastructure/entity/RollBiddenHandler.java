@@ -11,6 +11,7 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class RollBiddenHandler extends BaseTypeHandler<Map<Integer, Boolean>> {
@@ -25,7 +26,7 @@ public class RollBiddenHandler extends BaseTypeHandler<Map<Integer, Boolean>> {
     public Map<Integer, Boolean> getNullableResult(ResultSet rs, String columnName)
             throws SQLException {
         String result = rs.getString(columnName);
-        return rs.wasNull() ? null : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
+        return rs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
         });
     }
 
@@ -33,7 +34,7 @@ public class RollBiddenHandler extends BaseTypeHandler<Map<Integer, Boolean>> {
     public Map<Integer, Boolean> getNullableResult(ResultSet rs, int columnIndex)
             throws SQLException {
         String result = rs.getString(columnIndex);
-        return rs.wasNull() ? null : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
+        return rs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
         });
     }
 
@@ -41,7 +42,7 @@ public class RollBiddenHandler extends BaseTypeHandler<Map<Integer, Boolean>> {
     public Map<Integer, Boolean> getNullableResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String result = cs.getString(columnIndex);
-        return cs.wasNull() ? null : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
+        return cs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<Integer, Boolean>>() {
         });
     }
 

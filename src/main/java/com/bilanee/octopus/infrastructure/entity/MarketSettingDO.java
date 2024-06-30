@@ -78,6 +78,8 @@ public class MarketSettingDO {
   Integer intraprovincialMonthlyResultDuration;
   Integer interprovincialSpotResultDuration;
   Integer intraprovincialSpotResultDuration;
+  Integer intraprovincialSpotRollingBidDuration;
+  Integer intraprovincialSpotRollingResultDuration;
   Integer settleResultDuration;
   Integer reviewDuration;
   Integer quizCompeteDuration;
@@ -107,7 +109,6 @@ public class MarketSettingDO {
   Boolean isOpeningIntraprovSpotQuickOffer;
   Boolean isOpeningThermalStartOffer;
   Boolean isOpeningThermalMinoutputOffer;
-
 
   /**
    * 使能单点登录限制

@@ -68,6 +68,6 @@ public class UnitRollBidVO {
     /**
      * 报单及成交结果详情
      */
-    List<RollBidVO> rollBidVOs;
+    RollBidVO rollBidVO;
 
 }

@@ -11,6 +11,7 @@ import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MoIntraDirectionHandler extends BaseTypeHandler<Map<TimeFrame, Direction>> {
@@ -25,7 +26,7 @@ public class MoIntraDirectionHandler extends BaseTypeHandler<Map<TimeFrame, Dire
     public Map<TimeFrame, Direction> getNullableResult(ResultSet rs, String columnName)
             throws SQLException {
         String result = rs.getString(columnName);
-        return rs.wasNull() ? null : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
+        return rs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
         });
     }
 
@@ -33,7 +34,7 @@ public class MoIntraDirectionHandler extends BaseTypeHandler<Map<TimeFrame, Dire
     public Map<TimeFrame, Direction> getNullableResult(ResultSet rs, int columnIndex)
             throws SQLException {
         String result = rs.getString(columnIndex);
-        return rs.wasNull() ? null : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
+        return rs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
         });
     }
 
@@ -41,7 +42,7 @@ public class MoIntraDirectionHandler extends BaseTypeHandler<Map<TimeFrame, Dire
     public Map<TimeFrame, Direction> getNullableResult(CallableStatement cs, int columnIndex)
             throws SQLException {
         String result = cs.getString(columnIndex);
-        return cs.wasNull() ? null : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
+        return cs.wasNull() ? new HashMap<>() : Json.parse(result, new TypeReference<Map<TimeFrame, Direction>>() {
         });
     }
 

@@ -250,6 +250,7 @@ public class ManageFacade {
                 .put(TradeStage.MO_INTRA, marketSettingDO.getIntraprovincialMonthlyBidDuration())
                 .put(TradeStage.DA_INTRA, marketSettingDO.getIntraprovincialSpotBidDuration())
                 .put(TradeStage.DA_INTER, marketSettingDO.getInterprovincialSpotBidDuration())
+                .put(TradeStage.ROLL, marketSettingDO.getIntraprovincialSpotRollingBidDuration())
                 .getMap();
 
         Map<TradeStage, Integer> resultLengths = StreamMap.<TradeStage, Integer>init()
@@ -259,6 +260,7 @@ public class ManageFacade {
                 .put(TradeStage.MO_INTRA, marketSettingDO.getIntraprovincialMonthlyResultDuration())
                 .put(TradeStage.DA_INTRA, marketSettingDO.getIntraprovincialSpotResultDuration())
                 .put(TradeStage.DA_INTER, marketSettingDO.getInterprovincialSpotResultDuration())
+                .put(TradeStage.ROLL, marketSettingDO.getIntraprovincialSpotRollingResultDuration())
                 .getMap();
 
         DelayConfig delayConfig = DelayConfig.builder()
@@ -326,12 +328,17 @@ public class ManageFacade {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
-        boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
-        SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
+        boolean needBidAspect = comp.getCompStage() == CompStage.TRADE && comp.getMarketStatus() == MarketStatus.BID;
+        if (needBidAspect) {
+            boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
+            SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
+        }
         CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
         CommandBus.acceptMemoryTransactional(command, new HashMap<>());
-        boolean recover = bidAspect.recover();
-        SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+        if (needBidAspect) {
+            boolean recover = bidAspect.recover();
+            SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+        }
         log.info("End step");
         return Result.success();
     }
