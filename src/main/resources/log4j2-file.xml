@@ -2,7 +2,7 @@
 <Configuration status="INFO">
     <Appenders>
         <RollingFile name="RollingFile" fileName="/mnt/octopus/app.log" filePattern="archive/app-%d{yyyy-MM-dd}-%i.log.gz">
-            <JsonTemplateLayout eventTemplateUri="classpath:layout.json" locationInfoEnabled="true"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="64MB"/>
             </Policies>
