@@ -503,7 +503,10 @@ public class UnitFacade {
                     .unitType(unit.getMetaUnit().getUnitType())
                     .sourceId(unit.getMetaUnit().getSourceId());
 
-            List<Bid> bids = bidMap.get(unit.getUnitId());
+            List<Bid> bids = bidMap.get(unit.getUnitId()).stream()
+                    .collect(Collectors.groupingBy(Bid::getInstant)).values().stream()
+                    .map(instantBids -> instantBids.stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElseThrow(SysEx::unreachable))
+                    .collect(Collectors.toList());
             UnitType unitType = unit.getMetaUnit().getUnitType();
             Double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
@@ -670,6 +673,34 @@ public class UnitFacade {
         BizEx.falseThrow(b0 || b1, PARAM_FORMAT_WRONG.message("当前报单处于处于不可撤状态"));
         Long unitId = bidDO.getUnitId();
         UnitCmd.IntraBidCancel command = UnitCmd.IntraBidCancel.builder().unitId(unitId).cancelBidId(intraCancelPO.getBidId()).build();
+        CommandBus.accept(command, new HashMap<>());
+        return Result.success();
+    }
+
+
+    /**
+     * 滚动撤单接口
+     * @param rollCancelPO 滚动撤单请求结构体
+     * @return 报单结果
+     */
+    @ToBid
+    @PostMapping("submitRollCancelPO")
+    public Result<Void> submitRollCancelPO(@RequestBody RollCancelPO rollCancelPO) {
+        StageId pStageId = StageId.parse(rollCancelPO.getStageId());
+        StageId cStageId = tunnel.runningComp().getStageId();
+
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.ROLL,
+                PARAM_FORMAT_WRONG.message("当前为滚动报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
+                PARAM_FORMAT_WRONG.message("竞价阶段已经关闭，未达成挂牌，将由系统自动撤单"));
+
+        BidDO bidDO = bidDOMapper.selectById(rollCancelPO.getBidId());
+        boolean b0 = bidDO.getBidStatus() == BidStatus.NEW_DECELERATED;
+        boolean b1 = bidDO.getBidStatus() == BidStatus.PART_DEAL;
+        BizEx.falseThrow(b0 || b1, PARAM_FORMAT_WRONG.message("当前报单处于处于不可撤状态"));
+        Long unitId = bidDO.getUnitId();
+        UnitCmd.RollBidCancel command = UnitCmd.RollBidCancel.builder().unitId(unitId).cancelBidId(rollCancelPO.getBidId()).build();
         CommandBus.accept(command, new HashMap<>());
         return Result.success();
     }
