@@ -450,20 +450,6 @@ public class Routers implements EventRouters {
         }
     }
 
-
-    @EventRouter(order = 1L)
-    public void rollBalance(CompEvent.Stepped stepped, Context context) {
-        StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.BID;
-        if (b0) {
-            List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
-            units.forEach(unit -> {
-                UnitCmd.RollBalance command = UnitCmd.RollBalance.builder().unitId(unit.getUnitId()).build();
-                CommandBus.driveByEvent(command, stepped);
-            });
-        }
-    }
-
     final CompFacade compFacade;
 
     @FinalEventRouter

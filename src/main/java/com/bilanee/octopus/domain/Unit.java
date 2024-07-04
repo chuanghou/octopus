@@ -219,24 +219,6 @@ public class Unit extends AggregateRoot {
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
-    @MethodHandler
-    public void handle(UnitCmd.RollBalance command, Context context) {
-        BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(unitId)).tradeStage(TradeStage.MO_INTRA).build();
-        List<Bid> bids = tunnel.listBids(bidQuery).stream().filter(bid -> !Collect.isEmpty(bid.getDeals())).collect(Collectors.toList());
-        if (Collect.isEmpty(bids)) {
-            return;
-        }
-        Direction direction = bids.get(0).getDirection();
-        if (direction == metaUnit.getUnitType().generalDirection()) {
-            Arrays.stream(TimeFrame.values()).forEach(t -> {
-                double sum = bids.stream().filter(b -> b.getTimeFrame() == t).flatMap(b -> b.getDeals().stream())
-                        .collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
-                balance.get(t).put(direction, balance.get(t).get(direction) + sum);
-            });
-        }
-        context.publishPlaceHolderEvent(getAggregateId());
-    }
-
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public interface Convertor extends BasicConvertor {
@@ -248,7 +230,4 @@ public class Unit extends AggregateRoot {
 
     }
 
-    public static void main(String[] args) {
-        System.out.println(new Date(1696947778906L));
-    }
 }
