@@ -617,7 +617,7 @@ public class UnitFacade {
         gridLimit.check(rollBidPO.getBidPO().getPrice());
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
         BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.ROLL,
-                PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
+                PARAM_FORMAT_WRONG.message("当前为日前滚动报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
