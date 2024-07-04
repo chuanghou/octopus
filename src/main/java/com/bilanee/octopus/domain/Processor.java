@@ -336,7 +336,7 @@ public class Processor implements EventHandler<IntraBidContainer> {
     private List<Ask> extractAsks(Iterable<Bid> bids) {
         List<Ask> asks = new ArrayList<>();
         for (Bid bid : bids) {
-            if (asks.size() == 0 || !asks.get(asks.size() - 1).getPrice().equals(bid.getPrice())) {
+            if (asks.isEmpty() || !asks.get(asks.size() - 1).getPrice().equals(bid.getPrice())) {
                 if (asks.size() >= 5) {
                     break;
                 }
