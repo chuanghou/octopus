@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.GridLimit;
+import com.bilanee.octopus.basic.enums.Operation;
 import com.bilanee.octopus.basic.enums.UnitType;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
@@ -69,5 +70,10 @@ public class UnitRollBidVO {
      * 报单及成交结果详情
      */
     RollBidVO rollBidVO;
+
+    /**
+     * 操作
+     */
+    List<Operation> operations;
 
 }

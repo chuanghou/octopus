@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Data
 @Builder
@@ -21,6 +22,7 @@ public class RollCancelPO {
     /**
      * 待取消的量价单Id
      */
+    @NotNull
     Long bidId;
 
 }

@@ -69,11 +69,6 @@ public class RollBidVO {
     BidStatus bidStatus;
 
     /**
-     * 操作
-     */
-    List<Operation> operations;
-
-    /**
      * 成交详细
      */
     List<RollDealVO> rollDealVOs;

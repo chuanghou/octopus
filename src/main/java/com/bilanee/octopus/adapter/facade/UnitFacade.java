@@ -538,6 +538,7 @@ public class UnitFacade {
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
 
             Bid bid = instantBidMap.get(unit.getUnitId());
+            List<Operation> operations = Collect.asList(Operation.DECLARE);
             if (bid != null) {
                 double quantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
                 if (bid.getDirection() == unitType.generalDirection()) {
@@ -546,6 +547,9 @@ public class UnitFacade {
                     opposite += quantity;
                 }
                 builder.transit(bid.getTransit());
+                if (bid.getBidStatus() != BidStatus.MANUAL_CANCELLED) {
+                    operations = bid.getBidStatus().operations();
+                }
                 // 报单内容
                 RollBidVO rollBidVO = RollBidVO.builder()
                         .bidId(bid.getBidId())
@@ -557,11 +561,11 @@ public class UnitFacade {
                         .price(bid.getPrice())
                         .declareTimeStamp(bid.getDeclareTimeStamp())
                         .cancelTimeStamp(bid.getCancelledTimeStamp())
-                        .operations(bid.getBidStatus().operations())
                         .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
                         .build();
                 builder.rollBidVO(rollBidVO);
             }
+            builder.operations(operations);
             builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
             return builder.build();
         }).collect(Collectors.toList());
