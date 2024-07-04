@@ -180,7 +180,6 @@ public class Unit extends AggregateRoot {
         Double unitBalance = balance.get(TimeFrame.getByInstant(bid.getInstant())).get(bid.getDirection());
         BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
-        balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getTransit());
         intraManager.declare(bid);
         rollBidden.put(instant, true);
         context.publishPlaceHolderEvent(getAggregateId());
@@ -189,8 +188,7 @@ public class Unit extends AggregateRoot {
     @MethodHandler
     public void handle(UnitCmd.RollBidCancelled command, Context context) {
         Bid bid = tunnel.getByBidId(command.getCancelBidId());
-        double returnBalance = bid.getQuantity() - bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
-        if (returnBalance < 1E-8) {
+        if (Collect.isEmpty(bid.getDeals())) {
             rollBidden.remove(bid.getInstant());
         }
         context.publishPlaceHolderEvent(getAggregateId());
