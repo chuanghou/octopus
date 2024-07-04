@@ -494,10 +494,16 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant()).build();
-        Map<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
+        Map<Long, Bid> instantBidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
                 tunnel.listBids(bidQuery).stream().collect(Collectors.groupingBy(Bid::getInstant)).values().stream()
                         .map(instantBids -> instantBids.stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElseThrow(SysEx::unreachable))
                         .collect(Collectors.toMap(Bid::getUnitId, Function.identity()));
+
+        bidQuery = BidQuery.builder().unitIds(unitIds)
+                .province(rollSymbol.getProvince()).timeFrame(TimeFrame.getByInstant(rollSymbol.getInstant())).build();
+        ListMultimap<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
+                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
+
         return units.stream().map(unit -> {
             UnitRollBidVO.UnitRollBidVOBuilder builder = UnitRollBidVO.builder().unitId(unit.getUnitId())
                     .capacity(unit.getMetaUnit().getMaxCapacity())
@@ -505,7 +511,6 @@ public class UnitFacade {
                     .unitName(unit.getMetaUnit().getName())
                     .unitType(unit.getMetaUnit().getUnitType())
                     .sourceId(unit.getMetaUnit().getSourceId());
-
 
             // 持仓限制
             List<BalanceVO> balanceVOs = new ArrayList<>();
@@ -524,16 +529,22 @@ public class UnitFacade {
                 balanceVOs = new ArrayList<>();
             }
             builder.balanceVOs(balanceVOs);
-            Bid bid = bidMap.get(unit.getUnitId());
+
+            List<Bid> bids = bidMap.get(unit.getUnitId());
+            UnitType unitType = unit.getMetaUnit().getUnitType();
+            double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+            double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
+                    .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+
+            Bid bid = instantBidMap.get(unit.getUnitId());
             if (bid != null) {
-                UnitType unitType = unit.getMetaUnit().getUnitType();
-                Double general = 0D, opposite = 0D;
+                double quantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
                 if (bid.getDirection() == unitType.generalDirection()) {
-                    general = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                    general += quantity;
                 } else {
-                    opposite = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
+                    opposite += quantity;
                 }
-                builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
                 builder.transit(bid.getTransit());
                 // 报单内容
                 RollBidVO rollBidVO = RollBidVO.builder()
@@ -551,6 +562,7 @@ public class UnitFacade {
                         .build();
                 builder.rollBidVO(rollBidVO);
             }
+            builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
             return builder.build();
         }).collect(Collectors.toList());
 
@@ -604,7 +616,7 @@ public class UnitFacade {
         GridLimit gridLimit = tunnel.priceLimit(unitType);
         gridLimit.check(rollBidPO.getBidPO().getPrice());
         BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
-        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.INTRA,
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.ROLL,
                 PARAM_FORMAT_WRONG.message("当前为中长期省省内报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID,
                 PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
