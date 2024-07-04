@@ -177,7 +177,7 @@ public class Unit extends AggregateRoot {
         bid.setBidStatus(BidStatus.NEW_DECELERATED);
         Integer instant = bid.getInstant();
         TimeFrame timeFrame = Arrays.stream(TimeFrame.values()).filter(t -> t.getPrds().contains(instant)).findFirst().orElseThrow(SysEx::unreachable);
-        Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
+        Double unitBalance = balance.get(TimeFrame.getByInstant(bid.getInstant())).get(bid.getDirection());
         BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
         balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getTransit());
