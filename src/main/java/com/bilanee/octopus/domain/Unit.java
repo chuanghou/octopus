@@ -11,7 +11,6 @@ import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.common.tool.Doubles;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.AggregateRoot;
@@ -26,7 +25,6 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -52,7 +50,7 @@ public class Unit extends AggregateRoot {
     @StaticWire
     static private Tunnel tunnel;
     @StaticWire
-    static private IntraManager intraManager;
+    static private ProcessorManager processorManager;
     @StaticWire
     static private BidDOMapper bidDOMapper;
 
@@ -152,13 +150,13 @@ public class Unit extends AggregateRoot {
 
         balance.get(bid.getTimeFrame()).put(bid.getDirection(), unitBalance - bid.getTransit());
 
-        intraManager.declare(bid);
+        processorManager.declare(bid);
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
     @MethodHandler
     public void handle(UnitCmd.IntraBidCancel command, Context context) {
-        intraManager.cancel(command.getCancelBidId());
+        processorManager.cancel(command.getCancelBidId());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 
@@ -180,7 +178,7 @@ public class Unit extends AggregateRoot {
         Double unitBalance = balance.get(TimeFrame.getByInstant(bid.getInstant())).get(bid.getDirection());
         BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
-        intraManager.declare(bid);
+        processorManager.declare(bid);
         rollBidden.put(instant, true);
         context.publishPlaceHolderEvent(getAggregateId());
     }
@@ -196,7 +194,7 @@ public class Unit extends AggregateRoot {
 
     @MethodHandler
     public void handle(UnitCmd.RollBidCancel command, Context context) {
-        intraManager.cancel(command.getCancelBidId());
+        processorManager.cancel(command.getCancelBidId());
         context.publishPlaceHolderEvent(getAggregateId());
     }
 

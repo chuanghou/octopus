@@ -56,7 +56,7 @@ public class ManageFacade {
     final UserDOMapper userDOMapper;
     final Tunnel tunnel;
     final DelayExecutor delayExecutor;
-    final IntraManager intraManager;
+    final ProcessorManager processorManager;
     final UnitBasicMapper unitBasicMapper;
     final LoadBasicMapper loadBasicMapper;
     final MarketSettingMapper marketSettingMapper;
@@ -155,7 +155,7 @@ public class ManageFacade {
     }
     private void doCreateComp(CompCreatePO compCreatePO) {
 
-        intraManager.clear();
+        processorManager.clear();
 
         Ssh.exec("python manage.py empty_data");
 
@@ -503,6 +503,9 @@ public class ManageFacade {
                 .interprovTradingMode(marketSettingDO.getInterprovTradingMode())
                 .retailPriceForecastMultiple(marketSettingDO.getRetailPriceForecastMultiple())
                 .singleLoginLimit(marketSettingDO.getSingleLoginLimit())
+                .minForwardLoadPosition(marketSettingDO.getMinForwardLoadPosition())
+                .minForwardUnitPosition(marketSettingDO.getMinForwardUnitPosition())
+                .maxForwardClearedMwMultiple(marketSettingDO.getMaxForwardClearedMwMultiple())
                 .build();
         return Result.success(electricMarketSettingVO);
     }
@@ -542,6 +545,9 @@ public class ManageFacade {
         marketSettingDO.setCapacityPrice(electricMarketSetting.getCapacityPrice());
         marketSettingDO.setRetailPriceForecastMultiple(electricMarketSetting.getRetailPriceForecastMultiple());
         marketSettingDO.setSingleLoginLimit(electricMarketSetting.getSingleLoginLimit());
+        marketSettingDO.setMinForwardLoadPosition(electricMarketSetting.getMinForwardLoadPosition());
+        marketSettingDO.setMinForwardLoadPosition(electricMarketSetting.getMinForwardLoadPosition());
+        marketSettingDO.setMaxForwardClearedMwMultiple(electricMarketSetting.getMaxForwardClearedMwMultiple());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }
@@ -592,6 +598,8 @@ public class ManageFacade {
         marketSettingDO.setIsOpeningIntraprovSpotQuickOffer(simulateSetting.getIsOpeningIntraprovSpotQuickOffer());
         marketSettingDO.setIsOpeningThermalStartOffer(simulateSetting.getIsOpeningThermalStartOffer());
         marketSettingDO.setIsOpeningThermalMinoutputOffer(simulateSetting.getIsOpeningThermalMinoutputOffer());
+        marketSettingDO.setIntraprovincialSpotRollingBidDuration(simulateSetting.getIntraprovincialSpotRollingBidDuration());
+        marketSettingDO.setIntraprovincialSpotRollingResultDuration(simulateSetting.getIntraprovincialSpotRollingResultDuration());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

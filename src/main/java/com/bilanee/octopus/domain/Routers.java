@@ -42,7 +42,7 @@ public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
     final Tunnel tunnel;
-    final IntraManager intraManager;
+    final ProcessorManager processorManager;
     final DomainTunnel domainTunnel;
     final TransactionDOMapper transactionDOMapper;
     final LoadResultMapper loadResultMapper;
@@ -388,12 +388,25 @@ public class Routers implements EventRouters {
 
 
         storeDb(now);
-        intraManager.close();
+        processorManager.close();
 
         if (b0) {
             Ssh.exec("python manage.py monthly_default_bid");
             monthlyDefaultBid(stepped, context);
         }
+    }
+
+    /**
+     * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
+     */
+    @EventRouter(order = 1L)
+    public void routeForRollClear(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        if (!(now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.CLEAR)) {
+            return;
+        }
+        storeDb(now);
+        processorManager.close();
     }
 
     private void storeDb(StageId now) {

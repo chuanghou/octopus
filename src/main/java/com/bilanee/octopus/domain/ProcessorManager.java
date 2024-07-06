@@ -20,7 +20,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class IntraManager implements ApplicationRunner {
+public class ProcessorManager implements ApplicationRunner {
 
     Map<Object, Processor> processors = new HashMap<>();
     final BidDOMapper bidDOMapper;

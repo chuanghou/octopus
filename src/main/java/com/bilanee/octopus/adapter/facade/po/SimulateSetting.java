@@ -141,4 +141,14 @@ public class SimulateSetting {
      */
     Boolean isOpeningThermalMinoutputOffer;
 
+    /**
+     * 省内日滚动报价持续时长（min）
+     */
+    Integer intraprovincialSpotRollingBidDuration;
+
+    /**
+     * 省内日滚动结果查询时长（min）
+     */
+    Integer intraprovincialSpotRollingResultDuration;
+
 }
