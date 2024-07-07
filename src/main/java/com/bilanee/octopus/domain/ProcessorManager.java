@@ -10,6 +10,7 @@ import com.bilanee.octopus.infrastructure.entity.BidDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -19,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
+@CustomLog
 @RequiredArgsConstructor
 public class ProcessorManager implements ApplicationRunner {
 
@@ -36,6 +38,7 @@ public class ProcessorManager implements ApplicationRunner {
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
+        log.info("processors.get(symbol) {}", symbol);
         Processor processor = processors.get(symbol);
         processor.declare(bid);
     }

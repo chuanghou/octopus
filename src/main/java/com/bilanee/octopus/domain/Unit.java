@@ -178,6 +178,7 @@ public class Unit extends AggregateRoot {
         Double unitBalance = balance.get(TimeFrame.getByInstant(bid.getInstant())).get(bid.getDirection());
         BizEx.trueThrow(unitBalance < bid.getTransit(), PARAM_FORMAT_WRONG.message("报单超过持仓量"));
 
+        log.info("processorManager.declare(bid) is {}", bid);
         processorManager.declare(bid);
         rollBidden.put(instant, true);
         context.publishPlaceHolderEvent(getAggregateId());

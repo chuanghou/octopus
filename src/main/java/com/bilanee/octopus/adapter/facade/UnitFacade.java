@@ -25,6 +25,7 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
@@ -54,6 +55,7 @@ import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRON
  * 单元信息
  */
 
+@CustomLog
 @RestController
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -630,6 +632,7 @@ public class UnitFacade {
         BizEx.falseThrow(directions.contains(rollBidPO.getBidPO().getDirection()), PARAM_FORMAT_WRONG.message("当前不允许此方向报单"));
         UnitCmd.RollBidDeclare command = UnitCmd.RollBidDeclare.builder()
                 .bid(Convertor.INST.to(rollBidPO.getBidPO())).stageId(pStageId).build();
+        log.info("command is {}", command);
         CommandBus.accept(command, new HashMap<>());
 
         return Result.success();

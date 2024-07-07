@@ -18,6 +18,7 @@ import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -26,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+@CustomLog
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Processor implements EventHandler<IntraBidContainer> {
 
@@ -68,7 +70,9 @@ public class Processor implements EventHandler<IntraBidContainer> {
 
 
     public void declare(Bid bid) {
+        log.info("public void declare(Bid bid) {}", bid);
         disruptor.publishEvent((rtBidContainer, sequence) -> {
+            log.info("disruptor.publishEvent((rtBidContainer, sequence) {}", rtBidContainer);
             rtBidContainer.setOperation(Operation.DECLARE);
             rtBidContainer.setDeclareBid(bid);
         });
@@ -93,6 +97,7 @@ public class Processor implements EventHandler<IntraBidContainer> {
 
     @Override
     public void onEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
+        log.info("onEvent(IntraBidContainer event {}", event);
         if (event.getOperation() == Operation.DECLARE) {
             doNewBid(event.getDeclareBid());
         } else if (event.getOperation() == Operation.CANCEL) {
@@ -149,9 +154,15 @@ public class Processor implements EventHandler<IntraBidContainer> {
                 bid.setCancelledTimeStamp(Clock.currentTimeMillis());
                 bid.setBidStatus(BidStatus.MANUAL_CANCELLED);
                 tunnel.updateBids(Collect.asList(bid));
-                UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
-                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
-                CommandBus.accept(command, new HashMap<>());
+                if (bid.getTimeFrame() != null) {
+                    UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
+                            .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                    CommandBus.accept(command, new HashMap<>());
+                } else {
+                    UnitCmd.RollBidCancelled command = UnitCmd.RollBidCancelled
+                            .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                    CommandBus.accept(command, new HashMap<>());
+                }
                 return true;
             }
             return false;
@@ -193,6 +204,7 @@ public class Processor implements EventHandler<IntraBidContainer> {
         Direction direction = declareBid.getDirection();
         declareBid.setDeclareTimeStamp(Clock.currentTimeMillis());
         declareBid.setBidStatus(BidStatus.NEW_DECELERATED);
+        log.info("tunnel.insertBid(declareBid) {}", declareBid);
         tunnel.insertBid(declareBid);
         if (declareBid.getDirection() == Direction.BUY) {
             buyPriorityQueue.add(declareBid);
