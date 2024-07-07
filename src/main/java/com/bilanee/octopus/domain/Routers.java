@@ -310,7 +310,8 @@ public class Routers implements EventRouters {
         StageId now = stepped.getNow();
         boolean b0 = now.getTradeStage() == TradeStage.AN_INTRA && now.getMarketStatus() == MarketStatus.BID;
         boolean b1 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.BID;
-        if (!(b0 || b1)) {
+        boolean b2 = now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.BID;
+        if (!(b0 || b1 || b2)) {
             return;
         }
         scheduledExecutorService.schedule(() -> {
@@ -321,6 +322,9 @@ public class Routers implements EventRouters {
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             } else if (tradeStage == TradeStage.MO_INTRA) {
                 wsTopic = WsTopic.MO_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.ROLL) {
+                wsTopic = WsTopic.ROLL_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
         }, 180_000L, TimeUnit.MILLISECONDS);
@@ -335,6 +339,9 @@ public class Routers implements EventRouters {
             } else if (tradeStage == TradeStage.MO_INTRA) {
                 wsTopic = WsTopic.MO_INTRA_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.ROLL) {
+                wsTopic = WsTopic.ROLL_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
         }, 210_000L, TimeUnit.MILLISECONDS);
 
@@ -346,6 +353,9 @@ public class Routers implements EventRouters {
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             } else if (tradeStage == TradeStage.MO_INTRA) {
                 wsTopic = WsTopic.MO_INTRA_BID;
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+            } else if (tradeStage == TradeStage.ROLL) {
+                wsTopic = WsTopic.ROLL_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
         }, 300_000L, TimeUnit.MILLISECONDS);
