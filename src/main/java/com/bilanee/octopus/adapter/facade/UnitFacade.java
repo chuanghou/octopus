@@ -549,7 +549,16 @@ public class UnitFacade {
                     opposite += quantity;
                 }
                 builder.transit(bid.getTransit());
-                if (bid.getBidStatus() != BidStatus.MANUAL_CANCELLED) {
+                if (bid.getBidStatus() == BidStatus.MANUAL_CANCELLED) {
+                    if (Collect.isEmpty(bid.getDeals())) {
+                        operations = Collect.asList(Operation.DECLARE);
+                    } else {
+                        operations = Collections.emptyList();
+                    }
+
+                } else if (bid.getBidStatus() == BidStatus.SYSTEM_CANCELLED){
+                    operations = Collections.EMPTY_LIST;
+                } else {
                     operations = bid.getBidStatus().operations();
                 }
                 // 报单内容
