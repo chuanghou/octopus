@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @CustomLog
 @RequiredArgsConstructor
@@ -399,7 +400,7 @@ public class Routers implements EventRouters {
         if (!(now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.CLEAR)) {
             return;
         }
-        storeDb(now);
+        storeDbOfRoll(now);
         processorManager.close();
     }
 
@@ -414,6 +415,40 @@ public class Routers implements EventRouters {
                 List<Bid> tBids = unitBids.stream().filter(bid -> bid.getTimeFrame() == tf).collect(Collectors.toList());
                 LambdaQueryWrapper<TransactionDO> eq = new LambdaQueryWrapper<TransactionDO>()
                         .in(TransactionDO::getPrd, tf.getPrds())
+                        .eq(TransactionDO::getRoundId, now.getRoundId() + 1)
+                        .eq(TransactionDO::getResourceId, unit.getMetaUnit().getSourceId())
+                        .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
+                        .eq(TransactionDO::getMarketType, now.getTradeStage().getMarketType());
+
+                double quantity = tBids.stream()
+                        .flatMap(uBid -> uBid.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
+                if (quantity > 0) {
+                    List<Direction> directions = tBids.stream().map(Bid::getDirection).distinct().collect(Collectors.toList());
+                    if (directions.size() > 1) {
+                        throw new RuntimeException();
+                    }
+                    Direction direction1 = directions.get(0);
+                    int ratio = direction1 == gDirection ? 1 : -1;
+                    List<TransactionDO> transactionDOS = transactionDOMapper.selectList(eq);
+                    transactionDOS.forEach(t -> t.setClearedMw(quantity * ratio));
+                    transactionDOS.forEach(transactionDOMapper::updateById);
+                }
+            });
+        });
+    }
+
+
+    private void storeDbOfRoll(StageId now) {
+        BidQuery bidQuery = BidQuery.builder().compId(now.getCompId()).roundId(now.getRoundId()).tradeStage(now.getTradeStage()).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().forEach((unitId, unitBids) -> {
+            Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
+            Direction gDirection = unit.getMetaUnit().getUnitType().generalDirection();
+
+            IntStream.range(0, 24).forEach(prd -> {
+                List<Bid> tBids = unitBids.stream().filter(bid -> bid.getInstant() == prd).collect(Collectors.toList());
+                LambdaQueryWrapper<TransactionDO> eq = new LambdaQueryWrapper<TransactionDO>()
+                        .eq(TransactionDO::getPrd, prd)
                         .eq(TransactionDO::getRoundId, now.getRoundId() + 1)
                         .eq(TransactionDO::getResourceId, unit.getMetaUnit().getSourceId())
                         .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
