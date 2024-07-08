@@ -314,37 +314,18 @@ public class Routers implements EventRouters {
         if (!(b0 || b1 || b2)) {
             return;
         }
-        scheduledExecutorService.schedule(() -> {
-            TradeStage tradeStage = tunnel.runningComp().getTradeStage();
-            WsTopic  wsTopic;
-            if (tradeStage == TradeStage.AN_INTRA) {
-                wsTopic = WsTopic.AN_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            } else if (tradeStage == TradeStage.MO_INTRA) {
-                wsTopic = WsTopic.MO_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            } else if (tradeStage == TradeStage.ROLL) {
-                wsTopic = WsTopic.ROLL_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            }
-        }, 180_000L, TimeUnit.MILLISECONDS);
+        scheduleWsCast(180_000L);
 
+        scheduleWsCast(210_000L);
 
-        scheduledExecutorService.schedule(() -> {
-            TradeStage tradeStage = tunnel.runningComp().getTradeStage();
-            WsTopic  wsTopic;
-            if (tradeStage == TradeStage.AN_INTRA) {
-                wsTopic = WsTopic.AN_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            } else if (tradeStage == TradeStage.MO_INTRA) {
-                wsTopic = WsTopic.MO_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            } else if (tradeStage == TradeStage.ROLL) {
-                wsTopic = WsTopic.ROLL_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
-            }
-        }, 210_000L, TimeUnit.MILLISECONDS);
+        scheduleWsCast(240_000L);
 
+        scheduleWsCast(300_000L);
+
+        scheduleWsCast(360_000L);
+    }
+
+    private void scheduleWsCast(long delay) {
         scheduledExecutorService.schedule(() -> {
             TradeStage tradeStage = tunnel.runningComp().getTradeStage();
             WsTopic wsTopic;
@@ -358,8 +339,10 @@ public class Routers implements EventRouters {
                 wsTopic = WsTopic.ROLL_BID;
                 WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
             }
-        }, 300_000L, TimeUnit.MILLISECONDS);
+        }, delay, TimeUnit.MILLISECONDS);
     }
+
+
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
      */
