@@ -252,7 +252,8 @@ public class Tunnel {
         LambdaQueryWrapper<IntraInstantDO> eq = new LambdaQueryWrapper<IntraInstantDO>()
                 .eq(IntraInstantDO::getStageId, intraInstantDO.getStageId())
                 .eq(IntraInstantDO::getProvince, intraInstantDO.getProvince())
-                .eq(IntraInstantDO::getTimeFrame, intraInstantDO.getTimeFrame());
+                .eq(!Objects.isNull(intraInstantDO.getInstant()), IntraInstantDO::getInstant, intraInstantDO.getInstant())
+                .eq(!Objects.isNull(intraInstantDO.getTimeFrame()), IntraInstantDO::getTimeFrame, intraInstantDO.getTimeFrame());
         if (intraInstantDOMapper.selectOne(eq) == null) {
             intraInstantDOMapper.insert(intraInstantDO);
         } else {

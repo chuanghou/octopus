@@ -99,15 +99,18 @@ public class RpcAspect {
                 }
             }
             IntStream.range(0, args.length).forEach(i -> log.with("arg" + i, args[i]));
-            String logTag = ((MethodSignature) pjp.getSignature()).getMethod().getName();
+            String message = ((MethodSignature) pjp.getSignature()).getMethod().getName();
             long cost = (System.currentTimeMillis() - start);
             log.result(result).cost(System.currentTimeMillis() - start);
+            if (args.length > 0) {
+                message += String.format("arg:%s", args[0]);
+            }
             if (t == null) {
-                log.success(true).info(logTag);
+                log.success(true).info(message + String.format("arg: %s", args[0]));
             } else if (t instanceof BizEx) {
-                log.success(false).warn(logTag, t);
+                log.success(false).warn(message, t);
             } else {
-                log.success(false).error(logTag, t);
+                log.success(false).error(message, t);
             }
         }
         return result;
