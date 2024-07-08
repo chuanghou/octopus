@@ -331,13 +331,13 @@ public class Routers implements EventRouters {
             WsTopic wsTopic;
             if (tradeStage == TradeStage.AN_INTRA) {
                 wsTopic = WsTopic.AN_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).body(delay).build());
             } else if (tradeStage == TradeStage.MO_INTRA) {
                 wsTopic = WsTopic.MO_INTRA_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).body(delay).build());
             } else if (tradeStage == TradeStage.ROLL) {
                 wsTopic = WsTopic.ROLL_BID;
-                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
+                WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).body(delay).build());
             }
         }, delay, TimeUnit.MILLISECONDS);
     }
