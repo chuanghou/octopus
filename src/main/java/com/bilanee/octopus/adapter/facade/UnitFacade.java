@@ -530,7 +530,7 @@ public class UnitFacade {
             } else {
                 balanceVOs = new ArrayList<>();
             }
-            builder.balanceVOs(balanceVOs);
+            builder.balanceVOs(balanceVOs.stream().filter(b -> b.getBalance() > 0D).collect(Collectors.toList()));
 
             List<Bid> bids = bidMap.get(unit.getUnitId());
             UnitType unitType = unit.getMetaUnit().getUnitType();
@@ -671,7 +671,7 @@ public class UnitFacade {
             return Collect.asList(Direction.BUY);
         } else if (now >= startTimeStamp + 180_000 && now < startTimeStamp + 240_000) {
             return Collections.EMPTY_LIST;
-        } else if (now >= startTimeStamp + 240_000 && now < startTimeStamp + 360_000) {
+        } else if (now >= startTimeStamp + 240_000 && now < startTimeStamp + 300_000) {
             return Collect.asList(Direction.SELL);
         } else {
             return Collect.asList(Direction.BUY, Direction.SELL);
