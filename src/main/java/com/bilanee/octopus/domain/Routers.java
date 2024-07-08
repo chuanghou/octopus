@@ -396,10 +396,12 @@ public class Routers implements EventRouters {
      */
     @EventRouter(order = 1L)
     public void routeForRollClear(CompEvent.Stepped stepped, Context context) {
+        log.info("stepped {}", stepped);
         StageId now = stepped.getNow();
         if (!(now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.CLEAR)) {
             return;
         }
+        log.info("now {}", now);
         storeDbOfRoll(now);
         processorManager.close();
     }
@@ -441,6 +443,7 @@ public class Routers implements EventRouters {
     private void storeDbOfRoll(StageId now) {
         BidQuery bidQuery = BidQuery.builder().compId(now.getCompId()).roundId(now.getRoundId()).tradeStage(now.getTradeStage()).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
+        log.info("bids {}", bids);
         bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().forEach((unitId, unitBids) -> {
             Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
             Direction gDirection = unit.getMetaUnit().getUnitType().generalDirection();
