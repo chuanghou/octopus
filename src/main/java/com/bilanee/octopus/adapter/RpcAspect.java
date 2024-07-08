@@ -106,7 +106,7 @@ public class RpcAspect {
                 message += String.format("arg:%s", args[0]);
             }
             if (t == null) {
-                log.success(true).info(message + String.format("arg: %s", args[0]));
+                log.success(true).info(message);
             } else if (t instanceof BizEx) {
                 log.success(false).warn(message, t);
             } else {
