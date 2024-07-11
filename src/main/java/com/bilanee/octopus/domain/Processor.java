@@ -10,6 +10,7 @@ import com.bilanee.octopus.infrastructure.entity.Ask;
 import com.bilanee.octopus.infrastructure.entity.IntraInstantDO;
 import com.bilanee.octopus.infrastructure.entity.IntraQuotationDO;
 import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.ExceptionHandler;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.util.DaemonThreadFactory;
 import com.stellariver.milky.common.base.SysEx;
@@ -45,6 +46,22 @@ public class Processor implements EventHandler<IntraBidContainer> {
         this.symbol = symbol;
         this.uniqueIdGetter = uniqueIdGetter;
         disruptor.handleEventsWith(this);
+        disruptor.setDefaultExceptionHandler(new ExceptionHandler<IntraBidContainer>() {
+            @Override
+            public void handleEventException(Throwable ex, long sequence, IntraBidContainer event) {
+                log.error("event is {}", event, ex);
+            }
+
+            @Override
+            public void handleOnStartException(Throwable ex) {
+                log.error("handleOnStartException", ex);
+            }
+
+            @Override
+            public void handleOnShutdownException(Throwable ex) {
+                log.error("handleOnShutdownException", ex);
+            }
+        });
         disruptor.start();
     }
 
@@ -129,8 +146,15 @@ public class Processor implements EventHandler<IntraBidContainer> {
         });
         tunnel.updateBids(new ArrayList<>(buyPriorityQueue));
         buyPriorityQueue.forEach(bid -> {
-            UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
-            CommandBus.accept(command, new HashMap<>());
+            if (bid.getTimeFrame() != null) {
+                UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
+                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                CommandBus.accept(command, new HashMap<>());
+            } else {
+                UnitCmd.RollBidCancelled command = UnitCmd.RollBidCancelled
+                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                CommandBus.accept(command, new HashMap<>());
+            }
         });
         buyPriorityQueue.clear();
 
@@ -140,8 +164,15 @@ public class Processor implements EventHandler<IntraBidContainer> {
         });
         tunnel.updateBids(new ArrayList<>(sellPriorityQueue));
         sellPriorityQueue.forEach(bid -> {
-            UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled.builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
-            CommandBus.accept(command, new HashMap<>());
+            if (bid.getTimeFrame() != null) {
+                UnitCmd.IntraBidCancelled command = UnitCmd.IntraBidCancelled
+                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                CommandBus.accept(command, new HashMap<>());
+            } else {
+                UnitCmd.RollBidCancelled command = UnitCmd.RollBidCancelled
+                        .builder().unitId(bid.getUnitId()).cancelBidId(bid.getBidId()).build();
+                CommandBus.accept(command, new HashMap<>());
+            }
         });
         sellPriorityQueue.clear();
         latestPrice = null;
