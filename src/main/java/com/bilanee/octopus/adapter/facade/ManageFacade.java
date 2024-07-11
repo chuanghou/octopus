@@ -169,7 +169,7 @@ public class ManageFacade {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         Integer traderNum = marketSettingDO.getTraderNum();
         Integer robotNum = marketSettingDO.getRobotNum();
-        BizEx.trueThrow(traderNum + robotNum > 120, ErrorEnums.PARAM_FORMAT_WRONG.message("人数最多支持120人"));
+        BizEx.trueThrow(traderNum + robotNum > 800, ErrorEnums.PARAM_FORMAT_WRONG.message("人数最多支持120人"));
         List<UserDO> userDOs = userDOMapper.selectList(null).stream().sorted(Comparator.comparing(UserDO::getUserId)).collect(Collectors.toList());
         List<String> traderUserIds = userDOs.subList(0, traderNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
         List<String> robotUserIds = userDOs.subList(traderNum, traderNum + robotNum).stream().map(UserDO::getUserId).collect(Collectors.toList());
