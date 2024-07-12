@@ -371,8 +371,7 @@ public class UnitFacade {
         List<Unit> units = future2.get();
 
         boolean notCurrentStage = !tunnel.runningComp().getStageId().toString().equals(stageId);
-
-        List<RollSymbolBidVO> rollSymbolBidVOs = new ArrayList<>(ConcurrentTool.batchCall(RollSymbol.rollSymbols(), rollSymbol -> {
+        List<RollSymbolBidVO> rollSymbolBidVOs = RollSymbol.rollSymbols().stream().map(rollSymbol -> {
             RollSymbolBidVO.RollSymbolBidVOBuilder builder = RollSymbolBidVO.builder()
                     .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant());
             IntraInstantDO intraInstantDO = instantDOMap.get(rollSymbol);
@@ -401,7 +400,7 @@ public class UnitFacade {
             builder.quotationVOs(quotationVOs);
             builder.stepRecord(stepRecord);
             return builder.build();
-        }, executor).values());
+        }).collect(Collectors.toList());
         return Result.success(rollSymbolBidVOs);
     }
 
@@ -504,7 +503,7 @@ public class UnitFacade {
 
         bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).timeFrame(TimeFrame.getByInstant(rollSymbol.getInstant())).build();
-        ListMultimap<Long, Bid> bidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
+        ListMultimap<Long, Bid> timeFrameBidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
                 tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
         return units.stream().map(unit -> {
@@ -533,7 +532,7 @@ public class UnitFacade {
             }
             builder.balanceVOs(balanceVOs.stream().filter(b -> b.getBalance() > 0D).collect(Collectors.toList()));
 
-            List<Bid> bids = bidMap.get(unit.getUnitId());
+            List<Bid> bids = timeFrameBidMap.get(unit.getUnitId());
             UnitType unitType = unit.getMetaUnit().getUnitType();
             double general = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection())
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
