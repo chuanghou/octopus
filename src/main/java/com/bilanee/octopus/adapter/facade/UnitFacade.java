@@ -496,8 +496,8 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant()).build();
-        Map<Long, List<Bid>> instantBidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
-                tunnel.listBids(bidQuery).stream().collect(Collectors.groupingBy(Bid::getUnitId));
+        ListMultimap<Long, Bid> instantBidMap = Collect.isEmpty(unitIds) ? ArrayListMultimap.create() :
+                tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
 
         bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).timeFrame(TimeFrame.getByInstant(rollSymbol.getInstant())).build();
