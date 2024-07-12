@@ -549,6 +549,8 @@ public class UnitFacade {
                     if (Collect.isEmpty(bid.getDeals())) {
                         operations = Collect.asList(Operation.DECLARE);
                         builder.instantStatus("尚未挂牌");
+                        bid.setQuantity(null);
+                        bid.setPrice(null);
                     } else {
                         operations = Collections.emptyList();
                         builder.instantStatus("部分成交部分撤单");
