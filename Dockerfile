@@ -9,13 +9,13 @@ RUN yum -y install  vim
 #安装ifconfig命令查看网络IP
 RUN yum -y install net-tools
 #安装java8及lib库
-RUN yum -y install glibc.i686
+#RUN #yum -y install glibc.i686
 #将安装包添加到容器中
-ADD jdk-8u192-linux-x64.tar.gz   /usr/local/java/
-#配置java环境变量
-ENV JAVA_HOME /usr/local/java/jdk1.8.0_192
-ENV PATH $JAVA_HOME/bin:$PATH
-#暴露端口号
-EXPOSE 80
-CMD echo "success--------------ok"
-CMD /bin/bash
+#ADD jdk-8u192-linux-x64.tar.gz   /usr/local/java/
+##配置java环境变量
+#ENV JAVA_HOME /usr/local/java/jdk1.8.0_192
+#ENV PATH $JAVA_HOME/bin:$PATH
+##暴露端口号
+#EXPOSE 80
+#CMD echo "success--------------ok"
+#CMD /bin/bash
