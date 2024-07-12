@@ -72,6 +72,11 @@ public class UnitRollBidVO {
     RollBidVO rollBidVO;
 
     /**
+     * 挂牌状态
+     */
+    String status;
+
+    /**
      * 操作
      */
     List<Operation> operations;

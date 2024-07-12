@@ -51,5 +51,6 @@ public class MyTest {
     public void interPointTest() throws InterruptedException {
         Comp comp = tunnel.runningComp();
         Result<List<RollSymbolBidVO>> listResult = unitFacade.listRollSymbolBidVOs(comp.getStageId().toString(), TokenUtils.sign("1000"));
+        System.out.println(listResult);
     }
 }

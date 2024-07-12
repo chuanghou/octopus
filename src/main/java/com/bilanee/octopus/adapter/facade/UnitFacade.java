@@ -550,14 +550,22 @@ public class UnitFacade {
                 if (bid.getBidStatus() == BidStatus.MANUAL_CANCELLED) {
                     if (Collect.isEmpty(bid.getDeals())) {
                         operations = Collect.asList(Operation.DECLARE);
+                        builder.status("尚未挂牌");
                     } else {
                         operations = Collections.emptyList();
+                        builder.status("部分成交部分撤单");
                     }
-
                 } else if (bid.getBidStatus() == BidStatus.SYSTEM_CANCELLED){
                     operations = Collections.EMPTY_LIST;
+                    if (Collect.isEmpty(bid.getDeals())) {
+                        builder.status(bid.getBidStatus().getDesc());
+                    } else {
+                        builder.status("部分成交部分系统撤单");
+                    }
+                    builder.status(bid.getBidStatus().getDesc());
                 } else {
                     operations = bid.getBidStatus().operations();
+                    builder.status(bid.getBidStatus().getDesc());
                 }
                 // 报单内容
                 RollBidVO rollBidVO = RollBidVO.builder()
@@ -573,7 +581,10 @@ public class UnitFacade {
                         .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
                         .build();
                 builder.rollBidVO(rollBidVO);
+            } else {
+                builder.status("尚未挂牌");
             }
+
             if (Collect.isEmpty(balanceVOs)) {
                 operations.clear();
             }
