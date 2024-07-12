@@ -2,6 +2,7 @@ package com.bilanee.octopus.adapter.facade.vo;
 
 import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.GridLimit;
+import com.bilanee.octopus.basic.enums.InstantStatus;
 import com.bilanee.octopus.basic.enums.Operation;
 import com.bilanee.octopus.basic.enums.UnitType;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -74,7 +75,7 @@ public class UnitRollBidVO {
     /**
      * 挂牌状态
      */
-    String instantStatus;
+    InstantStatus instantStatus;
 
     /**
      * 操作
