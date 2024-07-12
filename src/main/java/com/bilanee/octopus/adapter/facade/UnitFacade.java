@@ -577,6 +577,9 @@ public class UnitFacade {
                         .build();
                 builder.rollBidVO(rollBidVO);
             }
+            if (Collect.isEmpty(balanceVOs)) {
+                operations.clear();
+            }
             builder.operations(operations);
             builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
             return builder.build();
