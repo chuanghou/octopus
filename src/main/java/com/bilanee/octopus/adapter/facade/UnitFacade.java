@@ -496,10 +496,8 @@ public class UnitFacade {
 
         BidQuery bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).instant(rollSymbol.getInstant()).build();
-        Map<Long, Bid> instantBidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
-                tunnel.listBids(bidQuery).stream().collect(Collectors.groupingBy(Bid::getInstant)).values().stream()
-                        .map(instantBids -> instantBids.stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElseThrow(SysEx::unreachable))
-                        .collect(Collectors.toMap(Bid::getUnitId, Function.identity()));
+        Map<Long, List<Bid>> instantBidMap = Collect.isEmpty(unitIds) ? new HashMap<>() :
+                tunnel.listBids(bidQuery).stream().collect(Collectors.groupingBy(Bid::getUnitId));
 
         bidQuery = BidQuery.builder().unitIds(unitIds)
                 .province(rollSymbol.getProvince()).timeFrame(TimeFrame.getByInstant(rollSymbol.getInstant())).build();
@@ -539,7 +537,7 @@ public class UnitFacade {
             double opposite = bids.stream().filter(bid -> bid.getDirection() == unitType.generalDirection().opposite())
                     .flatMap(b -> b.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
 
-            Bid bid = instantBidMap.get(unit.getUnitId());
+            Bid bid = instantBidMap.get(unit.getUnitId()).stream().max(Comparator.comparing(Bid::getDeclareTimeStamp)).orElse(null);
             List<Operation> operations = Collect.asList(Operation.DECLARE);
             if (bid != null) {
                 double quantity = bid.getDeals().stream().map(Deal::getQuantity).reduce(0D, Double::sum);
