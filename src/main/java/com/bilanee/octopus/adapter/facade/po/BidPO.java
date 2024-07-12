@@ -1,7 +1,10 @@
 package com.bilanee.octopus.adapter.facade.po;
 
+import com.bilanee.octopus.basic.ErrorEnums;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.stellariver.milky.common.base.AfterValidation;
+import com.stellariver.milky.common.base.BizEx;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -32,12 +35,14 @@ public class BidPO {
     /**
      * 申报价格
      */
+    @NotNull(message = "价格不能为空")
     @Digits(integer = 10, fraction = 2, message = "格式不满足要求")
     Double price;
 
     /**
      * 申报方向
      */
+    @NotNull(message = "方向不能为空")
     Direction direction;
 
     /**
@@ -49,5 +54,10 @@ public class BidPO {
      * 时刻，滚动撮合用
      */
     Integer instant;
+
+    @AfterValidation
+    public void afterValidation() {
+        BizEx.trueThrow(timeFrame == null && instant == null, ErrorEnums.PARAM_IS_NULL.message("时刻/时段参数为空"));
+    }
 
 }
