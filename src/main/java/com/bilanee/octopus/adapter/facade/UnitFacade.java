@@ -19,7 +19,6 @@ import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.common.tool.common.ConcurrentTool;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
@@ -45,7 +44,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -550,22 +548,22 @@ public class UnitFacade {
                 if (bid.getBidStatus() == BidStatus.MANUAL_CANCELLED) {
                     if (Collect.isEmpty(bid.getDeals())) {
                         operations = Collect.asList(Operation.DECLARE);
-                        builder.status("尚未挂牌");
+                        builder.instantStatus("尚未挂牌");
                     } else {
                         operations = Collections.emptyList();
-                        builder.status("部分成交部分撤单");
+                        builder.instantStatus("部分成交部分撤单");
                     }
                 } else if (bid.getBidStatus() == BidStatus.SYSTEM_CANCELLED){
                     operations = Collections.EMPTY_LIST;
                     if (Collect.isEmpty(bid.getDeals())) {
-                        builder.status(bid.getBidStatus().getDesc());
+                        builder.instantStatus(bid.getBidStatus().getDesc());
                     } else {
-                        builder.status("部分成交部分系统撤单");
+                        builder.instantStatus("部分成交部分系统撤单");
                     }
-                    builder.status(bid.getBidStatus().getDesc());
+                    builder.instantStatus(bid.getBidStatus().getDesc());
                 } else {
                     operations = bid.getBidStatus().operations();
-                    builder.status(bid.getBidStatus().getDesc());
+                    builder.instantStatus(bid.getBidStatus().getDesc());
                 }
                 // 报单内容
                 RollBidVO rollBidVO = RollBidVO.builder()
@@ -582,7 +580,7 @@ public class UnitFacade {
                         .build();
                 builder.rollBidVO(rollBidVO);
             } else {
-                builder.status("尚未挂牌");
+                builder.instantStatus("尚未挂牌");
             }
 
             if (Collect.isEmpty(balanceVOs)) {

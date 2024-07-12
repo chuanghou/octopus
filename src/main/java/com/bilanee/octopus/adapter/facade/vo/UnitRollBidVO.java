@@ -74,7 +74,7 @@ public class UnitRollBidVO {
     /**
      * 挂牌状态
      */
-    String status;
+    String instantStatus;
 
     /**
      * 操作
