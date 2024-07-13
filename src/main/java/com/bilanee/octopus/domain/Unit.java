@@ -8,6 +8,7 @@ import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
+import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.StaticWire;
 import com.stellariver.milky.common.base.SysEx;
@@ -25,6 +26,7 @@ import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
@@ -210,12 +212,34 @@ public class Unit extends AggregateRoot {
 
     @MethodHandler
     public void handle(UnitCmd.FillBalance command, Context context) {
-        balance.forEach(((timeFrame, balances) -> {
-            Direction generalDirection = metaUnit.getUnitType().generalDirection();
-            Double reverseBalance = metaUnit.getCapacity().get(timeFrame).get(generalDirection) - balances.get(generalDirection);
-            balances.put(generalDirection.opposite(), reverseBalance);
-        }));
-        context.publishPlaceHolderEvent(getAggregateId());
+        if (command.getTradeStage() == TradeStage.MO_INTRA) {
+            balance.forEach(((timeFrame, balances) -> {
+                Direction generalDirection = metaUnit.getUnitType().generalDirection();
+                Double reverseBalance = metaUnit.getCapacity().get(timeFrame).get(generalDirection) - balances.get(generalDirection);
+                balances.put(generalDirection.opposite(), reverseBalance);
+            }));
+            context.publishPlaceHolderEvent(getAggregateId());
+        } else if (command.getTradeStage() == TradeStage.ROLL) {
+            BidQuery bidQuery = BidQuery.builder().unitIds(Collect.asSet(unitId))
+                    .tradeStage(TradeStage.MO_INTRA)
+                    .compId(compId)
+                    .roundId(roundId)
+                    .build();
+            ListMultimap<TimeFrame, Deal> deals = tunnel.listBids(bidQuery).stream().flatMap(l -> l.getDeals().stream()).collect(Collect.listMultiMap(Deal::getTimeFrame));
+            Arrays.stream(TimeFrame.values()).filter(t -> !deals.get(t).isEmpty()).forEach(t -> {
+                List<Deal> tfDeals = deals.get(t);
+                double sum = tfDeals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+                if (Objects.equals(tfDeals.get(0).getBuyUnitId(), unitId)) {
+                    balance.get(t).put(Direction.SELL, balance.get(t).get(Direction.SELL) + sum);
+                } else if (Objects.equals(tfDeals.get(0).getSellUnitId(), unitId)) {
+                    balance.get(t).put(Direction.BUY, balance.get(t).get(Direction.BUY) + sum);
+                } else {
+                    throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+                }
+            });
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
     }
 
     @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE,

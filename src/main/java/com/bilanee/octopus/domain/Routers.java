@@ -485,14 +485,25 @@ public class Routers implements EventRouters {
     @EventRouter(order = 1L)
     public void fillReverseBalance(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
+
         boolean b0 = now.getTradeStage() == TradeStage.MO_INTRA && now.getMarketStatus() == MarketStatus.BID;
         if (b0) {
             List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
             units.forEach(unit -> {
-                UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(unit.getUnitId()).build();
+                UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(unit.getUnitId()).tradeStage(TradeStage.MO_INTRA).build();
                 CommandBus.driveByEvent(command, stepped);
             });
         }
+
+        boolean b1 = now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.BID;
+        if (b1) {
+            List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
+            units.forEach(unit -> {
+                UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(unit.getUnitId()).tradeStage(TradeStage.ROLL).build();
+                CommandBus.driveByEvent(command, stepped);
+            });
+        }
+
     }
 
     final CompFacade compFacade;

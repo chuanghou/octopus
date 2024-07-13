@@ -5,6 +5,7 @@ import com.bilanee.octopus.basic.MetaUnit;
 import com.bilanee.octopus.basic.StageId;
 import com.bilanee.octopus.basic.enums.Direction;
 import com.bilanee.octopus.basic.enums.TimeFrame;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import com.stellariver.milky.domain.support.command.Command;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -187,6 +188,7 @@ public class UnitCmd {
     static public class FillBalance extends Command {
 
         Long unitId;
+        TradeStage tradeStage;
 
         @Override
         public String getAggregateId() {
