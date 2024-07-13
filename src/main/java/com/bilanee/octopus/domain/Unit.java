@@ -237,6 +237,7 @@ public class Unit extends AggregateRoot {
                     throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
                 }
             });
+            context.publishPlaceHolderEvent(getAggregateId());
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
