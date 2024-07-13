@@ -208,7 +208,7 @@ public class Comp extends AggregateRoot {
     }
 
     @MethodHandler
-    public void step(CompCmd.Step command, Context context) {
+    public void step(CompCmd.Step command, Context context) throws InterruptedException {
         StageId last = getStageId();
         this.compStage = command.getStageId().getCompStage();
         this.roundId = command.getStageId().getRoundId();
@@ -230,6 +230,8 @@ public class Comp extends AggregateRoot {
         StepRecord stepRecord = StepRecord.builder().stageId(getStageId().toString())
                 .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
         stepRecords.add(stepRecord);
+
+        Thread.sleep(10_000L);
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);
