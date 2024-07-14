@@ -259,6 +259,7 @@ public class Routers implements EventRouters {
 
     final InterDealDOMapper interDealDOMapper;
     final IntraDealDOMapper intraDealDOMapper;
+    final RollDealDOMapper rollDealDOMapper;
 
 
     /**
@@ -401,6 +402,30 @@ public class Routers implements EventRouters {
         if (!(now.getTradeStage() == TradeStage.ROLL && now.getMarketStatus() == MarketStatus.CLEAR)) {
             return;
         }
+
+        BidQuery bidQuery = BidQuery.builder()
+                .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        String dt = tunnel.runningComp().getDt();
+        bids.stream().flatMap(b -> b.getDeals().stream()).distinct().forEach(deal -> {
+            Unit buyUnit = domainTunnel.getByAggregateId(Unit.class, deal.getBuyUnitId());
+            Unit sellUnit = domainTunnel.getByAggregateId(Unit.class, deal.getSellUnitId());
+            RollDealDO rollDealDO = RollDealDO.builder()
+                    .roundId(now.getRoundId() + 1)
+                    .buyerId(buyUnit.getMetaUnit().getSourceId())
+                    .buyerType(buyUnit.getMetaUnit().getUnitType().getDbCode())
+                    .sellerId(sellUnit.getMetaUnit().getSourceId())
+                    .sellerType(sellUnit.getMetaUnit().getUnitType().getDbCode())
+                    .dt(dt)
+                    .prd(deal.getInstant())
+                    .transTime(new Date(deal.getTimeStamp()))
+                    .clearedMw(deal.getQuantity())
+                    .clearedPrice(deal.getPrice())
+                    .build();
+            rollDealDOMapper.insert(rollDealDO);
+        });
+
+
         log.info("now {}", now);
         storeDbOfRoll(now);
         processorManager.close();
