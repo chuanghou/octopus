@@ -75,7 +75,7 @@ public class BidAspect {
     public void recover() {
         int counter = biddingCounter.addAndGet(1);
         log.info("biddingCounter.addAndGet(1) then get {}", counter);
-        if (counter == 0) {
+        if (counter != 0) {
             log.error("recover failure");
         }
     }
