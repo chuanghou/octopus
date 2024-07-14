@@ -523,7 +523,6 @@ public class ManageFacade {
         marketSettingDO.setRegulatedProducerPrice(electricMarketSetting.getRegulatedProducerPrice());
         marketSettingDO.setRegulatedUserTariff(electricMarketSetting.getRegulatedUserTariff());
         marketSettingDO.setRegulatedInterprovTransmissionPrice(electricMarketSetting.getRegulatedInterprovTransmissionPrice());
-        marketSettingDO.setMonthlyCoalPrice(electricMarketSetting.getMonthlyCoalPrice());
         marketSettingDO.setRetailPriceForecastMultiple(electricMarketSetting.getRetailPriceForecastMultiple());
         marketSettingDO.setSingleLoginLimit(electricMarketSetting.getSingleLoginLimit());
         marketSettingDO.setMinForwardLoadPosition(electricMarketSetting.getMinForwardLoadPosition());
@@ -611,7 +610,7 @@ public class ManageFacade {
         // 轮次校验
         Integer roundNum = marketSettingDO.getRoundNum();
         if (roundNum != simulateSetting.getRoundSettings().size()) {
-            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("轮次数量不匹配"))
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("轮次数量不匹配"));
         }
 
         String caseSetting = simulateSetting.getRoundSettings().stream().map(r -> {

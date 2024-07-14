@@ -72,10 +72,12 @@ public class BidAspect {
     }
 
     @SneakyThrows
-    public boolean recover() {
+    public void recover() {
         int counter = biddingCounter.addAndGet(1);
         log.info("biddingCounter.addAndGet(1) then get {}", counter);
-        return counter == 0;
+        if (counter == 0) {
+            log.error("recover failure");
+        }
     }
 
 }

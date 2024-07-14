@@ -30,9 +30,11 @@ public class DelayExecutor {
     public void schedule(Command command, long length, TimeUnit timeUnit) {
         scheduledFuture = (ScheduledFuture<Object>) scheduledExecutorService.schedule(() -> {
             bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
-            CommandBus.acceptMemoryTransactional(command, new HashMap<>());
-            boolean recover = bidAspect.recover();
-            SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+            try {
+                CommandBus.acceptMemoryTransactional(command, new HashMap<>());
+            } finally {
+                bidAspect.recover();
+            }
         }, length, timeUnit);
     }
 
