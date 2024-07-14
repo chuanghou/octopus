@@ -333,11 +333,13 @@ public class ManageFacade {
             boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
             SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
         }
-        CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
-        CommandBus.acceptMemoryTransactional(command, new HashMap<>());
-        if (needBidAspect) {
-            boolean recover = bidAspect.recover();
-            SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+        try {
+            CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
+            CommandBus.acceptMemoryTransactional(command, new HashMap<>());
+        } finally {
+            if (needBidAspect) {
+                bidAspect.recover();
+            }
         }
         log.info("End step");
         return Result.success();
