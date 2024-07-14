@@ -120,6 +120,7 @@ public class UnitFacade {
         String userId = TokenUtils.getUserId(token);
         StageId parsedStageId = StageId.parse(stageId);
         Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
         boolean realTime = comp.getStageId().equals(parsedStageId);
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
@@ -274,6 +275,7 @@ public class UnitFacade {
     public Result<List<IntraSymbolBidVO>> listIntraSymbolBidVOs(@NotBlank String stageId, @RequestHeader String token) {
 
         Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
         StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
 
 

@@ -75,12 +75,18 @@ public class WebSocket {
     @OnError
     public void onError(Session session, Throwable error) {
         String userId = sessions.get(session);
+        if (error instanceof IOException) {
+            return;
+        }
         log.error("onError userId: {}, session : {}", userId, session, error);
     }
 
     @OnMessage
     @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     public void onMessage(Session session, String message) {
+        if (session == null) {
+            return;
+        }
         String userId = sessions.get(session);
         try {
             synchronized (session) {
