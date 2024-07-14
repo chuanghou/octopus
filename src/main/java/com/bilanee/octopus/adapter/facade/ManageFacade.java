@@ -326,12 +326,19 @@ public class ManageFacade {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
-        boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
-        SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
-        CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
-        CommandBus.acceptMemoryTransactional(command, new HashMap<>());
-        boolean recover = bidAspect.recover();
-        SysEx.falseThrow(recover, ErrorEnums.SYS_EX.message("恢复失败"));
+        boolean needBidAspect = comp.getCompStage() == CompStage.TRADE && comp.getMarketStatus() == MarketStatus.BID;
+        if (needBidAspect) {
+            boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
+            SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
+        }
+        try {
+            CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
+            CommandBus.acceptMemoryTransactional(command, new HashMap<>());
+        } finally {
+            if (needBidAspect) {
+                bidAspect.recover();
+            }
+        }
         log.info("End step");
         return Result.success();
     }
@@ -353,15 +360,7 @@ public class ManageFacade {
     @GetMapping("getExampleSetting")
     public Result<ExampleSetting> getExampleSetting() {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        String caseSetting = marketSettingDO.getCaseSetting();
         ExampleSetting.ExampleSettingBuilder builder = ExampleSetting.builder();
-        if (Kit.notBlank(caseSetting)) {
-            char[] charArray = caseSetting.toCharArray();
-            builder.transferDiffer(Objects.equals(charArray[0], '1'));
-            builder.transferLoadPeak(Objects.equals(charArray[1], '1'));
-            builder.receiverDiffer(Objects.equals(charArray[2], '1'));
-            builder.receiverLoadPeak(Objects.equals(charArray[3], '1'));
-        }
 
         String forecastDeviation = marketSettingDO.getForecastDeviation();
         if (Kit.notBlank(forecastDeviation)) {
@@ -403,11 +402,6 @@ public class ManageFacade {
     @PostMapping("updateExampleSetting")
     public Result<Void> updateExampleSetting(@RequestBody ExampleSetting exampleSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        String caseSetting = (exampleSetting.getTransferDiffer() ? "1" : "0") +
-                (exampleSetting.getTransferLoadPeak() ? "1" : "0") +
-                (exampleSetting.getReceiverDiffer() ? "1" : "0") +
-                (exampleSetting.getReceiverLoadPeak() ? "1" : "0");
-        marketSettingDO.setCaseSetting(caseSetting);
 
         marketSettingDO.setLoadAnnualMaxForecastErr(exampleSetting.getLoadAnnualMaxForecastErr().getForecastError());
         marketSettingDO.setLoadMonthlyMaxForecastErr(exampleSetting.getLoadMonthlyMaxForecastErr().getForecastError());
@@ -478,10 +472,6 @@ public class ManageFacade {
         ElectricMarketSettingVO electricMarketSettingVO = ElectricMarketSettingVO.builder()
                 .generatorPriceLimit(GridLimit.builder().high(marketSettingDO.getOfferPriceCap()).low(marketSettingDO.getOfferPriceFloor()).build())
                 .loadPriceLimit(GridLimit.builder().high(marketSettingDO.getBidPriceCap()).low(marketSettingDO.getBidPriceFloor()).build())
-                .transmissionAndDistributionTariff(marketSettingDO.getTransmissionAndDistributionTariff())
-                .annualCoalPrice(marketSettingDO.getAnnualCoalPrice())
-                .monthlyCoalPrice(marketSettingDO.getMonthlyCoalPrice())
-                .daCoalPrice(marketSettingDO.getDaCoalPrice())
                 .capacityPrice(marketSettingDO.getCapacityPrice())
                 .maxForwardUnitPositionInterest(marketSettingDO.getMaxForwardUnitPositionInterest())
                 .maxForwardLoadPositionInterest(marketSettingDO.getMaxForwardLoadPositionInterest())
@@ -523,15 +513,11 @@ public class ManageFacade {
         marketSettingDO.setOfferPriceFloor(electricMarketSetting.getGeneratorPriceLimit().getLow());
         marketSettingDO.setBidPriceCap(electricMarketSetting.getLoadPriceLimit().getHigh());
         marketSettingDO.setBidPriceFloor(electricMarketSetting.getLoadPriceLimit().getLow());
-        marketSettingDO.setTransmissionAndDistributionTariff(electricMarketSetting.getTransmissionAndDistributionTariff());
         marketSettingDO.setMaxForwardLoadPositionInterest(electricMarketSetting.getMaxForwardLoadPositionInterest());
         marketSettingDO.setMaxForwardUnitPositionInterest(electricMarketSetting.getMaxForwardUnitPositionInterest());
         marketSettingDO.setRegulatedProducerPrice(electricMarketSetting.getRegulatedProducerPrice());
         marketSettingDO.setRegulatedUserTariff(electricMarketSetting.getRegulatedUserTariff());
         marketSettingDO.setRegulatedInterprovTransmissionPrice(electricMarketSetting.getRegulatedInterprovTransmissionPrice());
-        marketSettingDO.setAnnualCoalPrice(electricMarketSetting.getAnnualCoalPrice());
-        marketSettingDO.setMonthlyCoalPrice(electricMarketSetting.getMonthlyCoalPrice());
-        marketSettingDO.setDaCoalPrice(electricMarketSetting.getDaCoalPrice());
         marketSettingDO.setCapacityPrice(electricMarketSetting.getCapacityPrice());
         marketSettingDO.setRetailPriceForecastMultiple(electricMarketSetting.getRetailPriceForecastMultiple());
         marketSettingDO.setSingleLoginLimit(electricMarketSetting.getSingleLoginLimit());
@@ -551,6 +537,33 @@ public class ManageFacade {
         List<String> assetAllocationModes = Arrays.stream(StringUtils.split(assetAllocationModeStr, ":")).collect(Collectors.toList());
         simulateSetting.setAssetAllocationModes(assetAllocationModes);
         simulateSetting.setAssetAllocationMode(marketSettingDO.getAssetAllocationMode());
+
+        Integer roundNum = marketSettingDO.getRoundNum();
+        String[] caseSettings = marketSettingDO.getCaseSetting().split(":");
+        BizEx.trueThrow(caseSettings.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("caseSetting参数异常，不与轮次匹配"));
+        String[] transmissionAndDistributionTariffs = marketSettingDO.getTransmissionAndDistributionTariff().split(":");
+        BizEx.trueThrow(transmissionAndDistributionTariffs.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("transmissionAndDistributionTariff参数异常，不与轮次匹配"));
+        String[] annualCoalPrices = marketSettingDO.getAnnualCoalPrice().split(":");
+        BizEx.trueThrow(annualCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("annualCoalPrice参数异常，不与轮次匹配"));
+        String[] monthlyCoalPrices = marketSettingDO.getMonthlyCoalPrice().split(":");
+        BizEx.trueThrow(monthlyCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("monthlyCoalPrice参数异常，不与轮次匹配"));
+        String[] daCoalPrices = marketSettingDO.getDaCoalPrice().split(":");
+        BizEx.trueThrow(daCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("daCoalPrice参数异常，不与轮次匹配"));
+        List<RoundSetting> roundSettings = IntStream.range(0, roundNum).mapToObj(i -> {
+            RoundSetting roundSetting = new RoundSetting();
+            char[] charArray = caseSettings[i].toCharArray();
+            roundSetting.setTransferDiffer(Objects.equals(charArray[0], '1'));
+            roundSetting.setTransferLoadPeak(Objects.equals(charArray[1], '1'));
+            roundSetting.setTransferDiffer(Objects.equals(charArray[2], '1'));
+            roundSetting.setTransferLoadPeak(Objects.equals(charArray[3], '1'));
+            roundSetting.setTransmissionAndDistributionTariff(Double.parseDouble(transmissionAndDistributionTariffs[i]));
+            roundSetting.setAnnualCoalPrice(Double.parseDouble(annualCoalPrices[i]));
+            roundSetting.setMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
+            roundSetting.setDaCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
+            return roundSetting;
+        }).collect(Collectors.toList());
+        simulateSetting.setRoundSettings(roundSettings);
+
         return Result.success(simulateSetting);
     }
 
@@ -585,6 +598,34 @@ public class ManageFacade {
         marketSettingDO.setIsOpeningIntraprovSpotQuickOffer(simulateSetting.getIsOpeningIntraprovSpotQuickOffer());
         marketSettingDO.setIsOpeningThermalStartOffer(simulateSetting.getIsOpeningThermalStartOffer());
         marketSettingDO.setIsOpeningThermalMinoutputOffer(simulateSetting.getIsOpeningThermalMinoutputOffer());
+
+        // 轮次校验
+        Integer roundNum = marketSettingDO.getRoundNum();
+        if (roundNum != simulateSetting.getRoundSettings().size()) {
+            throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("轮次数量不匹配"));
+        }
+
+        String caseSetting = simulateSetting.getRoundSettings().stream().map(r -> {
+            return (r.getTransferDiffer() ? "1" : "0") +
+                    (r.getTransferLoadPeak() ? "1" : "0") +
+                    (r.getReceiverDiffer() ? "1" : "0") +
+                    (r.getReceiverLoadPeak() ? "1" : "0");
+        }).collect(Collectors.joining(":"));
+
+        marketSettingDO.setCaseSetting(caseSetting);
+
+        String transmissionAndDistributionTariff = simulateSetting.getRoundSettings().stream().map(r -> r.getTransmissionAndDistributionTariff() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setTransmissionAndDistributionTariff(transmissionAndDistributionTariff);
+
+        String annualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getAnnualCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setAnnualCoalPrice(annualCoalPrice);
+
+        String monthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setMonthlyCoalPrice(monthlyCoalPrice);
+
+        String daCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getDaCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setDaCoalPrice(daCoalPrice);
+
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

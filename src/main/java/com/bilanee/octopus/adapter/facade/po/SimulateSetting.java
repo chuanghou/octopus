@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade.po;
 
+import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -126,6 +127,9 @@ public class SimulateSetting {
 
     List<String> assetAllocationModes;
 
+    @NotNull(message = "轮次相关参数不能为空") @Valids
+    List<RoundSetting> roundSettings;
+
     /**
      * 是否开放省内现货快捷报价
      */
@@ -140,5 +144,15 @@ public class SimulateSetting {
      * 是否开放火电机组最小技术出力报价
      */
     Boolean isOpeningThermalMinoutputOffer;
+
+    /**
+     * 省内日滚动报价持续时长（min）
+     */
+    Integer intraprovincialSpotRollingBidDuration;
+
+    /**
+     * 省内日滚动结果查询时长（min）
+     */
+    Integer intraprovincialSpotRollingResultDuration;
 
 }
