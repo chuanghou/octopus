@@ -13,31 +13,6 @@ import javax.validation.constraints.NotNull;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ExampleSetting {
 
-
-    /**
-     * 送电省负荷峰谷差 大（true）小（false）
-     */
-    @NotNull
-    Boolean transferDiffer;
-
-    /**
-     * 送电省负荷峰值 高（true）低（false）
-     */
-    @NotNull
-    Boolean transferLoadPeak;
-
-    /**
-     * 受电省负荷峰谷差 大（true）小（false）
-     */
-    @NotNull
-    Boolean receiverDiffer;
-
-    /**
-     * 受电省负荷峰值 高（true）低（false）
-     */
-    @NotNull
-    Boolean receiverLoadPeak;
-
     /**
      * 负荷年度预测百分比误差
      */

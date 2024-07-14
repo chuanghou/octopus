@@ -86,7 +86,7 @@ public class MarketSettingDO {
   Integer quizResultDuration;
   String dt;
   String caseSetting;
-  Double transmissionAndDistributionTariff;
+  String transmissionAndDistributionTariff;
   Double regulatedUserTariff;
   Double regulatedProducerPrice;
   Double regulatedInterprovTransmissionPrice;
@@ -98,9 +98,9 @@ public class MarketSettingDO {
   Integer paperId;
   Double maxForwardUnitPositionInterest;
   Double maxForwardLoadPositionInterest;
-  Double annualCoalPrice;
-  Double monthlyCoalPrice;
-  Double daCoalPrice;
+  String annualCoalPrice;
+  String monthlyCoalPrice;
+  String daCoalPrice;
   String forecastDeviation;
   Double retailPriceForecastMultiple;
   Integer assetAllocationMode;

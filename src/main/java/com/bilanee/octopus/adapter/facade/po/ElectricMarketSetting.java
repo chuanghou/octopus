@@ -35,11 +35,7 @@ public class ElectricMarketSetting {
     Double regulatedProducerPrice;
 
 
-    /**
-     * 输配电价
-     */
-    @NotNull(message = "输配电价不可为空")
-    Double transmissionAndDistributionTariff;
+
 
 
     /**
@@ -55,24 +51,6 @@ public class ElectricMarketSetting {
     @NotNull(message = "保障性用户电价不可为空")
     Double regulatedUserTariff;
 
-
-    /**
-     * 燃煤价格年度预测（元/t）
-     */
-    @NotNull(message = "燃煤价格年度预测不可为空")
-    Double annualCoalPrice;
-
-    /**
-     * 燃煤价格月度预测（元/t）
-     */
-    @NotNull(message = "燃煤价格月度预测不可为空")
-    Double monthlyCoalPrice;
-
-    /**
-     * 燃煤价格日前预测（元/t）
-     */
-    @NotNull(message = "燃煤价格日前预测不可为空")
-    Double daCoalPrice;
 
     /**
      * 容量电价（元/MWyear）

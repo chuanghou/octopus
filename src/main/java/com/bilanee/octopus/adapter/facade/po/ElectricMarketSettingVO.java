@@ -27,11 +27,6 @@ public class ElectricMarketSettingVO {
     Double regulatedProducerPrice;
 
 
-    /**
-     * 输配电价
-     */
-    Double transmissionAndDistributionTariff;
-
 
     /**
      * 省间交易的政府定价
@@ -43,21 +38,6 @@ public class ElectricMarketSettingVO {
      * 保障性用户电价
      */
     Double regulatedUserTariff;
-
-    /**
-     * 燃煤价格年度预测（元/t）
-     */
-    Double annualCoalPrice;
-
-    /**
-     * 燃煤价格月度预测（元/t）
-     */
-    Double monthlyCoalPrice;
-
-    /**
-     * 燃煤价格日前预测（元/t）
-     */
-    Double daCoalPrice;
 
     /**
      * 容量电价（元/MWyear）

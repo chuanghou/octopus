@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade.po;
 
+import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -125,6 +126,9 @@ public class SimulateSetting {
     Integer assetAllocationMode;
 
     List<String> assetAllocationModes;
+
+    @NotNull(message = "轮次相关参数不能为空") @Valids
+    List<RoundSetting> roundSettings;
 
     /**
      * 是否开放省内现货快捷报价
