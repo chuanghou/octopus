@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.UserFacade;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.TokenUtils;
 import com.stellariver.milky.common.base.BeanUtil;
+import com.stellariver.milky.common.tool.executor.EnhancedExecutor;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import lombok.Data;
@@ -29,7 +30,6 @@ import java.util.concurrent.Executors;
 @ServerEndpoint("/ws")
 public class WebSocket {
 
-    private static final Executor executor = Executors.newFixedThreadPool(100);
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
 
 
@@ -39,6 +39,8 @@ public class WebSocket {
             return 2024;
         }
     }, "一个用户ID不能同时登录两个页面");
+
+
 
     @OnOpen
     public void onOpen(Session session) throws IOException {
@@ -112,7 +114,7 @@ public class WebSocket {
 
     @SneakyThrows
     public static void cast(WsMessage wsMessage) {
-        sessions.keySet().forEach(session -> executor.execute(() -> {
+        sessions.keySet().forEach(session -> BeanUtil.getBean(EnhancedExecutor.class).execute(() -> {
             String userId = sessions.get(session);
             try {
                 synchronized (session) {
