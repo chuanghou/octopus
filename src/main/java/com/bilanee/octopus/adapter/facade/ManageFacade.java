@@ -1,6 +1,7 @@
 package com.bilanee.octopus.adapter.facade;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.PaperVO;
@@ -12,10 +13,8 @@ import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.domain.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
-import com.stellariver.milky.common.base.BizEx;
-import com.stellariver.milky.common.base.ExceptionType;
-import com.stellariver.milky.common.base.Result;
-import com.stellariver.milky.common.base.SysEx;
+import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.*;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
@@ -23,14 +22,15 @@ import com.stellariver.milky.common.tool.util.StreamMap;
 import com.stellariver.milky.domain.support.base.DomainTunnel;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
-import lombok.CustomLog;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
 import org.mapstruct.*;
+import org.mapstruct.Builder;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -550,12 +550,14 @@ public class ManageFacade {
         BizEx.trueThrow(caseSettings.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("caseSetting参数异常，不与轮次匹配"));
         String[] transmissionAndDistributionTariffs = marketSettingDO.getTransmissionAndDistributionTariff().split(":");
         BizEx.trueThrow(transmissionAndDistributionTariffs.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("transmissionAndDistributionTariff参数异常，不与轮次匹配"));
+        String[] multiYearCoalPrices = marketSettingDO.getMultiYearCoalPrice().split(":");
+        BizEx.trueThrow(multiYearCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("multiYearCoalPrices参数异常，不与轮次匹配"));
         String[] annualCoalPrices = marketSettingDO.getAnnualCoalPrice().split(":");
-        BizEx.trueThrow(annualCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("annualCoalPrice参数异常，不与轮次匹配"));
+        BizEx.trueThrow(annualCoalPrices.length/2 != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("annualCoalPrice参数异常，不与轮次匹配"));
         String[] monthlyCoalPrices = marketSettingDO.getMonthlyCoalPrice().split(":");
-        BizEx.trueThrow(monthlyCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("monthlyCoalPrice参数异常，不与轮次匹配"));
+        BizEx.trueThrow(monthlyCoalPrices.length/2 != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("monthlyCoalPrice参数异常，不与轮次匹配"));
         String[] daCoalPrices = marketSettingDO.getDaCoalPrice().split(":");
-        BizEx.trueThrow(daCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("daCoalPrice参数异常，不与轮次匹配"));
+        BizEx.trueThrow(daCoalPrices.length/2 != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("daCoalPrice参数异常，不与轮次匹配"));
         List<RoundSetting> roundSettings = IntStream.range(0, roundNum).mapToObj(i -> {
             RoundSetting roundSetting = new RoundSetting();
             char[] charArray = caseSettings[i].toCharArray();
@@ -564,12 +566,30 @@ public class ManageFacade {
             roundSetting.setTransferDiffer(Objects.equals(charArray[2], '1'));
             roundSetting.setTransferLoadPeak(Objects.equals(charArray[3], '1'));
             roundSetting.setTransmissionAndDistributionTariff(Double.parseDouble(transmissionAndDistributionTariffs[i]));
-            roundSetting.setAnnualCoalPrice(Double.parseDouble(annualCoalPrices[i]));
-            roundSetting.setMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
-            roundSetting.setDaCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
+            roundSetting.setTransferMultiCoalPrice(Double.parseDouble(multiYearCoalPrices[2 * i]));
+            roundSetting.setReceiverMultiCoalPrice(Double.parseDouble(multiYearCoalPrices[2 * i + 1]));
+            roundSetting.setTransferAnnualCoalPrice(Double.parseDouble(annualCoalPrices[2 * i]));
+            roundSetting.setReceiverAnnualCoalPrice(Double.parseDouble(annualCoalPrices[2 * i + 1]));
+            roundSetting.setTransferMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[2 * i]));
+            roundSetting.setReceiverMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[2 * i + 1]));
+            roundSetting.setTransferDaCoalPrice(Double.parseDouble(daCoalPrices[2 * i]));
+            roundSetting.setReceiverDaCoalPrice(Double.parseDouble(daCoalPrices[2 * i + 1]));
             return roundSetting;
         }).collect(Collectors.toList());
         simulateSetting.setRoundSettings(roundSettings);
+
+        simulateSetting.setIntraprovincialMultiYearBidDuration(simulateSetting.getIntraprovincialMultiYearBidDuration());
+        simulateSetting.setIntraprovincialMultiYearResultDuration(simulateSetting.getIntraprovincialMultiYearResultDuration());
+
+        SimulateSetting.RenewableSpecialTransactionDemandPercentage resolved
+                = SimulateSetting.RenewableSpecialTransactionDemandPercentage.resolve(marketSettingDO.getRenewableSpecialTransactionDemandPercentage());
+        simulateSetting.setRenewableSpecialTransactionDemandPercentage(resolved);
+
+        simulateSetting.setMwhPercentageThatCanBeChangedForRetailPackage(marketSettingDO.getMwhPercentageThatCanBeChangedForRetailPackage());
+
+        simulateSetting.setWindSpecificPriceCap(marketSettingDO.getWindSpecificPriceCap());
+        simulateSetting.setSolarSpecificPriceCap(marketSettingDO.getSolarSpecificPriceCap());
+
         return Result.success(simulateSetting);
     }
 
@@ -607,6 +627,11 @@ public class ManageFacade {
         marketSettingDO.setIntraprovincialSpotRollingBidDuration(simulateSetting.getIntraprovincialSpotRollingBidDuration());
         marketSettingDO.setIntraprovincialSpotRollingResultDuration(simulateSetting.getIntraprovincialSpotRollingResultDuration());
 
+        marketSettingDO.setIntraprovincialMultiYearBidDuration(simulateSetting.getIntraprovincialMultiYearBidDuration());
+        marketSettingDO.setIntraprovincialMultiYearResultDuration(simulateSetting.getIntraprovincialMultiYearResultDuration());
+        marketSettingDO.setRenewableSpecialTransactionDemandPercentage(simulateSetting.getRenewableSpecialTransactionDemandPercentage().storeValue());
+
+
         // 轮次校验
         Integer roundNum = marketSettingDO.getRoundNum();
         if (roundNum != simulateSetting.getRoundSettings().size()) {
@@ -625,18 +650,122 @@ public class ManageFacade {
         String transmissionAndDistributionTariff = simulateSetting.getRoundSettings().stream().map(r -> r.getTransmissionAndDistributionTariff() + "").collect(Collectors.joining(":"));
         marketSettingDO.setTransmissionAndDistributionTariff(transmissionAndDistributionTariff);
 
-        String annualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getAnnualCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setAnnualCoalPrice(annualCoalPrice);
+        String transferMultiAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferMultiCoalPrice() + "").collect(Collectors.joining(":"));
+        String receiverMultiAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverMultiCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setMultiYearCoalPrice(transferMultiAnnualCoalPrice + ";" + receiverMultiAnnualCoalPrice);
 
-        String monthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setMonthlyCoalPrice(monthlyCoalPrice);
+        String transferAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferAnnualCoalPrice() + "").collect(Collectors.joining(":"));
+        String receiverAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverAnnualCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setAnnualCoalPrice(transferAnnualCoalPrice + ";" + receiverAnnualCoalPrice);
 
-        String daCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getDaCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setDaCoalPrice(daCoalPrice);
+        String transferMonthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
+        String receiverMonthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setMonthlyCoalPrice(transferMonthlyCoalPrice + ";" + receiverMonthlyCoalPrice);
+
+        String transferDaCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferDaCoalPrice() + "").collect(Collectors.joining(":"));
+        String receiverDaCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverDaCoalPrice() + "").collect(Collectors.joining(":"));
+        marketSettingDO.setDaCoalPrice(transferDaCoalPrice + ";" + receiverDaCoalPrice);
+
+        marketSettingDO.setMwhPercentageThatCanBeChangedForRetailPackage(simulateSetting.getMwhPercentageThatCanBeChangedForRetailPackage());
+        marketSettingDO.setRetailPlanDescription(simulateSetting.getRetailPlanDescription());
+        marketSettingDO.setWindSpecificPriceCap(simulateSetting.getWindSpecificPriceCap());
+        marketSettingDO.setSolarSpecificPriceCap(simulateSetting.getSolarSpecificPriceCap());
 
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }
+
+    final RetailPlanParameterDOMapper retailPlanParameterDOMapper;
+
+
+    /**
+     * 列举所有的套餐详情
+     */
+    @GetMapping("listRetailPlans")
+    public Result<List<RetailPlan>> listRetailPlans() {
+        ListMultimap<Integer, RetailPlanParameter> retailPlans=
+                retailPlanParameterDOMapper.selectList(null)
+                .stream().collect(Collect.listMultiMap(RetailPlanParameter::getRetailPlanId));
+        List<RetailPlan> retailPlanVOs = retailPlans.asMap().entrySet().stream().map(e -> {
+            List<Parameter> parameters = e.getValue().stream().map(p -> {
+                return Parameter.builder().parameterId(p.getParameterId())
+                        .parameterDescription(p.getParameterDescription())
+                        .value(p.getParameterValue())
+                        .build();
+            }).collect(Collectors.toList());
+            return RetailPlan.builder().retailPlanId(e.getKey()).parameters(parameters).build();
+        }).collect(Collectors.toList());
+        return Result.success(retailPlanVOs);
+    }
+
+    /**
+     * 提交参数参数
+     * @param retailPlans 参套参数
+     */
+    @PostMapping("submitRetailPlans")
+    public Result<Void> submitRetailPlans(@RequestBody @Valids List<RetailPlan> retailPlans) {
+        retailPlans.forEach(retailPlan -> {
+            for (Parameter parameter : retailPlan.parameters) {
+                LambdaUpdateWrapper<RetailPlanParameter> eq = new LambdaUpdateWrapper<RetailPlanParameter>()
+                        .eq(RetailPlanParameter::getRetailPlanId, retailPlan.retailPlanId)
+                        .eq(RetailPlanParameter::getParameterId, parameter.getParameterId());
+                RetailPlanParameter retailPlanParameter = RetailPlanParameter.builder().parameterValue(parameter.value).build();
+                retailPlanParameterDOMapper.update(retailPlanParameter, eq);
+            }
+        });
+        return Result.success();
+    }
+
+
+
+
+    @Data
+    @lombok.Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class RetailPlan {
+        /**
+         * 套餐id
+         */
+        @NotNull(message = "套餐id不能为空")
+        Integer retailPlanId;
+
+        /**
+         * 套餐参数
+         */
+        List<Parameter> parameters;
+    }
+
+    @Data
+    @lombok.Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class Parameter {
+
+        /**
+         * 参数id
+         */
+        @NotNull(message = "参数id不能为空")
+        Integer parameterId;
+
+        /**
+         * 参数描述
+         */
+        String parameterDescription;
+
+        /**
+         * 参数值
+         */
+        @NotBlank(message = "参数值不能为空")
+        String value;
+
+    }
+
+
+
+
 
 
     final PaperDOMapper paperDOMapper;

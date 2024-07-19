@@ -1374,10 +1374,188 @@ public class UnitFacade {
 
 
 
+    /**
+     * 多年报价接口
+     * @param stageId 阶段id
+     * @param token token
+     * @province 省份
+     * @param generatorType 机组类型
+     * @return 报单结果
+     */
+    @ToBid
+    @SuppressWarnings("unchecked")
+    @PostMapping("submitMultiAnnualBiPO")
+    public Result<List<MultiYearBid>> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
+                                                           @NotNull Province province, @NotNull GeneratorType generatorType) {
+        StageId parsedStageId = StageId.parse(stageId);
+        String userId = TokenUtils.getUserId(token);
+        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
+                .stream().filter(u -> u.getMetaUnit().getProvince().equals(province))
+                .filter(u -> generatorType.equals(u.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
+
+        if (Collect.isEmpty(units)) {
+            return Result.success(Collections.EMPTY_LIST);
+        }
+        Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
+        LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>()
+                .eq(MultiYearUnitOfferDO::getUnitId, Collect.transfer(units, u -> u.getMetaUnit().getSourceId()))
+                .eq(MultiYearUnitOfferDO::getRoundId, parsedStageId.getRoundId() + 1);
+        List<MultiYearUnitOfferDO> multiYearUnitOfferDOs = multiYearUnitOfferDOMapper.selectList(eq);
+        List<MultiYearBid> multiYearBids = multiYearUnitOfferDOs.stream().map(d -> {
+            return MultiYearBid.builder()
+                    .unitId(unitMap.get(d.getUnitId()).getUnitId())
+                    .unitName(unitMap.get(d.getUnitId()).getMetaUnit().getName())
+                    .maxMultiYearClearedMwh(d.getMaxMultiYearClearedMwh())
+                    .offerMwh1(d.getOfferMwh1())
+                    .offerMwh2(d.getOfferMwh2())
+                    .offerMwh3(d.getOfferMwh3())
+                    .offerPrice1(d.getOfferPrice1())
+                    .offerPrice2(d.getOfferPrice2())
+                    .offerPrice3(d.getOfferPrice3())
+                    .build();
+        }).collect(Collectors.toList());
+        return Result.success(multiYearBids);
+    }
+
+    final MultiYearUnitOfferDOMapper multiYearUnitOfferDOMapper;
 
 
 
+    /**
+     * 多年报价接口
+     * @param multiYearBid 省间报价请求结构体
+     * @return 报单结果
+     */
+    @ToBid
+    @PostMapping("submitMultiAnnualBiPO")
+    public Result<Void> submitMultiAnnualBiPO(@RequestBody MultiYearBid multiYearBid, @NotBlank String stageId, @RequestHeader String token) {
+
+        StageId pStageId = StageId.parse(stageId);
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.MULTI, PARAM_FORMAT_WRONG.message("当前为多年间报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID, PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+
+        String userId = TokenUtils.getUserId(token);
+
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, multiYearBid.getUnitId());
+        BizEx.nullThrow(unit, PARAM_FORMAT_WRONG.message("找不到对应unitId" + multiYearBid.getUnitId() + "对应数据"));
+        Integer sourceId = unit.getMetaUnit().getSourceId();
+        LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>().eq(MultiYearUnitOfferDO::getUnitId, sourceId)
+                .eq(MultiYearUnitOfferDO::getRoundId, pStageId.getRoundId() + 1);
+        MultiYearUnitOfferDO multiYearUnitOfferDO = multiYearUnitOfferDOMapper.selectOne(eq);
+        multiYearUnitOfferDO.setOfferMwh1(multiYearUnitOfferDO.getOfferMwh1());
+        multiYearUnitOfferDO.setOfferMwh2(multiYearUnitOfferDO.getOfferMwh2());
+        multiYearUnitOfferDO.setOfferMwh3(multiYearUnitOfferDO.getOfferMwh3());
+        multiYearUnitOfferDO.setOfferPrice1(multiYearUnitOfferDO.getOfferPrice1());
+        multiYearUnitOfferDO.setOfferPrice2(multiYearUnitOfferDO.getOfferPrice2());
+        multiYearUnitOfferDO.setOfferPrice3(multiYearUnitOfferDO.getOfferPrice3());
+        multiYearUnitOfferDOMapper.updateById(multiYearUnitOfferDO);
+        return Result.success();
+    }
+
+    /**
+     * 新能源专场
+     * @param stageId 阶段id
+     * @param token token
+     * @param province 省份
+     * @return 报单结果
+     */
+    @SuppressWarnings("unchecked")
+    @PostMapping("listRetailPackageVO")
+    public Result<RetailPackageVO> listsRetailPackageVO(@NotBlank String stageId, @RequestHeader String token, @NotNull Province province) {
+        StageId parsedStageId = StageId.parse(stageId);
+        String userId = TokenUtils.getUserId(token);
+        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
+                .stream().filter(u -> u.getMetaUnit().getProvince().equals(province))
+                .filter(u -> UnitType.LOAD.equals(u.getMetaUnit().getUnitType())).collect(Collectors.toList());
+
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        RetailPackageVO.RetailPackageVOBuilder builder = RetailPackageVO.builder().headMessage(marketSettingDO.getMarketPackageDescription());
+        if (Collect.isEmpty(units)) {
+            builder.unitPackages(Collections.EMPTY_LIST);
+            return Result.success(builder.build());
+        }
+
+        Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
+
+        List<Integer> sourceIds = Collect.transfer(units, u -> u.getMetaUnit().getSourceId());
+        LambdaQueryWrapper<RetailMarketLoadBidDO> in = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
+                .eq(RetailMarketLoadBidDO::getRoundId, parsedStageId.getRoundId())
+                .in(RetailMarketLoadBidDO::getLoadId, sourceIds);
+
+        ListMultimap<Integer, RetailMarketLoadBidDO> groupBidDO =
+                retailMarketLoadBidDOMapper.selectList(in).stream().collect(Collect.listMultiMap(RetailMarketLoadBidDO::getLoadId));
 
 
+        LambdaQueryWrapper<RetailMarketPackageDescription> eq = new LambdaQueryWrapper<RetailMarketPackageDescription>()
+                .eq(RetailMarketPackageDescription::getRoundId, parsedStageId.getRoundId() + 1)
+                .eq(RetailMarketPackageDescription::getProv, province.getDbCode());
+        Map<Integer, RetailMarketPackageDescription> map = Collect.toMap(retailMarketPackageDescriptionMapper.selectList(eq), RetailMarketPackageDescription::getRetailPackageId);
+
+
+        List<RetailPackageVO.UnitPackage> unitPackages = units.stream().map(u -> {
+            List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = groupBidDO.get(u.getMetaUnit().getSourceId());
+            List<RetailPackageVO.PackageDetail> packageDetails = retailMarketLoadBidDOS.stream().map(d -> {
+                return RetailPackageVO.PackageDetail.builder()
+                        .id(d.getRetailPackageId())
+                        .description(map.get(d.getRetailPackageId()).getRetailPackageDescription())
+                        .checked(d.getIsSelectedRetailPackage())
+                        .build();
+            }).collect(Collectors.toList());
+            return RetailPackageVO.UnitPackage.builder()
+                    .unitId(u.getUnitId())
+                    .unitName(u.getMetaUnit().getName())
+                    .packageDetails(packageDetails)
+                    .build();
+        }).collect(Collectors.toList());
+
+        RetailPackageVO retailPackageVO = builder.unitPackages(unitPackages).build();
+        return Result.success(retailPackageVO);
+    }
+
+
+    /**
+     * 新能源专场提交
+     * @param stageId 阶段id
+     * @param token token
+     * @return 报单结果
+     */
+    @PostMapping("submitRetailPackages")
+    public Result<Void> submitRetailPackages(@RequestBody RetailMarketPO retailMarketPO, @NotBlank String stageId, @RequestHeader String token) {
+        StageId pStageId = StageId.parse(stageId);
+        StageId cStageId = tunnel.runningComp().getStageId();
+        BizEx.falseThrow(pStageId.equals(cStageId), PARAM_FORMAT_WRONG.message("已经进入下一阶段不可报单"));
+
+        BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.MULTI, PARAM_FORMAT_WRONG.message("当前为多年间报价阶段"));
+        BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID, PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
+
+        String userId = TokenUtils.getUserId(token);
+
+        Unit unit = domainTunnel.getByAggregateId(Unit.class, retailMarketPO.getUnitId());
+
+        Integer sourceId = unit.getMetaUnit().getSourceId();
+
+        Map<Integer, RetailMarketPO.PackageChoice> map = Collect.toMap(retailMarketPO.getPackageChoices(), RetailMarketPO.PackageChoice::getPackageId);
+
+        LambdaQueryWrapper<RetailMarketLoadBidDO> eq = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
+                .eq(RetailMarketLoadBidDO::getLoadId, sourceId)
+                .eq(RetailMarketLoadBidDO::getRoundId, pStageId.getRoundId());
+        List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = retailMarketLoadBidDOMapper.selectList(eq);
+        retailMarketLoadBidDOS.forEach(retailMarketLoadBidDO -> {
+            RetailMarketPO.PackageChoice packageChoice = map.get(retailMarketLoadBidDO.getRetailPackageId());
+            if (packageChoice == null) {
+                throw new BizEx(PARAM_FORMAT_WRONG.message("没有提交所有选项"));
+            }
+            retailMarketLoadBidDO.setIsSelectedRetailPackage(packageChoice.getChecked());
+        });
+
+        retailMarketLoadBidDOS.forEach(retailMarketLoadBidDOMapper::updateById);
+        return Result.success();
+    }
+
+    final RetailMarketLoadBidDOMapper retailMarketLoadBidDOMapper;
+    final RetailMarketPackageDescriptionMapper retailMarketPackageDescriptionMapper;
 
 }

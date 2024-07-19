@@ -44,21 +44,51 @@ public class RoundSetting {
     Double transmissionAndDistributionTariff;
 
     /**
-     * 燃煤价格年度预测（元/t）
+     * 送电省燃煤价格多年预测（元/t）
      */
-    @NotNull(message = "燃煤价格年度预测不可为空")
-    Double annualCoalPrice;
+    @NotNull(message = "送电省燃煤价格多年预测不可为空")
+    Double transferMultiCoalPrice;
 
     /**
-     * 燃煤价格月度预测（元/t）
+     * 受电省燃煤价格多年预测（元/t）
      */
-    @NotNull(message = "燃煤价格月度预测不可为空")
-    Double monthlyCoalPrice;
+    @NotNull(message = "受电省燃煤价格多年预测不可为空")
+    Double receiverMultiCoalPrice;
 
     /**
-     * 燃煤价格日前预测（元/t）
+     * 送电省燃煤价格年度预测（元/t）
      */
-    @NotNull(message = "燃煤价格日前预测不可为空")
-    Double daCoalPrice;
+    @NotNull(message = "送电省燃煤价格年度预测不可为空")
+    Double transferAnnualCoalPrice;
+
+    /**
+     * 受电省燃煤价格年度预测（元/t）
+     */
+    @NotNull(message = "受电省燃煤价格年度预测不可为空")
+    Double receiverAnnualCoalPrice;
+
+    /**
+     * 送电省燃煤价格月度预测（元/t）
+     */
+    @NotNull(message = "送电省燃煤价格月度预测不可为空")
+    Double transferMonthlyCoalPrice;
+
+    /**
+     * 受电省燃煤价格月度预测（元/t）
+     */
+    @NotNull(message = "受电省燃煤价格月度预测不可为空")
+    Double receiverMonthlyCoalPrice;
+
+    /**
+     * 送电省燃煤价格日前预测（元/t）
+     */
+    @NotNull(message = "送电省燃煤价格日前预测不可为空")
+    Double transferDaCoalPrice;
+
+    /**
+     * 受电省燃煤价格日前预测（元/t）
+     */
+    @NotNull(message = "受电省燃煤价格日前预测不可为空")
+    Double receiverDaCoalPrice;
 
 }

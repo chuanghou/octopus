@@ -98,6 +98,7 @@ public class MarketSettingDO {
   Integer paperId;
   Double maxForwardUnitPositionInterest;
   Double maxForwardLoadPositionInterest;
+  String multiYearCoalPrice;
   String annualCoalPrice;
   String monthlyCoalPrice;
   String daCoalPrice;
@@ -127,6 +128,48 @@ public class MarketSettingDO {
    * 各设备省间可交易额度相对于按容量均分的倍数
    */
   Double maxForwardClearedMwMultiple;
+
+  /**
+   * 省内多年报价持续时长（min）
+   */
+  Integer intraprovincialMultiYearBidDuration;
+
+  /**
+   * 省内多年结果查询时长（min）
+   */
+  Integer intraprovincialMultiYearResultDuration;
+
+  /**
+   * 新能源专场交易电网申报需求占新能源预测上网电量百分比“:”为分隔符，存储顺序：
+   * 送电省风、送电省光、
+   * 受电省风、受电省光
+   */
+  String renewableSpecialTransactionDemandPercentage;
+
+
+  /**
+   * 总用电量中可变更零售套餐的
+   * 电量占比
+   */
+  Double mwhPercentageThatCanBeChangedForRetailPackage;
+
+
+  /**
+   * 用户侧零售套餐说明
+   */
+  String retailPlanDescription;
+
+
+  /**
+   * 风力新能源价格上限
+   */
+  Double windSpecificPriceCap;
+
+
+  /**
+   * 光伏新能源价格上限
+   */
+  Double solarSpecificPriceCap;
 
 
 }

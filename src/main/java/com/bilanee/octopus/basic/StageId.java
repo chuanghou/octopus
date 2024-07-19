@@ -55,7 +55,7 @@ public class StageId {
             } else {
                 stageId.setCompStage(CompStage.TRADE);
                 stageId.setRoundId(0);
-                stageId.setTradeStage(TradeStage.AN_INTER);
+                stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
                 stageId.setMarketStatus(MarketStatus.BID);
             }
         } else if (compStage == CompStage.QUIT_COMPETE) {
@@ -63,7 +63,7 @@ public class StageId {
         } else if (compStage == CompStage.QUIT_RESULT) {
             stageId.setCompStage(CompStage.TRADE);
             stageId.setRoundId(0);
-            stageId.setTradeStage(TradeStage.AN_INTER);
+            stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
             stageId.setMarketStatus(MarketStatus.BID);
         } else if (compStage == CompStage.REVIEW) {
             stageId.setCompStage(CompStage.RANKING);
@@ -80,7 +80,7 @@ public class StageId {
                     stageId.setMarketStatus(null);
                 } else {
                     stageId.setRoundId(stageId.getRoundId() + 1);
-                    stageId.setTradeStage(TradeStage.AN_INTER);
+                    stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
                     stageId.setMarketStatus(MarketStatus.BID);
                 }
             } else if (marketStatus == MarketStatus.BID){
