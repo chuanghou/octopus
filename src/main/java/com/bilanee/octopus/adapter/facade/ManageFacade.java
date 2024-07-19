@@ -137,7 +137,7 @@ public class ManageFacade {
         if (compCreatePO.getStartTimeStamp() == null) {
             compCreatePO.setStartTimeStamp(System.currentTimeMillis() + 30 * 60_000);
         } else {
-            if (compCreatePO.getStartTimeStamp() - System.currentTimeMillis() < 30 * 60_1000L) {
+            if (compCreatePO.getStartTimeStamp() - System.currentTimeMillis() < 30 * 60_000L) {
                 throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("至少设置30分钟以后开始比赛"));
             }
         }
