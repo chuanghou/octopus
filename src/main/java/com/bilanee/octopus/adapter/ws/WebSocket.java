@@ -32,6 +32,10 @@ public class WebSocket {
 
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
 
+    private static final Executor executor = Executors.newFixedThreadPool(100);
+
+
+
 
     private  static  final CloseReason closeReason = new CloseReason(new CloseReason.CloseCode() {
         @Override
@@ -108,7 +112,7 @@ public class WebSocket {
 
     @SneakyThrows
     public static void cast(WsMessage wsMessage) {
-        sessions.keySet().forEach(session -> BeanUtil.getBean(EnhancedExecutor.class).execute(() -> {
+        sessions.keySet().forEach(session -> executor.execute(() -> {
             String userId = sessions.get(session);
             try {
                 synchronized (session) {
