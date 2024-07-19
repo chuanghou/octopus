@@ -83,18 +83,5 @@ public class ElectricMarketSetting {
      */
     Boolean singleLoginLimit;
 
-    /**
-     * 发电侧中长期持仓考核要求（%）
-     */
-    Double minForwardUnitPosition;
-    /**
-     * 用户侧中长期持仓考核要求（%）
-     */
-    Double minForwardLoadPosition;
-    /**
-     * 各设备省间可交易额度相对于按容量均分的倍数
-     */
-    Double maxForwardClearedMwMultiple;
-
 
 }
