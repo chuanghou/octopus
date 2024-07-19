@@ -63,7 +63,8 @@ public class Bid {
             return cache.get("TransmissionAndDistributionTariff", () -> {
                 MarketSettingMapper marketSettingMapper = BeanUtil.getBean(MarketSettingMapper.class);
                 MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-                return marketSettingDO.getTransmissionAndDistributionTariff();
+                int index = marketSettingDO.getRoundId() - 1;
+                return Double.parseDouble(marketSettingDO.getTransmissionAndDistributionTariff().split(":")[index]);
             });
         }
 
