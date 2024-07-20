@@ -262,6 +262,24 @@ public class Routers implements EventRouters {
     final RollDealDOMapper rollDealDOMapper;
 
 
+    @EventRouter(order = 1L)
+    public void routeForMultiClear(CompEvent.Stepped stepped, Context context) {
+        StageId now = stepped.getNow();
+        boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
+        boolean b1 = now.getTradeStage() == TradeStage.MO_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
+        if (!(b0 || b1)) {
+            return;
+        }
+        CompCmd.ClearMulti command = CompCmd.ClearMulti.builder().compId(now.getCompId()).build();
+        CommandBus.driveByEvent(command, stepped);
+        BidQuery bidQuery = BidQuery.builder()
+                .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
+        String dt = tunnel.runningComp().getDt();
+        // TODO
+        // 联调结束后增加回写代码
+    }
+
+
     /**
      * 年度省间出清和月度省间出清，主要是为了清算集中竞价结果，算成交价格，确定各个量价最后的成交数量
      */
