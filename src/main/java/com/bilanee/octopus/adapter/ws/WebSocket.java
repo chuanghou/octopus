@@ -18,9 +18,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 
 @Data
@@ -31,7 +29,7 @@ public class WebSocket {
 
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
 
-    private static final Executor executor = Executors.newFixedThreadPool(200);
+    private static final Executor executor = new ThreadPoolExecutor(200, 200, 0L,TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
 
     private  static  final CloseReason closeReason = new CloseReason(new CloseReason.CloseCode() {
         @Override
