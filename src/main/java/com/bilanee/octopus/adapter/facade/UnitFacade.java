@@ -1405,6 +1405,7 @@ public class UnitFacade {
             return MultiYearBid.builder()
                     .unitId(unitMap.get(d.getUnitId()).getUnitId())
                     .unitName(unitMap.get(d.getUnitId()).getMetaUnit().getName())
+                    .renewableType(unitMap.get(d.getUnitId()).getMetaUnit().getRenewableType())
                     .maxMultiYearClearedMwh(d.getMaxMultiYearClearedMwh())
                     .offerMwh1(d.getOfferMwh1())
                     .offerMwh2(d.getOfferMwh2())
@@ -1472,7 +1473,7 @@ public class UnitFacade {
                 .filter(u -> UnitType.LOAD.equals(u.getMetaUnit().getUnitType())).collect(Collectors.toList());
 
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        RetailPackageVO.RetailPackageVOBuilder builder = RetailPackageVO.builder().headMessage(marketSettingDO.getMarketPackageDescription());
+        RetailPackageVO.RetailPackageVOBuilder builder = RetailPackageVO.builder().headMessage(marketSettingDO.getRetailPlanDescription());
         if (Collect.isEmpty(units)) {
             builder.unitPackages(Collections.EMPTY_LIST);
             return Result.success(builder.build());

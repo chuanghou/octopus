@@ -20,6 +20,8 @@ public class MetaUnit {
     GridLimit priceLimit;
     @Nullable
     GeneratorType generatorType;
+    @Nullable
+    RenewableType renewableType;
     Integer sourceId;
     Map<TimeFrame, Map<Direction, Double>> capacity;
     Double minCapacity;

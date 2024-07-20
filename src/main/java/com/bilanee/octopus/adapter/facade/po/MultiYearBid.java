@@ -2,13 +2,15 @@ package com.bilanee.octopus.adapter.facade.po;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.ErrorEnums;
+import com.bilanee.octopus.basic.enums.GeneratorType;
+import com.bilanee.octopus.basic.enums.RenewableType;
 import com.bilanee.octopus.infrastructure.entity.MultiYearUnitOfferDO;
 import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
 import com.bilanee.octopus.infrastructure.mapper.MultiYearUnitOfferDOMapper;
 import com.stellariver.milky.common.base.AfterValidation;
 import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.BizEx;
-import com.stellariver.milky.common.base.ErrorEnum;
+import com.stellariver.milky.common.base.SysEx;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -25,7 +27,13 @@ public class MultiYearBid {
     @NotNull(message = "机组id不能为空")
     Long unitId;
 
+    @NotNull(message = "新能源机组型不能为空")
+    RenewableType renewableType;
+
     String unitName;
+
+    @NotNull(message = "轮次id不能为空")
+    Integer roundId;
 
     /**
      * 省内多年成交上限（MWh）， offerMwh1 + offerMwh2 + offerMwh3 不能超过这个值
@@ -77,8 +85,14 @@ public class MultiYearBid {
                 .eq(MultiYearUnitOfferDO::getUnitId, unitId);
         MultiYearUnitOfferDO multiYearUnitOfferDO = BeanUtil.getBean(MultiYearUnitOfferDOMapper.class).selectOne(eq);
         BizEx.trueThrow(v > multiYearUnitOfferDO.getMaxMultiYearClearedMwh(), ErrorEnums.PARAM_FORMAT_WRONG.message("报单量超过限制"));
-
-        Double newEnergyUpLimit = BeanUtil.getBean(MarketSettingMapper.class).selectById(1).getNewEnergyUpLimit();
+        Double newEnergyUpLimit;
+        if (RenewableType.WIND == renewableType) {
+            newEnergyUpLimit = BeanUtil.getBean(MarketSettingMapper.class).selectById(1).getWindSpecificPriceCap();
+        } else if (RenewableType.SOLAR == renewableType ){
+            newEnergyUpLimit = BeanUtil.getBean(MarketSettingMapper.class).selectById(1).getSolarSpecificPriceCap();
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
         BizEx.trueThrow(offerPrice1 > newEnergyUpLimit, ErrorEnums.PARAM_FORMAT_WRONG.message("价格超过最大限制" + newEnergyUpLimit));
         BizEx.trueThrow(offerPrice2 > newEnergyUpLimit, ErrorEnums.PARAM_FORMAT_WRONG.message("价格超过最大限制" + newEnergyUpLimit));
         BizEx.trueThrow(offerPrice3 > newEnergyUpLimit, ErrorEnums.PARAM_FORMAT_WRONG.message("价格超过最大限制" + newEnergyUpLimit));
