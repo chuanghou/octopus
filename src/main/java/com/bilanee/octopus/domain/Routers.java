@@ -15,6 +15,7 @@ import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
 import com.bilanee.octopus.infrastructure.entity.*;
 import com.bilanee.octopus.infrastructure.mapper.*;
+import com.google.common.collect.ListMultimap;
 import com.stellariver.milky.common.base.SysEx;
 import com.stellariver.milky.common.tool.common.Clock;
 import com.stellariver.milky.common.tool.common.Kit;
@@ -28,6 +29,7 @@ import com.stellariver.milky.domain.support.event.EventRouters;
 import com.stellariver.milky.domain.support.event.FinalEventRouter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -397,6 +399,8 @@ public class Routers implements EventRouters {
             }
         }, 300_000L, TimeUnit.MILLISECONDS);
     }
+
+    final ForwardMarketTransactionStatusDOMapper forwardMarketTransactionStatusDOMapper;
     /**
      * 年度省内和月度省内出清，其实本质是为了，关闭所有挂单，执行的其实是撤单策略
      */
@@ -433,7 +437,21 @@ public class Routers implements EventRouters {
         });
 
 
-
+        ListMultimap<Pair<Province, TimeFrame>, Bid> groupBids = bids.stream().collect(Collect.listMultiMap(b -> Pair.of(b.getProvince(), b.getTimeFrame())));
+        groupBids.asMap().forEach((p, subBids) -> {
+            double totalQuantity = subBids.stream().collect(Collectors.summarizingDouble(bid -> bid.getPrice() * bid.getQuantity())).getSum();
+            double totalPrice = subBids.stream().collect(Collectors.summarizingDouble(Bid::getQuantity)).getSum();
+            double averagePrice = totalQuantity / totalPrice;
+            Integer prov = p.getKey().getDbCode();
+            Integer pfvPrd = p.getValue().getDbCode();
+            LambdaQueryWrapper<ForwardMarketTransactionStatusDO> eq = new LambdaQueryWrapper<ForwardMarketTransactionStatusDO>().eq(ForwardMarketTransactionStatusDO::getRoundId, now.getRoundId() + 1)
+                    .eq(ForwardMarketTransactionStatusDO::getMarketType, now.getTradeStage().getMarketType2())
+                    .eq(ForwardMarketTransactionStatusDO::getProv, prov)
+                    .eq(ForwardMarketTransactionStatusDO::getPfvPrd, pfvPrd);
+            ForwardMarketTransactionStatusDO forwardMarketTransactionStatusDO = forwardMarketTransactionStatusDOMapper.selectOne(eq);
+            forwardMarketTransactionStatusDO.setAvgClearedPrice(averagePrice);
+            forwardMarketTransactionStatusDOMapper.updateById(forwardMarketTransactionStatusDO);
+        });
         storeDb(now);
         intraManager.close();
 
