@@ -88,7 +88,7 @@ public class CompFacade {
 
 
     /**
-     * 省间出清结果
+     * 省间/多年出清结果
      * @param stageId 阶段id
      * @param token 访问者token
      * @return 省间出清结果
@@ -109,7 +109,7 @@ public class CompFacade {
         LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>().eq(ClearanceDO::getStageId, stageId);
         List<ClearanceDO> clearanceDOs = clearanceDOMapper.selectList(eq);
         List<InterClearance> interClearances = Collect.transfer(clearanceDOs, clearanceDO -> Json.parse(clearanceDO.getClearance(), InterClearance.class));
-        Map<TimeFrame, InterClearanceVO> interClearVOs = interClearances.stream().map(Convertor.INST::to).collect(Collectors.toMap(InterClearanceVO::getTimeFrame, i -> i));
+        List<InterClearanceVO> interClearVOs = interClearances.stream().map(Convertor.INST::to).collect(Collectors.toList());
 
         boolean ranking = tunnel.review();
 
@@ -122,7 +122,7 @@ public class CompFacade {
                 .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
                 .stream().sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId())).collect(Collectors.toList());
-        interClearVOs.values().forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
+        interClearVOs.forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
 
         // 委托及成交信息
         BidQuery bidQuery = BidQuery.builder()
@@ -132,8 +132,19 @@ public class CompFacade {
                 .userId(ranking ? null : TokenUtils.getUserId(token))
                 .build();
 
-        tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getTimeFrame)).asMap().forEach((timeFrame, bids) -> {
-            List<UnitDealVO> unitDealVOS = bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(e -> {
+        List<Bid> bids = tunnel.listBids(bidQuery);
+        interClearVOs.forEach(interClearanceVO -> {
+            List<Bid> subBids = bids.stream().filter(b -> {
+                if (parsedStageId.getTradeStage() == TradeStage.MULTI_ANNUAL) {
+                    return b.getRenewableType() == interClearanceVO.getMultiYearFrame().getRenewableType()
+                            && b.getProvince() == interClearanceVO.getMultiYearFrame().getProvince();
+                } else if (parsedStageId.getTradeStage() == TradeStage.AN_INTER || parsedStageId.getTradeStage() == TradeStage.MO_INTER) {
+                    return b.getTimeFrame() == interClearanceVO.getTimeFrame();
+                } else {
+                    throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+                }
+            }).collect(Collectors.toList());
+            List<UnitDealVO> unitDealVOS = subBids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().entrySet().stream().map(e -> {
                 Long unitId = e.getKey();
                 Collection<Bid> unitBids = e.getValue();
                 List<Deal> deals = unitBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
@@ -146,10 +157,10 @@ public class CompFacade {
                         .deals(deals)
                         .build();
             }).collect(Collectors.toList());
-            Optional.ofNullable(interClearVOs.get(timeFrame)).ifPresent(interClearanceVO -> interClearanceVO.setUnitDealVOS(unitDealVOS));
+            interClearanceVO.setUnitDealVOS(unitDealVOS);
         });
 
-        return new ArrayList<>(interClearVOs.values());
+        return interClearVOs;
     }
 
     /**

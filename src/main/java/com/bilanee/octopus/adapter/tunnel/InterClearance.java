@@ -4,6 +4,8 @@ import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.Section;
 import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.enums.MultiYearFrame;
+import com.bilanee.octopus.basic.enums.RenewableType;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,6 +21,7 @@ public class InterClearance {
 
     StageId stageId;
     TimeFrame timeFrame;
+    MultiYearFrame multiYearFrame;
     Double sellDeclaredQuantity;
     Double buyDeclaredQuantity;
     Double dealQuantity;

@@ -76,4 +76,21 @@ public class CompCmd {
 
     }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode(callSuper = true)
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    static public class ClearMulti extends Command {
+
+        Long compId;
+        @Override
+        public String getAggregateId() {
+            return compId.toString();
+        }
+
+    }
+
+
 }

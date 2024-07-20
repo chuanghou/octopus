@@ -5,6 +5,7 @@ import com.bilanee.octopus.PointSerialize;
 import com.bilanee.octopus.basic.GridLimit;
 import com.bilanee.octopus.basic.Point;
 import com.bilanee.octopus.basic.Section;
+import com.bilanee.octopus.basic.enums.MultiYearFrame;
 import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
@@ -23,6 +24,11 @@ public class InterClearanceVO {
      * 运行时段
      */
     TimeFrame timeFrame;
+
+    /**
+     * 多年区时段
+     */
+    MultiYearFrame multiYearFrame;
 
     /**
      *  市场成交情况：卖方总申报电力

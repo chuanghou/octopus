@@ -1386,12 +1386,12 @@ public class UnitFacade {
     @SuppressWarnings("unchecked")
     @PostMapping("submitMultiAnnualBiPO")
     public Result<List<MultiYearBid>> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
-                                                           @NotNull Province province, @NotNull GeneratorType generatorType) {
+                                                           @NotNull Province province, @NotNull RenewableType renewableType) {
         StageId parsedStageId = StageId.parse(stageId);
         String userId = TokenUtils.getUserId(token);
         List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
                 .stream().filter(u -> u.getMetaUnit().getProvince().equals(province))
-                .filter(u -> generatorType.equals(u.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
+                .filter(u -> renewableType.equals(u.getMetaUnit().getRenewableType())).collect(Collectors.toList());
 
         if (Collect.isEmpty(units)) {
             return Result.success(Collections.EMPTY_LIST);

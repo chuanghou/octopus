@@ -150,6 +150,7 @@ public class Tunnel {
         queryWrapper.eq(q.getBidStatus() != null, BidDO::getBidStatus, Kit.op(q.getBidStatus()).orElse(null));
         queryWrapper.eq(q.getTimeFrame() != null, BidDO::getTimeFrame, Kit.op(q.getTimeFrame()).orElse(null));
         queryWrapper.eq(q.getInstant() != null, BidDO::getInstant, Kit.op(q.getInstant()).orElse(null));
+        queryWrapper.ne(BidDO::getUserId, "system");
         List<BidDO> bidDOs = bidDOMapper.selectList(queryWrapper);
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
@@ -289,27 +290,33 @@ public class Tunnel {
         return Collect.asMap(UnitType.LOAD, loadPriceLimit, UnitType.GENERATOR, generatorPriceLimit);
     }
 
-    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
-        Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
-        GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
-        if (stageId.getTradeStage() == TradeStage.AN_INTER) {
-            return originalTransLimit;
-        } else if (stageId.getTradeStage() == TradeStage.MO_INTER) {
-            stageId = StageId.parse(stageId.toString());
-            stageId.setTradeStage(TradeStage.AN_INTER);
-            LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>()
-                    .eq(ClearanceDO::getStageId, stageId.toString())
-                    .eq(ClearanceDO::getTimeFrame, timeFrame)
-                    ;
-            ClearanceDO clearanceDO = clearanceDOMapper.selectOne(eq);
-            InterClearance interClearance = Json.parse(clearanceDO.getClearance(), InterClearance.class);
-            double dealQuantity = interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity();
-            return GridLimit.builder()
-                    .low(originalTransLimit.getLow() - dealQuantity)
-                    .high(originalTransLimit.getHigh() - dealQuantity)
-                    .build();
+    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame, MultiYearFrame multiYearFrame) {
+        SysEx.trueThrow(timeFrame == null && multiYearFrame == null, ErrorEnums.SYS_EX);
+        SysEx.trueThrow(timeFrame != null && multiYearFrame != null, ErrorEnums.SYS_EX);
+        if (multiYearFrame != null) {
+            return GridLimit.builder().low(Double.MIN_VALUE).high(Double.MAX_VALUE).build();
         } else {
-            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
+            GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
+            if (stageId.getTradeStage() == TradeStage.AN_INTER) {
+                return originalTransLimit;
+            } else if (stageId.getTradeStage() == TradeStage.MO_INTER) {
+                stageId = StageId.parse(stageId.toString());
+                stageId.setTradeStage(TradeStage.AN_INTER);
+                LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>()
+                        .eq(ClearanceDO::getStageId, stageId.toString())
+                        .eq(ClearanceDO::getTimeFrame, timeFrame)
+                        ;
+                ClearanceDO clearanceDO = clearanceDOMapper.selectOne(eq);
+                InterClearance interClearance = Json.parse(clearanceDO.getClearance(), InterClearance.class);
+                double dealQuantity = interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity();
+                return GridLimit.builder()
+                        .low(originalTransLimit.getLow() - dealQuantity)
+                        .high(originalTransLimit.getHigh() - dealQuantity)
+                        .build();
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
         }
     }
 

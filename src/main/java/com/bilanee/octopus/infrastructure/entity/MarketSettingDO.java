@@ -146,6 +146,13 @@ public class MarketSettingDO {
    */
   String renewableSpecialTransactionDemandPercentage;
 
+  /**
+   * 新能源专场交易电网申报需求占新能源预测上网电量百分比“:”为分隔符，存储顺序：
+   * 送电省风、送电省光、
+   * 受电省风、受电省光
+   */
+  String renewableSpecialTransactionDemand;
+
 
   /**
    * 总用电量中可变更零售套餐的

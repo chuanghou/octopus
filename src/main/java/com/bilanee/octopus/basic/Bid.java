@@ -16,9 +16,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Data
-@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Bid {
 
@@ -29,6 +29,7 @@ public class Bid {
     Province province;
     TimeFrame timeFrame;
     Integer instant;
+    RenewableType renewableType;
     Integer roundId;
     TradeStage tradeStage;
     Direction direction;
