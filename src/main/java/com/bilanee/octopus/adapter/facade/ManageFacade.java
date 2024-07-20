@@ -559,7 +559,7 @@ public class ManageFacade {
             roundSetting.setTransmissionAndDistributionTariff(Double.parseDouble(transmissionAndDistributionTariffs[i]));
             roundSetting.setAnnualCoalPrice(Double.parseDouble(annualCoalPrices[i]));
             roundSetting.setMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
-            roundSetting.setDaCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
+            roundSetting.setDaCoalPrice(Double.parseDouble(daCoalPrices[i]));
             return roundSetting;
         }).collect(Collectors.toList());
         simulateSetting.setRoundSettings(roundSettings);
