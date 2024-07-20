@@ -405,16 +405,19 @@ public class Routers implements EventRouters {
         groupBids.asMap().forEach((p, subBids) -> {
             double totalQuantity = subBids.stream().collect(Collectors.summarizingDouble(bid -> bid.getPrice() * bid.getQuantity())).getSum();
             double totalPrice = subBids.stream().collect(Collectors.summarizingDouble(Bid::getQuantity)).getSum();
-            double averagePrice = totalQuantity / totalPrice;
-            Integer prov = p.getKey().getDbCode();
-            Integer pfvPrd = p.getValue().getDbCode();
-            LambdaQueryWrapper<ForwardMarketTransactionStatusDO> eq = new LambdaQueryWrapper<ForwardMarketTransactionStatusDO>().eq(ForwardMarketTransactionStatusDO::getRoundId, now.getRoundId() + 1)
-                    .eq(ForwardMarketTransactionStatusDO::getMarketType, now.getTradeStage().getMarketType2())
-                    .eq(ForwardMarketTransactionStatusDO::getProv, prov)
-                    .eq(ForwardMarketTransactionStatusDO::getPfvPrd, pfvPrd);
-            ForwardMarketTransactionStatusDO forwardMarketTransactionStatusDO = forwardMarketTransactionStatusDOMapper.selectOne(eq);
-            forwardMarketTransactionStatusDO.setAvgClearedPrice(averagePrice);
-            forwardMarketTransactionStatusDOMapper.updateById(forwardMarketTransactionStatusDO);
+            if (totalQuantity != 0D) {
+                double averagePrice = totalQuantity / totalPrice;
+                Integer prov = p.getKey().getDbCode();
+                Integer pfvPrd = p.getValue().getDbCode();
+                LambdaQueryWrapper<ForwardMarketTransactionStatusDO> eq = new LambdaQueryWrapper<ForwardMarketTransactionStatusDO>().eq(ForwardMarketTransactionStatusDO::getRoundId, now.getRoundId() + 1)
+                        .eq(ForwardMarketTransactionStatusDO::getMarketType, now.getTradeStage().getMarketType2())
+                        .eq(ForwardMarketTransactionStatusDO::getProv, prov)
+                        .eq(ForwardMarketTransactionStatusDO::getPfvPrd, pfvPrd);
+                ForwardMarketTransactionStatusDO forwardMarketTransactionStatusDO = forwardMarketTransactionStatusDOMapper.selectOne(eq);
+                forwardMarketTransactionStatusDO.setAvgClearedPrice(averagePrice);
+                forwardMarketTransactionStatusDOMapper.updateById(forwardMarketTransactionStatusDO);
+            }
+
         });
         storeDb(now);
         processorManager.close();
