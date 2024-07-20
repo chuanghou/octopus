@@ -554,8 +554,8 @@ public class ManageFacade {
             char[] charArray = caseSettings[i].toCharArray();
             roundSetting.setTransferDiffer(Objects.equals(charArray[0], '1'));
             roundSetting.setTransferLoadPeak(Objects.equals(charArray[1], '1'));
-            roundSetting.setTransferDiffer(Objects.equals(charArray[2], '1'));
-            roundSetting.setTransferLoadPeak(Objects.equals(charArray[3], '1'));
+            roundSetting.setReceiverDiffer(Objects.equals(charArray[2], '1'));
+            roundSetting.setReceiverLoadPeak(Objects.equals(charArray[3], '1'));
             roundSetting.setTransmissionAndDistributionTariff(Double.parseDouble(transmissionAndDistributionTariffs[i]));
             roundSetting.setAnnualCoalPrice(Double.parseDouble(annualCoalPrices[i]));
             roundSetting.setMonthlyCoalPrice(Double.parseDouble(monthlyCoalPrices[i]));
