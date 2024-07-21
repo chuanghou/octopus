@@ -19,21 +19,7 @@ public class MarketSettingDO {
   @TableId(type = IdType.INPUT)
   Integer marketSettingId;
   Integer objectiveType;
-  Boolean isNetworkLoss;
-  Boolean isInplantUse;
   Integer prdNum;
-  Boolean isStartupCost;
-  Boolean isRampConstraint;
-  Boolean isMaxOnOffTimesConstraint;
-  Boolean isMinOnOffDurationConstraint;
-  Boolean isBranchConstraint;
-  Boolean isSectionConstraint;
-  Boolean isSysResConstraint;
-  @TableField("is_unitgroup_MWh_constraint")
-  Boolean isUnitgroupMWhConstraint;
-  @TableField("is_unitgroup_MW_constraint")
-  Boolean isUnitgroupMwConstraint;
-  Boolean isUnitgroupResConstraint;
   Boolean isEnteringReviewStage;
   Boolean isOpeningTradingPlatform;
   Boolean isConductingQAndAModule;
