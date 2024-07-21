@@ -586,7 +586,7 @@ public class ManageFacade {
                 = SimulateSetting.RenewableSpecialTransactionDemandPercentage.resolve(marketSettingDO.getRenewableSpecialTransactionDemandPercentage());
         simulateSetting.setRenewableSpecialTransactionDemandPercentage(resolved);
 
-        simulateSetting.setMwhPercentageThatCanBeChangedForRetailPackage(marketSettingDO.getMwhPercentageThatCanBeChangedForRetailPackage());
+        simulateSetting.setMwhPercentageForRetailPlan(marketSettingDO.getMwhPercentageForRetailPlan());
 
         return Result.success(simulateSetting);
     }
@@ -664,7 +664,7 @@ public class ManageFacade {
         String receiverDaCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverDaCoalPrice() + "").collect(Collectors.joining(":"));
         marketSettingDO.setDaCoalPrice(transferDaCoalPrice + ";" + receiverDaCoalPrice);
 
-        marketSettingDO.setMwhPercentageThatCanBeChangedForRetailPackage(simulateSetting.getMwhPercentageThatCanBeChangedForRetailPackage());
+        marketSettingDO.setMwhPercentageForRetailPlan(simulateSetting.getMwhPercentageForRetailPlan());
 
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();

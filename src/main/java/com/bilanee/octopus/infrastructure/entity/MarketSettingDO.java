@@ -1,7 +1,6 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
@@ -144,7 +143,7 @@ public class MarketSettingDO {
    * 总用电量中可变更零售套餐的
    * 电量占比
    */
-  Double mwhPercentageThatCanBeChangedForRetailPackage;
+  Double mwhPercentageForRetailPlan;
 
 
   /**

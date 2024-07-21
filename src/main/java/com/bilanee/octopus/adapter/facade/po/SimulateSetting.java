@@ -175,7 +175,7 @@ public class SimulateSetting {
      * 总用电量中可变更零售套餐的
      * 电量占比
      */
-    Double mwhPercentageThatCanBeChangedForRetailPackage;
+    Double mwhPercentageForRetailPlan;
 
 
     @Data
