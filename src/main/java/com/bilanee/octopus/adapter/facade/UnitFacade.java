@@ -1379,12 +1379,12 @@ public class UnitFacade {
      * @param stageId 阶段id
      * @param token token
      * @province 省份
-     * @param generatorType 机组类型
+     * @param renewableType 机组类型
      * @return 报单结果
      */
     @ToBid
     @SuppressWarnings("unchecked")
-    @PostMapping("submitMultiAnnualBiPO")
+    @PostMapping("listsMultiAnnualBids")
     public Result<List<MultiYearBid>> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
                                                            @NotNull Province province, @NotNull RenewableType renewableType) {
         StageId parsedStageId = StageId.parse(stageId);
