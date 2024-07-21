@@ -177,23 +177,6 @@ public class SimulateSetting {
      */
     Double mwhPercentageThatCanBeChangedForRetailPackage;
 
-    /**
-     * 用户侧零售套餐说明
-     */
-    String retailPlanDescription;
-
-
-    /**
-     * 风电新能源价格上限
-     */
-    Double windSpecificPriceCap;
-
-
-    /**
-     * 光伏新能源价格上限
-     */
-    Double solarSpecificPriceCap;
-
 
     @Data
     @Builder

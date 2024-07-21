@@ -588,9 +588,6 @@ public class ManageFacade {
 
         simulateSetting.setMwhPercentageThatCanBeChangedForRetailPackage(marketSettingDO.getMwhPercentageThatCanBeChangedForRetailPackage());
 
-        simulateSetting.setWindSpecificPriceCap(marketSettingDO.getWindSpecificPriceCap());
-        simulateSetting.setSolarSpecificPriceCap(marketSettingDO.getSolarSpecificPriceCap());
-
         return Result.success(simulateSetting);
     }
 
@@ -668,9 +665,6 @@ public class ManageFacade {
         marketSettingDO.setDaCoalPrice(transferDaCoalPrice + ";" + receiverDaCoalPrice);
 
         marketSettingDO.setMwhPercentageThatCanBeChangedForRetailPackage(simulateSetting.getMwhPercentageThatCanBeChangedForRetailPackage());
-        marketSettingDO.setRetailPlanDescription(simulateSetting.getRetailPlanDescription());
-        marketSettingDO.setWindSpecificPriceCap(simulateSetting.getWindSpecificPriceCap());
-        marketSettingDO.setSolarSpecificPriceCap(simulateSetting.getSolarSpecificPriceCap());
 
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
