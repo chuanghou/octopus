@@ -552,7 +552,7 @@ public class ManageFacade {
         String[] transmissionAndDistributionTariffs = marketSettingDO.getTransmissionAndDistributionTariff().split(":");
         BizEx.trueThrow(transmissionAndDistributionTariffs.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("transmissionAndDistributionTariff参数异常，不与轮次匹配"));
         String[] multiYearCoalPrices = marketSettingDO.getMultiYearCoalPrice().split(":");
-        BizEx.trueThrow(multiYearCoalPrices.length != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("multiYearCoalPrices参数异常，不与轮次匹配"));
+        BizEx.trueThrow(multiYearCoalPrices.length/2 != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("multiYearCoalPrices参数异常，不与轮次匹配"));
         String[] annualCoalPrices = marketSettingDO.getAnnualCoalPrice().split(":");
         BizEx.trueThrow(annualCoalPrices.length/2 != roundNum, ErrorEnums.PARAM_FORMAT_WRONG.message("annualCoalPrice参数异常，不与轮次匹配"));
         String[] monthlyCoalPrices = marketSettingDO.getMonthlyCoalPrice().split(":");
