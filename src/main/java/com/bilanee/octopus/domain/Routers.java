@@ -45,7 +45,7 @@ public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
     final Tunnel tunnel;
-    final IntraManager intraManager;
+    final ProcessorManager processorManager;
     final DomainTunnel domainTunnel;
     final TransactionDOMapper transactionDOMapper;
     final LoadResultMapper loadResultMapper;

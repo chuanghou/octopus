@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.tunnel;
 
+import com.bilanee.octopus.config.OctopusProperties;
 import com.stellariver.milky.common.base.BeanUtil;
 import lombok.CustomLog;
 import lombok.SneakyThrows;
@@ -26,11 +27,10 @@ public class Ssh {
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
         long s;
-        SShProperties sShProperties = BeanUtil.getBean(SShProperties.class);
+        OctopusProperties octopusProperties = BeanUtil.getBean(OctopusProperties.class);
         try {
-            ssh.connect(sShProperties.getHost(), Integer.parseInt(sShProperties.getPort()));
-            ssh.authPassword(sShProperties.getUser(), sShProperties.getPwd());
-            OctopusProperties octopusProperties = BeanUtil.getBean(OctopusProperties.class);
+            ssh.connect(octopusProperties.getIp(), 22);
+            ssh.authPassword(octopusProperties.getUsername(), octopusProperties.getPassword());
             ssh.connect(octopusProperties.getIp());
             ssh.authPassword(octopusProperties.getUsername(), octopusProperties.getPassword());
             session = ssh.startSession();

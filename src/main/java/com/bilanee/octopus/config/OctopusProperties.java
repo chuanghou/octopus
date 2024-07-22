@@ -15,5 +15,9 @@ import org.springframework.stereotype.Component;
 public class OctopusProperties {
 
     Integer delayUnits;
+    Integer djangoPort;
+    String ip;
+    String username;
+    String password;
 
 }

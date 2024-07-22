@@ -241,7 +241,7 @@ public class Tunnel {
     public Double cost(Long unitId, Double startQuantity, Double endQuantity, Integer roundId) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
-            return (cost(unitId, startQuantity) + cost(unitId, endQuantity)) / 2;
+            return (cost(unitId, startQuantity, roundId) + cost(unitId, endQuantity, roundId)) / 2;
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
                     .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
@@ -294,7 +294,7 @@ public class Tunnel {
         return Collect.asMap(UnitType.LOAD, loadPriceLimit, UnitType.GENERATOR, generatorPriceLimit);
     }
 
-    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
+    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame, MultiYearFrame multiYearFrame) {
         Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare(stageId.getRoundId());
         GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
         if (stageId.getTradeStage() == TradeStage.AN_INTER) {
