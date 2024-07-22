@@ -30,5 +30,6 @@ public class IntraCost {
   Double hotStartupOfferCap;
   Double noLoadOfferCap;
   Integer unitId;
+  Integer roundId;
 
 }

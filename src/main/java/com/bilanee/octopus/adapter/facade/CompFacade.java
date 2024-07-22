@@ -508,7 +508,8 @@ public class CompFacade {
                 .stream().map(bids -> bids.stream().collect(Collectors.summarizingDouble(LoadDaForecastBidDO::getBidMw)).getSum()).collect(Collectors.toList());
 
         LambdaQueryWrapper<LoadForecastValueDO> in1 = new LambdaQueryWrapper<LoadForecastValueDO>()
-                .in(LoadForecastValueDO::getLoadId, loadSourceIds);
+                .in(LoadForecastValueDO::getLoadId, loadSourceIds)
+                .eq(LoadForecastValueDO::getRoundId, parsed.getRoundId() + 1);
         List<Double> rtInstantLoadBids = Collect.isEmpty(loadSourceIds) ? new ArrayList<>() : loadForecastValueMapper.selectList(in1).stream().collect(Collectors.groupingBy(LoadForecastValueDO::getPrd)).values()
                 .stream().map(vs -> vs.stream().collect(Collectors.summarizingDouble(LoadForecastValueDO::getRtP)).getSum()).collect(Collectors.toList());
 
@@ -636,7 +637,7 @@ public class CompFacade {
 
         // rt qps
         LambdaQueryWrapper<GeneratorForecastValueDO> in3 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
-                .in(GeneratorForecastValueDO::getUnitId, renewableUnitIds.keySet());
+                .in(GeneratorForecastValueDO::getUnitId, renewableUnitIds.keySet()).in(GeneratorForecastValueDO::getRoundId, stageId.getRoundId() + 1);
         Collector<GeneratorForecastValueDO, List<GeneratorForecastValueDO>, List<Double>> collector1 = Collector.of(
                 ArrayList::new, List::add, (ls0, ls1) -> { ls0.addAll(ls1); return ls0; },
                 ls -> ls.stream().sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd)).map(GeneratorForecastValueDO::getRtP).collect(Collectors.toList()));
@@ -690,7 +691,7 @@ public class CompFacade {
                 .flatMap(Collection::stream).collect(Collectors.toList());
 
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        LambdaQueryWrapper<SprDO> eq0 = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, province.getDbCode());
+        LambdaQueryWrapper<SprDO> eq0 = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, province.getDbCode()).eq(SprDO::getRoundId, stageId.getRoundId() + 1);
         List<Qp> rtInstantQps = sprDOMapper.selectList(eq0).stream()
                 .sorted(Comparator.comparing(SprDO::getPrd))
                 .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getClearedPriceCap())).collect(Collectors.toList());
@@ -813,7 +814,7 @@ public class CompFacade {
                     .map(bs -> bs.stream().collect(Collectors.summarizingDouble(SpotLoadCleared::getDaClearedMw)).getSum())
                     .collect(Collectors.toList());
         } else {
-            LambdaQueryWrapper<SprDO> eq = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
+            LambdaQueryWrapper<SprDO> eq = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode()).eq(SprDO::getRoundId, roundId + 1);
             intraLoads = sprDOMapper.selectList(eq).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtLoad).collect(Collectors.toList());
         }
 
@@ -855,7 +856,7 @@ public class CompFacade {
                         .entrySet().stream().sorted(Map.Entry.comparingByKey()).map(Map.Entry::getValue)
                         .map(ls -> ls.stream().collect(Collectors.summarizingDouble(GeneratorDaForecastBidDO::getForecastMw)).getSum()).collect(Collectors.toList());
             } else {
-                LambdaQueryWrapper<SprDO> eqx = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode());
+                LambdaQueryWrapper<SprDO> eqx = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, parsedProvince.getDbCode()).eq(SprDO::getRoundId, parsedStageId.getRoundId() + 1);
                 renewableTotals = sprDOMapper.selectList(eqx).stream().sorted(Comparator.comparing(SprDO::getPrd)).map(SprDO::getRtRenewable).collect(Collectors.toList());
             }
         }
@@ -1028,7 +1029,7 @@ public class CompFacade {
         List<TieLinePowerDO> tieLinePowerDOs = tieLinePowerDOMapper.selectList(eqx)
                 .stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
 
-        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<>();
+        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getRoundId, roundId + 1);
         List<UnmetDemand> collect = unmetDemandMapper.selectList(eq1).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
         List<Integer> instants = IntStream.range(0, 24).mapToObj(i -> {
             TieLinePowerDO tieLinePowerDO = tieLinePowerDOs.get(i);
@@ -1069,7 +1070,7 @@ public class CompFacade {
                 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1).eq(TieLinePowerDO::getPrd, instant);
         TieLinePowerDO tieLinePowerDO = tieLinePowerDOMapper.selectOne(eqx);
         double already = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
-        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getPrd, instant);
+        LambdaQueryWrapper<UnmetDemand> eq1 = new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getPrd, instant).eq(UnmetDemand::getRoundId, roundId + 1);
         Double receiverDeclaredTotal = unmetDemandMapper.selectOne(eq1).getDaReceivingMw() - already;
 
         LambdaQueryWrapper<InterSpotTransactionDO> last = new LambdaQueryWrapper<InterSpotTransactionDO>()

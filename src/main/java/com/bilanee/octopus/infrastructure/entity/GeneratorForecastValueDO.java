@@ -27,5 +27,6 @@ public class GeneratorForecastValueDO {
   Double daPForecast;
   Double rtP;
   Integer unitId;
+  Integer roundId;
 
 }

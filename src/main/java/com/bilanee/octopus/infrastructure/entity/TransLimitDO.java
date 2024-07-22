@@ -22,5 +22,6 @@ public class TransLimitDO {
     Double minMonthlyReceivingMw;
     Double maxAnnualReceivingMw;
     Double maxMonthlyReceivingMw;
+    Integer roundId;
 
 }

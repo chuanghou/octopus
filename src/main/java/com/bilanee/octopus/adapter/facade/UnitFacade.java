@@ -767,15 +767,17 @@ public class UnitFacade {
                 .priceLimit(priceLimit);
         if (unitType == UnitType.GENERATOR) {
 
-            Double costStart = tunnel.cost(unit.getUnitId(), 0D);
-            Double costEnd = tunnel.cost(unit.getUnitId(), metaUnit.getMaxCapacity());
+            Double costStart = tunnel.cost(unit.getUnitId(), 0D, stageId.getRoundId());
+            Double costEnd = tunnel.cost(unit.getUnitId(), metaUnit.getMaxCapacity(), stageId.getRoundId());
             builder.costStart(Point.<Double>builder().x(0D).y(costStart).build());
             builder.costEnd(Point.<Double>builder().x(metaUnit.getMaxCapacity()).y(costEnd).build());
 
             if (generatorType == GeneratorType.CLASSIC) {
                 LambdaQueryWrapper<IntraOffer> eq = new LambdaQueryWrapper<IntraOffer>()
                         .eq(IntraOffer::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraOffer::getRoundId, stageId.getRoundId() + 1);
-                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>()
+                        .eq(IntraCost::getRoundId, stageId.getRoundId() + 1)
+                        .eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
                 IntraCost intraCost = intraCostMapper.selectOne(eq1);
                 IntraOffer intraOffer = intraOfferMapper.selectOne(eq);
                 builder.coldStartupOffer(intraOffer.getColdStartupOffer());
@@ -812,7 +814,8 @@ public class UnitFacade {
             if (generatorType == GeneratorType.RENEWABLE) {
 
                 LambdaQueryWrapper<GeneratorForecastValueDO> eq1 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
-                        .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId());
+                        .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId())
+                        .eq(GeneratorForecastValueDO::getRoundId, stageId.getRoundId() + 1);
                 List<Double> forecasts = generatorForecastValueMapper.selectList(eq1).stream()
                         .sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
                         .map(GeneratorForecastValueDO::getDaPForecast)
@@ -831,7 +834,8 @@ public class UnitFacade {
 
         } else if (unitType == UnitType.LOAD){
             LambdaQueryWrapper<LoadForecastValueDO> eq0 = new LambdaQueryWrapper<LoadForecastValueDO>()
-                    .eq(LoadForecastValueDO::getLoadId, unit.getMetaUnit().getSourceId());
+                    .eq(LoadForecastValueDO::getLoadId, unit.getMetaUnit().getSourceId())
+                    .eq(LoadForecastValueDO::getRoundId, stageId.getRoundId() + 1);
             List<Double> forecasts = loadForecastValueMapper.selectList(eq0).stream()
                     .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getDaPForecast).collect(Collectors.toList());
             builder.forecasts(forecasts);
@@ -888,7 +892,7 @@ public class UnitFacade {
                 double v = segments.get(i).getEnd() - segments.get(i).getStart();
                 generatorDaSegmentBidDO.setOfferMw(v);
                 generatorDaSegmentBidDO.setOfferPrice(segment.getPrice());
-                generatorDaSegmentBidDO.setOfferCost(tunnel.cost(unitId, segment.getStart(), segment.getEnd()));
+                generatorDaSegmentBidDO.setOfferCost(tunnel.cost(unitId, segment.getStart(), segment.getEnd(), parsed.getRoundId() + 1));
             });
             gSegmentBidDOs.forEach(generatorDaSegmentMapper::updateById);
 
@@ -908,7 +912,8 @@ public class UnitFacade {
                         .eq(IntraOffer::getUnitId, unit.getMetaUnit().getSourceId());
                 IntraOffer intraOffer = intraOfferMapper.selectOne(eq);
 
-                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+                LambdaQueryWrapper<IntraCost> eq1 = new LambdaQueryWrapper<IntraCost>()
+                        .eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraCost::getRoundId, StageId.parse(stageId).getRoundId() + 1);
                 IntraCost intraCost = intraCostMapper.selectOne(eq1);
                 BizEx.trueThrow(intraDaBidPO.getColdStartupOffer() > intraCost.getColdStartupOfferCap(), PARAM_FORMAT_WRONG.message("冷启动费用超过上限"));
                 BizEx.trueThrow(intraDaBidPO.getWarmStartupOffer() > intraCost.getWarmStartupOfferCap(), PARAM_FORMAT_WRONG.message("温启动费用超过上限"));
@@ -950,7 +955,8 @@ public class UnitFacade {
                                   @NotNull @PositiveOrZero Double start,
                                   @NotNull @Positive Double end) {
         BizEx.trueThrow(end <= start, PARAM_FORMAT_WRONG.message("报价段右端点应该小于左端点"));
-        double v = tunnel.cost(unitId, start, end);
+        Integer roundId = tunnel.runningComp().getStageId().getRoundId();
+        double v = tunnel.cost(unitId, start, end, roundId);
         v = BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
         return Result.success(v);
     }
@@ -1059,7 +1065,7 @@ public class UnitFacade {
                     .map(GeneratorDaForecastBidDO::getForecastMw)
                     .collect(Collectors.toList());
             LambdaQueryWrapper<GeneratorForecastValueDO> eq5 = new LambdaQueryWrapper<GeneratorForecastValueDO>()
-                    .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId());
+                    .eq(GeneratorForecastValueDO::getUnitId, unit.getMetaUnit().getSourceId()).eq(GeneratorForecastValueDO::getRoundId, roundId + 1);
             rtDeclares = generatorForecastValueMapper.selectList(eq5).stream()
                     .sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
                     .map(GeneratorForecastValueDO::getRtP)
@@ -1199,7 +1205,8 @@ public class UnitFacade {
                 .sorted(Comparator.comparing(SpotLoadCleared::getPrd)).map(SpotLoadCleared::getDaClearedMw).collect(Collectors.toList());
         LoadClearVO.LoadClearVOBuilder builder = LoadClearVO.builder().daCleared(daCleared);
         LambdaQueryWrapper<LoadForecastValueDO> eq1 = new LambdaQueryWrapper<LoadForecastValueDO>()
-                .eq(LoadForecastValueDO::getLoadId, sourceId);
+                .eq(LoadForecastValueDO::getLoadId, sourceId)
+                .eq(LoadForecastValueDO::getRoundId, roundId + 1);
         List<Double> rtCleared = loadForecastValueMapper.selectList(eq1).stream()
                 .sorted(Comparator.comparing(LoadForecastValueDO::getPrd)).map(LoadForecastValueDO::getRtP).collect(Collectors.toList());
         builder.rtCleared(rtCleared);
@@ -1234,7 +1241,7 @@ public class UnitFacade {
         Integer roundId = parsedStageId.getRoundId();
         LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         List<TieLinePowerDO> tieLinePowerDOS = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
-        List<UnmetDemand> unmetDemands = unmetDemandMapper.selectList(null).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
+        List<UnmetDemand> unmetDemands = unmetDemandMapper.selectList(new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getRoundId, roundId + 1)).stream().sorted(Comparator.comparing(UnmetDemand::getPrd)).collect(Collectors.toList());
         List<Double> availablePrds = IntStream.range(0, 24).mapToObj(i -> {
             TieLinePowerDO tieLinePowerDO = tieLinePowerDOS.get(i);
             double v = tieLinePowerDO.getAnnualTielinePower() + tieLinePowerDO.getMonthlyTielinePower();
@@ -1247,7 +1254,7 @@ public class UnitFacade {
                 .filter(u -> u.getMetaUnit().getUnitType().equals(UnitType.GENERATOR))
                 .filter(u -> u.getMetaUnit().getProvince().equals(Province.TRANSFER))
                 .collect(Collectors.toList());
-        Map<Integer, List<Double>> maxCapacities = generatorUnitDOs.stream().collect(Collectors.toMap(u -> u.getMetaUnit().getSourceId(), this::highLimit));
+        Map<Integer, List<Double>> maxCapacities = generatorUnitDOs.stream().collect(Collectors.toMap(u -> u.getMetaUnit().getSourceId(), u -> highLimit(u, roundId)));
         List<Integer> sourceIds = Collect.transfer(generatorUnitDOs, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<SpotUnitCleared> in = new LambdaQueryWrapper<SpotUnitCleared>()
                 .eq(SpotUnitCleared::getRoundId, roundId + 1).in(SpotUnitCleared::getUnitId, sourceIds);
@@ -1312,12 +1319,13 @@ public class UnitFacade {
 
     }
 
-    private List<Double> highLimit(UnitDO unitDO) {
+    private List<Double> highLimit(UnitDO unitDO, Integer roundId) {
         if (GeneratorType.CLASSIC.equals(unitDO.getMetaUnit().getGeneratorType())) {
             return IntStream.range(0, 24).mapToObj(i -> unitDO.getMetaUnit().getMaxCapacity()).collect(Collectors.toList());
         } else {
             LambdaQueryWrapper<GeneratorForecastValueDO> eq = new LambdaQueryWrapper<GeneratorForecastValueDO>()
-                    .eq(GeneratorForecastValueDO::getUnitId, unitDO.getMetaUnit().getSourceId());
+                    .eq(GeneratorForecastValueDO::getUnitId, unitDO.getMetaUnit().getSourceId())
+                    .eq(GeneratorForecastValueDO::getRoundId, roundId + 1);
             return generatorForecastValueMapper.selectList(eq).stream().sorted(Comparator.comparing(GeneratorForecastValueDO::getPrd))
                     .map(GeneratorForecastValueDO::getDaPForecast).collect(Collectors.toList());
         }

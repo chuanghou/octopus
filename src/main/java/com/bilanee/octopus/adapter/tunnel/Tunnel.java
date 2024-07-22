@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.adapter.repository.UnitAdapter;
 import com.bilanee.octopus.basic.*;
 import com.bilanee.octopus.basic.enums.*;
+import com.bilanee.octopus.config.OctopusProperties;
 import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.*;
@@ -55,7 +56,7 @@ public class Tunnel {
     final GeneratorResultMapper generatorResultMapper;
     final LoadResultMapper loadResultMapper;
     final RestTemplate restTemplate;
-    final SShProperties sShProperties;
+    final OctopusProperties octopusProperties;
 
 
 
@@ -89,7 +90,7 @@ public class Tunnel {
 
         String queryString = "trader_id_list=[" + String.join(",", traderIds) + "]&" + "robot_id_list=[" + String.join(",", robotIds) + "]";
 
-        URI uri = new URI("http", null, sShProperties.getHost(), 8002, "/automatic_assigned/", queryString, null);
+        URI uri = new URI("http", null, octopusProperties.getIp(), octopusProperties.getDjangoPort(), "/automatic_assigned/", queryString, null);
         ResponseEntity<String> responseEntity = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
         Message parse = Json.parse(responseEntity.getBody(), Message.class);
         BizEx.falseThrow(Integer.valueOf(0).equals(parse.getCode()), ErrorEnums.SYS_EX.message(queryString + Json.toJson(parse)));
@@ -217,16 +218,18 @@ public class Tunnel {
 
     final IntraCostMapper intraCostMapper;
 
-    public Double cost(Long unitId, Double quantity) {
+    public Double cost(Long unitId, Double quantity, Integer roundId) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
-            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>()
+                    .eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraCost::getRoundId, roundId + 1);
             IntraCost intraCost = intraCostMapper.selectOne(eq);
             return 2 * intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
                     .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
-                    .eq(SystemReleaseParametersDO::getPrd, 1);
+                    .eq(SystemReleaseParametersDO::getPrd, 1)
+                    .eq(SystemReleaseParametersDO::getRoundId, roundId + 1);
             return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
@@ -235,14 +238,15 @@ public class Tunnel {
 
     final SystemReleaseParametersDOMapper systemReleaseParametersDOMapper;
 
-    public Double cost(Long unitId, Double startQuantity, Double endQuantity) {
+    public Double cost(Long unitId, Double startQuantity, Double endQuantity, Integer roundId) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
             return (cost(unitId, startQuantity) + cost(unitId, endQuantity)) / 2;
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
                     .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
-                    .eq(SystemReleaseParametersDO::getPrd, 1);
+                    .eq(SystemReleaseParametersDO::getPrd, 1)
+                    .eq(SystemReleaseParametersDO::getRoundId, roundId + 1);
             return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
@@ -290,38 +294,33 @@ public class Tunnel {
         return Collect.asMap(UnitType.LOAD, loadPriceLimit, UnitType.GENERATOR, generatorPriceLimit);
     }
 
-    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame, MultiYearFrame multiYearFrame) {
-        SysEx.trueThrow(timeFrame == null && multiYearFrame == null, ErrorEnums.SYS_EX);
-        SysEx.trueThrow(timeFrame != null && multiYearFrame != null, ErrorEnums.SYS_EX);
-        if (multiYearFrame != null) {
-            return GridLimit.builder().low(Double.MIN_VALUE).high(Double.MAX_VALUE).build();
+    public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
+        Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare(stageId.getRoundId());
+        GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
+        if (stageId.getTradeStage() == TradeStage.AN_INTER) {
+            return originalTransLimit;
+        } else if (stageId.getTradeStage() == TradeStage.MO_INTER) {
+            stageId = StageId.parse(stageId.toString());
+            stageId.setTradeStage(TradeStage.AN_INTER);
+            LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>()
+                    .eq(ClearanceDO::getStageId, stageId.toString())
+                    .eq(ClearanceDO::getTimeFrame, timeFrame)
+                    ;
+            ClearanceDO clearanceDO = clearanceDOMapper.selectOne(eq);
+            InterClearance interClearance = Json.parse(clearanceDO.getClearance(), InterClearance.class);
+            double dealQuantity = interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity();
+            return GridLimit.builder()
+                    .low(originalTransLimit.getLow() - dealQuantity)
+                    .high(originalTransLimit.getHigh() - dealQuantity)
+                    .build();
         } else {
-            Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
-            GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
-            if (stageId.getTradeStage() == TradeStage.AN_INTER) {
-                return originalTransLimit;
-            } else if (stageId.getTradeStage() == TradeStage.MO_INTER) {
-                stageId = StageId.parse(stageId.toString());
-                stageId.setTradeStage(TradeStage.AN_INTER);
-                LambdaQueryWrapper<ClearanceDO> eq = new LambdaQueryWrapper<ClearanceDO>()
-                        .eq(ClearanceDO::getStageId, stageId.toString())
-                        .eq(ClearanceDO::getTimeFrame, timeFrame)
-                        ;
-                ClearanceDO clearanceDO = clearanceDOMapper.selectOne(eq);
-                InterClearance interClearance = Json.parse(clearanceDO.getClearance(), InterClearance.class);
-                double dealQuantity = interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity();
-                return GridLimit.builder()
-                        .low(originalTransLimit.getLow() - dealQuantity)
-                        .high(originalTransLimit.getHigh() - dealQuantity)
-                        .build();
-            } else {
-                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
-            }
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
     }
 
-    public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare() {
-        List<TransLimitDO> transLimitDOs = transLimitDOMapper.selectList(null);
+    public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare(Integer roundId) {
+        LambdaQueryWrapper<TransLimitDO> eq = new LambdaQueryWrapper<TransLimitDO>().eq(TransLimitDO::getRoundId, roundId + 1);
+        List<TransLimitDO> transLimitDOs = transLimitDOMapper.selectList(eq);
         Map<TradeStage, Map<TimeFrame, GridLimit>> marketTypeTransLimit = new HashMap<>();
 
         Map<TimeFrame, GridLimit> transLimit = new HashMap<>();

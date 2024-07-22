@@ -45,7 +45,7 @@ public class Routers implements EventRouters {
 
     final UniqueIdGetter uniqueIdGetter;
     final Tunnel tunnel;
-    final ProcessorManager processorManager;
+    final IntraManager intraManager;
     final DomainTunnel domainTunnel;
     final TransactionDOMapper transactionDOMapper;
     final LoadResultMapper loadResultMapper;
@@ -403,10 +403,10 @@ public class Routers implements EventRouters {
 
         ListMultimap<Pair<Province, TimeFrame>, Bid> groupBids = bids.stream().collect(Collect.listMultiMap(b -> Pair.of(b.getProvince(), b.getTimeFrame())));
         groupBids.asMap().forEach((p, subBids) -> {
-            double totalQuantity = subBids.stream().collect(Collectors.summarizingDouble(bid -> bid.getPrice() * bid.getQuantity())).getSum();
-            double totalPrice = subBids.stream().collect(Collectors.summarizingDouble(Bid::getQuantity)).getSum();
-            if (totalQuantity != 0D) {
-                double averagePrice = totalQuantity / totalPrice;
+            double totalMoney = subBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.summarizingDouble(deal -> deal.getPrice() * deal.getQuantity())).getSum();
+            double totalQuantity = subBids.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+            if (totalQuantity != 0) {
+                double averagePrice = totalMoney / totalQuantity;
                 Integer prov = p.getKey().getDbCode();
                 Integer pfvPrd = p.getValue().getDbCode();
                 LambdaQueryWrapper<ForwardMarketTransactionStatusDO> eq = new LambdaQueryWrapper<ForwardMarketTransactionStatusDO>().eq(ForwardMarketTransactionStatusDO::getRoundId, now.getRoundId() + 1)
@@ -645,7 +645,7 @@ public class Routers implements EventRouters {
                 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         Map<Integer, Double> already = tieLinePowerDOMapper.selectList(eq).stream()
                 .collect(Collectors.toMap(TieLinePowerDO::getPrd, t -> t.getAnnualTielinePower() + t.getMonthlyTielinePower()));
-        Map<Integer, Double> demands = unmetDemandMapper.selectList(null).stream()
+        Map<Integer, Double> demands = unmetDemandMapper.selectList(new LambdaQueryWrapper<UnmetDemand>().eq(UnmetDemand::getRoundId, roundId + 1)).stream()
                 .collect(Collectors.toMap(UnmetDemand::getPrd, u -> u.getDaReceivingMw() - already.get(u.getPrd())));
         demands.entrySet().stream().filter(e -> e.getValue() > 0).forEach(e -> {
             Integer instant = e.getKey();
@@ -752,6 +752,20 @@ public class Routers implements EventRouters {
         }
 
 
+    }
+
+    /**
+     * 执行清算
+     */
+    @EventRouter
+    public void routerDefaultAnnualBid(CompEvent.Stepped stepped, Context context){
+        StageId now = stepped.getNow();
+        boolean b0 = now.getMarketStatus() == MarketStatus.BID;
+        boolean b1 = now.getTradeStage() == TradeStage.AN_INTER;
+        if (!(b0 && b1)) {
+            return;
+        }
+        Ssh.exec("python manage.py annual_default_bid");
     }
 
 

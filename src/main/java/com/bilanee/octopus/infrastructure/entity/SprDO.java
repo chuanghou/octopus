@@ -33,5 +33,6 @@ public class SprDO {
   Double resDn;
   Double minThermalCapacity;
   Double renewableGovernmentSubsidy;
+  Integer roundId;
 
 }
