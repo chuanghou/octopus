@@ -1,6 +1,7 @@
 package com.bilanee.octopus.adapter.facade;
 
 import com.bilanee.octopus.adapter.tunnel.SShProperties;
+import com.bilanee.octopus.config.OctopusProperties;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.CustomLog;
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TransferController {
 
-    private final SShProperties sShProperties;
+    private final OctopusProperties octopusProperties;
     private final RestTemplate restTemplate;
     private final Cache<String, String> cache = CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(1, TimeUnit.MINUTES).build();
     @SneakyThrows
@@ -30,7 +31,7 @@ public class TransferController {
     public String mirrorRest(HttpMethod method, HttpServletRequest request) throws URISyntaxException {
         String requestUri = request.getRequestURI().substring("/transfer".length());
         return cache.get(requestUri + request.getQueryString(), () -> {
-            URI uri = new URI("http", null, sShProperties.getHost(), 8002, requestUri, request.getQueryString(), null);
+            URI uri = new URI("http", null, octopusProperties.getIp(), 8002, requestUri, request.getQueryString(), null);
             ResponseEntity<String> responseEntity = restTemplate.exchange(uri, method, null, String.class);
             log.info("restTemplate.exchange(uri, method, null, String.class), response body {}", responseEntity.getBody());
             if (responseEntity.getBody() == null) {
