@@ -151,7 +151,6 @@ public class Tunnel {
         queryWrapper.eq(q.getBidStatus() != null, BidDO::getBidStatus, Kit.op(q.getBidStatus()).orElse(null));
         queryWrapper.eq(q.getTimeFrame() != null, BidDO::getTimeFrame, Kit.op(q.getTimeFrame()).orElse(null));
         queryWrapper.eq(q.getInstant() != null, BidDO::getInstant, Kit.op(q.getInstant()).orElse(null));
-        queryWrapper.ne(BidDO::getUserId, "system");
         List<BidDO> bidDOs = bidDOMapper.selectList(queryWrapper);
         return Collect.transfer(bidDOs, Convertor.INST::to);
     }
