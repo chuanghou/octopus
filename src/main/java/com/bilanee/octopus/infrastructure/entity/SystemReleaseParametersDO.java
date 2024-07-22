@@ -20,5 +20,6 @@ public class SystemReleaseParametersDO {
     Integer prov;
     Integer prd;
     Double renewableGovernmentSubsidy;
+    Integer roundId;
 
 }

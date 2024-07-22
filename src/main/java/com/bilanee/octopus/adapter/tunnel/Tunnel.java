@@ -213,16 +213,18 @@ public class Tunnel {
 
     final IntraCostMapper intraCostMapper;
 
-    public Double cost(Long unitId, Double quantity) {
+    public Double cost(Long unitId, Double quantity, Integer roundId) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
-            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>().eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId());
+            LambdaQueryWrapper<IntraCost> eq = new LambdaQueryWrapper<IntraCost>()
+                    .eq(IntraCost::getUnitId, unit.getMetaUnit().getSourceId()).eq(IntraCost::getRoundId, roundId + 1);
             IntraCost intraCost = intraCostMapper.selectOne(eq);
             return 2 * intraCost.getCostQuadraticCoe() * quantity + intraCost.getCostPrimaryCoe();
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
                     .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
-                    .eq(SystemReleaseParametersDO::getPrd, 1);
+                    .eq(SystemReleaseParametersDO::getPrd, 1)
+                    .eq(SystemReleaseParametersDO::getRoundId, roundId + 1);
             return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
@@ -231,14 +233,15 @@ public class Tunnel {
 
     final SystemReleaseParametersDOMapper systemReleaseParametersDOMapper;
 
-    public Double cost(Long unitId, Double startQuantity, Double endQuantity) {
+    public Double cost(Long unitId, Double startQuantity, Double endQuantity, Integer roundId) {
         Unit unit = domainTunnel.getByAggregateId(Unit.class, unitId);
         if (unit.getMetaUnit().getGeneratorType() == GeneratorType.CLASSIC) {
-            return (cost(unitId, startQuantity) + cost(unitId, endQuantity)) / 2;
+            return (cost(unitId, startQuantity, roundId) + cost(unitId, endQuantity, roundId)) / 2;
         } else if (unit.getMetaUnit().getGeneratorType() == GeneratorType.RENEWABLE) {
             LambdaQueryWrapper<SystemReleaseParametersDO> eq = new LambdaQueryWrapper<SystemReleaseParametersDO>()
                     .eq(SystemReleaseParametersDO::getProv, unit.getMetaUnit().getProvince().getDbCode())
-                    .eq(SystemReleaseParametersDO::getPrd, 1);
+                    .eq(SystemReleaseParametersDO::getPrd, 1)
+                    .eq(SystemReleaseParametersDO::getRoundId, roundId + 1);
             return systemReleaseParametersDOMapper.selectOne(eq).getRenewableGovernmentSubsidy();
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
@@ -286,7 +289,7 @@ public class Tunnel {
     }
 
     public GridLimit transLimit(StageId stageId, TimeFrame timeFrame) {
-        Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare();
+        Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare(stageId.getRoundId());
         GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
         if (stageId.getTradeStage() == TradeStage.AN_INTER) {
             return originalTransLimit;
@@ -309,8 +312,9 @@ public class Tunnel {
         }
     }
 
-    public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare() {
-        List<TransLimitDO> transLimitDOs = transLimitDOMapper.selectList(null);
+    public Map<TradeStage, Map<TimeFrame, GridLimit>> prepare(Integer roundId) {
+        LambdaQueryWrapper<TransLimitDO> eq = new LambdaQueryWrapper<TransLimitDO>().eq(TransLimitDO::getRoundId, roundId + 1);
+        List<TransLimitDO> transLimitDOs = transLimitDOMapper.selectList(eq);
         Map<TradeStage, Map<TimeFrame, GridLimit>> marketTypeTransLimit = new HashMap<>();
 
         Map<TimeFrame, GridLimit> transLimit = new HashMap<>();

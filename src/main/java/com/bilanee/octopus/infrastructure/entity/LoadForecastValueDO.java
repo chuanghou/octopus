@@ -26,5 +26,6 @@ public class LoadForecastValueDO {
   Double daPForecast;
   Double rtP;
   Integer loadId;
+  Integer roundId;
 
 }

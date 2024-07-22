@@ -29,8 +29,7 @@ public class Ssh {
         long s;
         try {
             OctopusProperties octopusProperties = BeanUtil.getBean(OctopusProperties.class);
-            String ip = BeanUtil.getBean(OctopusProperties.class).getIp();
-            ssh.connect(ip);
+            ssh.connect(octopusProperties.getIp());
             ssh.authPassword(octopusProperties.getUsername(), octopusProperties.getPassword());
             session = ssh.startSession();
             final Command cmd0 = session.exec("source ~/.bashrc; conda activate powermarket; cd /home/sjtu/PowerMarketExperiment; " + command);

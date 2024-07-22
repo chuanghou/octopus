@@ -18,5 +18,6 @@ public class UnmetDemand {
   Double daUnmetDemand;
   Double daReceivingMw;
   Double maxDaSendingMw;
+  Integer roundId;
 
 }
