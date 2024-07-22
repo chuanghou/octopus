@@ -1,6 +1,5 @@
 package com.bilanee.octopus.adapter.facade;
 
-import com.bilanee.octopus.adapter.tunnel.SShProperties;
 import com.bilanee.octopus.config.OctopusProperties;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
