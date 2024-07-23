@@ -643,7 +643,7 @@ public class UnitFacade {
                 double v = segments.get(i).getEnd() - segments.get(i).getStart();
                 generatorDaSegmentBidDO.setOfferMw(v);
                 generatorDaSegmentBidDO.setOfferPrice(segment.getPrice());
-                generatorDaSegmentBidDO.setOfferCost(tunnel.cost(unitId, segment.getStart(), segment.getEnd(), parsed.getRoundId() + 1));
+                generatorDaSegmentBidDO.setOfferCost(tunnel.cost(unitId, segment.getStart(), segment.getEnd(), parsed.getRoundId()));
             });
             gSegmentBidDOs.forEach(generatorDaSegmentMapper::updateById);
 
