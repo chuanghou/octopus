@@ -5,6 +5,9 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.TokenUtils;
+import com.bilanee.octopus.domain.Comp;
 import com.bilanee.octopus.domain.Routers;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import org.junit.jupiter.api.Test;
@@ -12,7 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("local")
+@ActiveProfiles("beta")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MyTest {
 
@@ -40,6 +43,8 @@ public class MyTest {
 
     @Test
     public void interPointTest() {
-        manageFacade.step();
+        Comp comp = tunnel.runningComp();
+        StageId stageId = comp.getStageId();
+        unitFacade.listInterBidsVOs(stageId.toString(), TokenUtils.sign("1000"));
     }
 }

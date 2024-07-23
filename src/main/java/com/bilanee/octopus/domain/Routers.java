@@ -56,9 +56,7 @@ public class Routers implements EventRouters {
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
 
-    @EventRouter
-    public void route(UnitEvent.Created created, Context context) {
-        Unit unit = created.getUnit();
+    public void fillAnnualBid(Unit unit, CompEvent.Stepped stepped) {
         if (unit.getMetaUnit().getProvince().interDirection() != unit.getMetaUnit().getUnitType().generalDirection()) {
             return;
         }
@@ -107,7 +105,7 @@ public class Routers implements EventRouters {
 
 
             UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(bidsAn).build();
-            CommandBus.driveByEvent(commandAn, created);
+            CommandBus.driveByEvent(commandAn, stepped);
 
         } else if (metaUnit.getUnitType() == UnitType.LOAD) {
             LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>()
@@ -141,7 +139,7 @@ public class Routers implements EventRouters {
             });
 
             UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(bidsAn).build();
-            CommandBus.driveByEvent(commandAn, created);
+            CommandBus.driveByEvent(commandAn, stepped);
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
@@ -712,6 +710,11 @@ public class Routers implements EventRouters {
             return;
         }
         Ssh.exec("python manage.py annual_default_bid");
+
+        Comp comp = tunnel.runningComp();
+        List<Unit> units = tunnel.listUnits(comp.getCompId(), comp.getRoundId(), null);
+        units.forEach(u -> fillAnnualBid(u, stepped));
+
     }
 
 
