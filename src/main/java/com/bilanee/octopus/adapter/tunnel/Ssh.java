@@ -22,7 +22,6 @@ public class Ssh {
     public static void exec(String command) {
         log.info("begin " + command );
         final SSHClient ssh = new SSHClient();
-        final SSHClient ssh1 = new SSHClient();
 
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
