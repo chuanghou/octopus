@@ -16,6 +16,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.stellariver.milky.common.base.BeanUtil;
 import com.stellariver.milky.common.base.BizEx;
 import com.stellariver.milky.common.base.Result;
 import com.stellariver.milky.common.base.SysEx;
@@ -1383,18 +1384,48 @@ public class UnitFacade {
 
 
     /**
-     * 多年报价接口
+     * 多年报价页面回填接口
      * @param stageId 阶段id
      * @param token token
-     * @province 省份
+     * @param province 省份
      * @param renewableType 机组类型
-     * @return 报单结果
+     * @return 页面显示
      */
-    @ToBid
-    @SuppressWarnings("unchecked")
-    @PostMapping("listsMultiAnnualBids")
-    public Result<List<MultiYearBid>> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
+    @GetMapping("listsMultiAnnualBids")
+    public Result<MultiYearBidVO> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
                                                            @NotNull Province province, @NotNull RenewableType renewableType) {
+        MarketSettingDO marketSettingDO = BeanUtil.getBeanLoader().getBean(MarketSettingMapper.class).selectById(1);
+        String renewableSpecialTransactionDemand = marketSettingDO.getRenewableSpecialTransactionDemand();
+        String[] split = renewableSpecialTransactionDemand.split(":");
+        double transferWind = Double.parseDouble(split[0]);
+        double transferSolar = Double.parseDouble(split[1]);
+        double receiverWind = Double.parseDouble(split[2]);
+        double receiverSolar = Double.parseDouble(split[3]);
+
+        double require;
+
+        if (province == Province.TRANSFER) {
+            if (renewableType == RenewableType.SOLAR) {
+                require = transferSolar;
+            } else if (renewableType == RenewableType.WIND) {
+                require = transferWind;
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+        } else if (province == Province.RECEIVER) {
+            if (renewableType == RenewableType.SOLAR) {
+                require = receiverSolar;
+            } else if (renewableType == RenewableType.WIND) {
+                require = receiverWind;
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+
+        MultiYearBidVO.MultiYearBidVOBuilder builder = MultiYearBidVO.builder().require(require);
+
         StageId parsedStageId = StageId.parse(stageId);
         String userId = TokenUtils.getUserId(token);
         List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
@@ -1402,7 +1433,7 @@ public class UnitFacade {
                 .filter(u -> renewableType.equals(u.getMetaUnit().getRenewableType())).collect(Collectors.toList());
 
         if (Collect.isEmpty(units)) {
-            return Result.success(Collections.EMPTY_LIST);
+            return Result.success(builder.multiYearBids(new ArrayList<>()).build());
         }
         Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>()
@@ -1410,10 +1441,18 @@ public class UnitFacade {
                 .eq(MultiYearUnitOfferDO::getRoundId, parsedStageId.getRoundId() + 1);
         List<MultiYearUnitOfferDO> multiYearUnitOfferDOs = multiYearUnitOfferDOMapper.selectList(eq);
         List<MultiYearBid> multiYearBids = multiYearUnitOfferDOs.stream().map(d -> {
+            Double priceLimit;
+            if (renewableType == RenewableType.SOLAR) {
+                priceLimit = marketSettingDO.getSolarSpecificPriceCap();
+            } else if (renewableType == RenewableType.WIND) {
+                priceLimit = marketSettingDO.getSolarSpecificPriceCap();
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
             return MultiYearBid.builder()
                     .unitId(unitMap.get(d.getUnitId()).getUnitId())
                     .unitName(unitMap.get(d.getUnitId()).getMetaUnit().getName())
-                    .renewableType(unitMap.get(d.getUnitId()).getMetaUnit().getRenewableType())
+                    .renewableType(renewableType)
                     .maxMultiYearClearedMwh(d.getMaxMultiYearClearedMwh())
                     .offerMwh1(d.getOfferMwh1())
                     .offerMwh2(d.getOfferMwh2())
@@ -1421,13 +1460,14 @@ public class UnitFacade {
                     .offerPrice1(d.getOfferPrice1())
                     .offerPrice2(d.getOfferPrice2())
                     .offerPrice3(d.getOfferPrice3())
+                    .maxPriceLimit(priceLimit)
                     .build();
         }).collect(Collectors.toList());
-        return Result.success(multiYearBids);
+        MultiYearBidVO multiYearBidVO = builder.multiYearBids(multiYearBids).build();
+        return Result.success(multiYearBidVO);
     }
 
     final MultiYearUnitOfferDOMapper multiYearUnitOfferDOMapper;
-
 
 
     /**
@@ -1465,14 +1505,14 @@ public class UnitFacade {
     }
 
     /**
-     * 新能源专场
+     * 新能源专场，页面回填接口
      * @param stageId 阶段id
      * @param token token
      * @param province 省份
      * @return 报单结果
      */
     @SuppressWarnings("unchecked")
-    @PostMapping("listRetailPackageVO")
+    @GetMapping("listRetailPackageVO")
     public Result<RetailPackageVO> listsRetailPackageVO(@NotBlank String stageId, @RequestHeader String token, @NotNull Province province) {
         StageId parsedStageId = StageId.parse(stageId);
         String userId = TokenUtils.getUserId(token);
@@ -1526,7 +1566,7 @@ public class UnitFacade {
 
 
     /**
-     * 新能源专场提交
+     * 新能源专场，套餐提交
      * @param stageId 阶段id
      * @param token token
      * @return 报单结果

@@ -2,7 +2,6 @@ package com.bilanee.octopus.adapter.facade.po;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bilanee.octopus.basic.ErrorEnums;
-import com.bilanee.octopus.basic.enums.GeneratorType;
 import com.bilanee.octopus.basic.enums.RenewableType;
 import com.bilanee.octopus.infrastructure.entity.MultiYearUnitOfferDO;
 import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
@@ -39,6 +38,11 @@ public class MultiYearBid {
      * 省内多年成交上限（MWh）， offerMwh1 + offerMwh2 + offerMwh3 不能超过这个值
      */
     Double maxMultiYearClearedMwh;
+
+    /**
+     * 最高价格限制
+     */
+    Double maxPriceLimit;
 
     /**
      * 多年交易报价段1申报数量（MWh）
