@@ -701,7 +701,7 @@ public class Routers implements EventRouters {
     /**
      * 执行清算
      */
-    @EventRouter
+    @EventRouter(order = 2)
     public void routerDefaultAnnualBid(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
         boolean b0 = now.getMarketStatus() == MarketStatus.BID;
