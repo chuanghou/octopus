@@ -140,7 +140,7 @@ public class UnitFacade {
                 .build();
 
 
-        boolean b = comp.getStageId().getTradeStage() == TradeStage.AN_INTER;
+        boolean b = parsedStageId.getTradeStage() == TradeStage.AN_INTER;
 
         ListMultimap<Long, Bid> groupedByUnitId = Collect.isEmpty(unitMap) ? ArrayListMultimap.create() :
                 tunnel.listBids(bidQuery).stream().collect(Collect.listMultiMap(Bid::getUnitId));
