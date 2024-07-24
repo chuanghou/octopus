@@ -1,8 +1,6 @@
 package com.bilanee.octopus.domain;
 
 import com.bilanee.octopus.adapter.facade.BidAspect;
-import com.stellariver.milky.common.base.SysEx;
-import com.stellariver.milky.domain.support.ErrorEnums;
 import com.stellariver.milky.domain.support.command.Command;
 import com.stellariver.milky.domain.support.command.CommandBus;
 import lombok.AccessLevel;
