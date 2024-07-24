@@ -3,7 +3,6 @@ package com.bilanee.octopus.adapter.facade.vo;
 import com.bilanee.octopus.DoubleSerialize;
 import com.bilanee.octopus.basic.enums.BidStatus;
 import com.bilanee.octopus.basic.enums.Direction;
-import com.bilanee.octopus.basic.enums.Operation;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
 import lombok.experimental.FieldDefaults;

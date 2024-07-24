@@ -25,9 +25,9 @@ import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.StringUtils;
-import org.mapstruct.*;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapping;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 

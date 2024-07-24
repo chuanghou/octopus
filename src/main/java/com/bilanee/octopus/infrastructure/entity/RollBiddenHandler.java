@@ -1,7 +1,5 @@
 package com.bilanee.octopus.infrastructure.entity;
 
-import com.bilanee.octopus.basic.enums.Direction;
-import com.bilanee.octopus.basic.enums.TimeFrame;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.stellariver.milky.common.tool.util.Json;
 import org.apache.ibatis.type.BaseTypeHandler;
