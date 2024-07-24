@@ -265,9 +265,8 @@ public class Routers implements EventRouters {
     @EventRouter(order = 1L)
     public void routeForMultiClear(CompEvent.Stepped stepped, Context context) {
         StageId now = stepped.getNow();
-        boolean b0 = now.getTradeStage() == TradeStage.AN_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
-        boolean b1 = now.getTradeStage() == TradeStage.MO_INTER && now.getMarketStatus() == MarketStatus.CLEAR;
-        if (!(b0 || b1)) {
+        boolean b0 = now.getTradeStage() == TradeStage.MULTI_ANNUAL && now.getMarketStatus() == MarketStatus.CLEAR;
+        if (!(b0)) {
             return;
         }
         CompCmd.ClearMulti command = CompCmd.ClearMulti.builder().compId(now.getCompId()).build();

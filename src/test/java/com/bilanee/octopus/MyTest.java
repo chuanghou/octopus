@@ -41,6 +41,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Ssh.exec("pwd");
+        manageFacade.step();
     }
 }
