@@ -252,6 +252,7 @@ public class ManageFacade {
                 .put(TradeStage.DA_INTRA, marketSettingDO.getIntraprovincialSpotBidDuration())
                 .put(TradeStage.DA_INTER, marketSettingDO.getInterprovincialSpotBidDuration())
                 .put(TradeStage.ROLL, marketSettingDO.getIntraprovincialSpotRollingBidDuration())
+                .put(TradeStage.MULTI_ANNUAL, marketSettingDO.getIntraprovincialMultiYearBidDuration())
                 .getMap();
 
         Map<TradeStage, Integer> resultLengths = StreamMap.<TradeStage, Integer>init()
@@ -262,6 +263,7 @@ public class ManageFacade {
                 .put(TradeStage.DA_INTRA, marketSettingDO.getIntraprovincialSpotResultDuration())
                 .put(TradeStage.DA_INTER, marketSettingDO.getInterprovincialSpotResultDuration())
                 .put(TradeStage.ROLL, marketSettingDO.getIntraprovincialSpotRollingResultDuration())
+                .put(TradeStage.MULTI_ANNUAL, marketSettingDO.getIntraprovincialMultiYearResultDuration())
                 .getMap();
 
         DelayConfig delayConfig = DelayConfig.builder()
