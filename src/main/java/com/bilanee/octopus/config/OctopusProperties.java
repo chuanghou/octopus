@@ -16,6 +16,7 @@ public class OctopusProperties {
 
     Integer delayUnits;
     Integer djangoPort;
+    Integer sshPort;
     String ip;
     String username;
     String password;

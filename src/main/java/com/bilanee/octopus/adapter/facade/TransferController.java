@@ -30,7 +30,7 @@ public class TransferController {
     public String mirrorRest(HttpMethod method, HttpServletRequest request) throws URISyntaxException {
         String requestUri = request.getRequestURI().substring("/transfer".length());
         return cache.get(requestUri + request.getQueryString(), () -> {
-            URI uri = new URI("http", null, octopusProperties.getIp(), 8002, requestUri, request.getQueryString(), null);
+            URI uri = new URI("http", null, octopusProperties.getIp(), octopusProperties.getDjangoPort(), requestUri, request.getQueryString(), null);
             ResponseEntity<String> responseEntity = restTemplate.exchange(uri, method, null, String.class);
             log.info("restTemplate.exchange(uri, method, null, String.class), response body {}", responseEntity.getBody());
             if (responseEntity.getBody() == null) {
