@@ -8,6 +8,7 @@ import com.bilanee.octopus.adapter.facade.po.BidPO;
 import com.bilanee.octopus.adapter.facade.po.RollBidPO;
 import com.bilanee.octopus.adapter.facade.vo.RollSymbolBidVO;
 import com.bilanee.octopus.adapter.tunnel.BidQuery;
+import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.Deal;
 import com.bilanee.octopus.basic.ErrorEnums;
@@ -38,7 +39,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@ActiveProfiles("local")
+@ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MyTest {
 
@@ -66,7 +67,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        UnitCmd.FillBalance command = UnitCmd.FillBalance.builder().unitId(767485L).tradeStage(TradeStage.ROLL).build();
-        CommandBus.accept(command, new HashMap<>());
+        Ssh.exec("pwd");
     }
 }

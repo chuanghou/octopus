@@ -22,15 +22,14 @@ public class Ssh {
     public static void exec(String command) {
         log.info("begin " + command );
         final SSHClient ssh = new SSHClient();
-        final SSHClient ssh1 = new SSHClient();
 
         ssh.addHostKeyVerifier(new PromiscuousVerifier());
         Session session = null;
         long s;
         OctopusProperties octopusProperties = BeanUtil.getBean(OctopusProperties.class);
         try {
-            ssh.authPassword(octopusProperties.getUsername(), octopusProperties.getPassword());
             ssh.connect(octopusProperties.getIp(), octopusProperties.getSshPort());
+            ssh.authPassword(octopusProperties.getUsername(), octopusProperties.getPassword());
             session = ssh.startSession();
             final Command cmd0 = session.exec("source ~/.bashrc; conda activate powermarket; cd /home/sjtu/PowerMarketExperiment; " + command);
             System.out.println(IOUtils.toString(cmd0.getInputStream(), StandardCharsets.UTF_8));
