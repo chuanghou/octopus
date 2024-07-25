@@ -1395,12 +1395,13 @@ public class UnitFacade {
     public Result<MultiYearBidVO> listsMultiAnnualBids(@NotBlank String stageId, @RequestHeader String token,
                                                            @NotNull Province province, @NotNull RenewableType renewableType) {
         MarketSettingDO marketSettingDO = BeanUtil.getBeanLoader().getBean(MarketSettingMapper.class).selectById(1);
-        String renewableSpecialTransactionDemand = marketSettingDO.getRenewableSpecialTransactionDemand();
-        String[] split = renewableSpecialTransactionDemand.split(":");
-        double transferWind = Double.parseDouble(split[0]);
-        double transferSolar = Double.parseDouble(split[1]);
-        double receiverWind = Double.parseDouble(split[2]);
-        double receiverSolar = Double.parseDouble(split[3]);
+        double renewableSpecialTransactionDemand = Double.parseDouble(marketSettingDO.getRenewableSpecialTransactionDemand());
+        String percentage = marketSettingDO.getRenewableSpecialTransactionDemandPercentage();
+        String[] split = percentage.split(":");
+        double transferWind = renewableSpecialTransactionDemand * Double.parseDouble(split[0]);
+        double transferSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[1]);
+        double receiverWind = renewableSpecialTransactionDemand * Double.parseDouble(split[2]);
+        double receiverSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[3]);
 
         double require;
 
