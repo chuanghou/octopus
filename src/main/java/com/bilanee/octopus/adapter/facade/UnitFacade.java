@@ -1488,12 +1488,7 @@ public class UnitFacade {
         BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.MULTI, PARAM_FORMAT_WRONG.message("当前为多年间报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID, PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
-        String userId = TokenUtils.getUserId(token);
-
-        Unit unit = domainTunnel.getByAggregateId(Unit.class, multiYearBid.getUnitId());
-        BizEx.nullThrow(unit, PARAM_FORMAT_WRONG.message("找不到对应unitId" + multiYearBid.getUnitId() + "对应数据"));
-        Integer sourceId = unit.getMetaUnit().getSourceId();
-        LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>().eq(MultiYearUnitOfferDO::getUnitId, sourceId)
+        LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>().eq(MultiYearUnitOfferDO::getUnitId, multiYearBid.getUnitId())
                 .eq(MultiYearUnitOfferDO::getRoundId, pStageId.getRoundId() + 1);
         MultiYearUnitOfferDO multiYearUnitOfferDO = multiYearUnitOfferDOMapper.selectOne(eq);
         multiYearUnitOfferDO.setOfferMwh1(multiYearUnitOfferDO.getOfferMwh1());
