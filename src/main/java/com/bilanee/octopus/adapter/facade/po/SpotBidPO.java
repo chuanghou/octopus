@@ -1,5 +1,6 @@
 package com.bilanee.octopus.adapter.facade.po;
 
+import com.stellariver.milky.common.base.Valids;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -30,7 +31,7 @@ public class SpotBidPO {
     /**
      * 分段量价
      */
-    @NotEmpty
+    @NotEmpty @Valids
     List<InstantSpotBidPO> instantSpotBidPOs;
 
 }
