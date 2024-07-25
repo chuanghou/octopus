@@ -14,10 +14,7 @@ import com.bilanee.octopus.infrastructure.mapper.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ListMultimap;
-import com.stellariver.milky.common.base.BeanUtil;
-import com.stellariver.milky.common.base.ExceptionType;
-import com.stellariver.milky.common.base.Result;
-import com.stellariver.milky.common.base.SysEx;
+import com.stellariver.milky.common.base.*;
 import com.stellariver.milky.common.tool.common.Kit;
 import com.stellariver.milky.common.tool.util.Collect;
 import com.stellariver.milky.common.tool.util.Json;
@@ -40,6 +37,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static com.stellariver.milky.common.base.ErrorEnumsBase.PARAM_FORMAT_WRONG;
 
 /**
  * 竞赛相关
@@ -765,6 +764,13 @@ public class CompFacade {
     @SneakyThrows
     @GetMapping ("listSpotBiddenEntityVOs")
     public Result<SpotBiddenVO> listSpotBiddenEntityVOs(@NotBlank String stageId, @NotBlank String province) {
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         SpotBiddenVO spotBiddenVO = (SpotBiddenVO) cache.get("listSpotBiddenEntityVOs" + province, () -> doListSpotBiddenEntityVOs(stageId, province));
         return Result.success(spotBiddenVO);
     }
@@ -963,6 +969,12 @@ public class CompFacade {
     @SneakyThrows
     @GetMapping("getSpotInterClearanceVO")
     public Result<SpotInterClearanceVO> getSpotInterClearanceVO(String stageId, @RequestHeader String token) {
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         SpotInterClearanceVO spotInterClearanceVO = (SpotInterClearanceVO) cache.get(
                 "getSpotInterClearanceVO" + stageId + TokenUtils.getUserId(token), () -> doGetSpotInterClearanceVO(stageId, token));
         return Result.success(spotInterClearanceVO);
@@ -1017,6 +1029,13 @@ public class CompFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("interSpotMarketVOAvailableInstants")
     public Result<List<Integer>> interSpotMarketVOAvailableInstants(String stageId) {
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         List<Integer> ls = (List<Integer>) cache.get("interSpotMarketVOAvailableInstants" + stageId, () -> doInterSpotMarketVOAvailableInstants(stageId));
         return Result.success(ls);
     }

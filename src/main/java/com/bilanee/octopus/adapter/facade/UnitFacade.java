@@ -277,6 +277,10 @@ public class UnitFacade {
 
         Comp comp = tunnel.runningComp();
         BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         StepRecord stepRecord = comp.getStepRecords().stream().filter(s -> s.getStageId().equals(stageId)).findFirst().orElseThrow(SysEx::unreachable);
 
 
@@ -1017,6 +1021,12 @@ public class UnitFacade {
     @SneakyThrows
     @GetMapping("listGeneratorClearances")
     public Result<GeneratorClearVO> listGeneratorClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         GeneratorClearVO clearVO = (GeneratorClearVO) shortCache.get("listGeneratorClearances" + stageId + unitId, () -> doListGeneratorClearances(stageId, unitId));
         return Result.success(clearVO);
     }
@@ -1192,6 +1202,14 @@ public class UnitFacade {
     @SneakyThrows
     @GetMapping("listLoadClearances")
     public Result<LoadClearVO> listLoadClearances(@NotBlank String stageId, @NotNull @Positive Long unitId) {
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
+
         LoadClearVO loadClearVO = (LoadClearVO) shortCache.get("listLoadClearances" + stageId + unitId, () -> doListLoadClearances(stageId, unitId));
         return Result.success(loadClearVO);
     }
@@ -1237,8 +1255,15 @@ public class UnitFacade {
      */
     @GetMapping("listSpotInterBidVO")
     public Result<List<SpotInterBidVO>> listSpotInterBidVO(@NotBlank String stageId, @RequestHeader String token) {
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
+
         StageId parsedStageId = StageId.parse(stageId);
-        Long compId = parsedStageId.getCompId();
         Integer roundId = parsedStageId.getRoundId();
         LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, roundId + 1);
         List<TieLinePowerDO> tieLinePowerDOS = tieLinePowerDOMapper.selectList(eq).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).collect(Collectors.toList());
