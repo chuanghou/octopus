@@ -1438,7 +1438,7 @@ public class UnitFacade {
         }
         Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>()
-                .eq(MultiYearUnitOfferDO::getUnitId, Collect.transfer(units, u -> u.getMetaUnit().getSourceId()))
+                .in(MultiYearUnitOfferDO::getUnitId, unitMap.keySet())
                 .eq(MultiYearUnitOfferDO::getRoundId, parsedStageId.getRoundId() + 1);
         List<MultiYearUnitOfferDO> multiYearUnitOfferDOs = multiYearUnitOfferDOMapper.selectList(eq);
         List<MultiYearBid> multiYearBids = multiYearUnitOfferDOs.stream().map(d -> {

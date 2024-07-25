@@ -219,6 +219,7 @@ public class ManageFacade {
                     .province(Kit.enumOfMightEx(Province::getDbCode, g.getProv()))
                     .unitType(UnitType.GENERATOR)
                     .generatorType(Kit.enumOfMightEx(GeneratorType::getDbCode, g.getType()))
+                    .renewableType(Kit.enumOf(RenewableType::getDbCode, g.getSubType()).orElse(null))
                     .sourceId(g.getUnitId())
                     .capacity(capacity)
                     .maxCapacity(g.getMaxP())

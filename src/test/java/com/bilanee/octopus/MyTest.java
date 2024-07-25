@@ -6,6 +6,12 @@ import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
+import com.bilanee.octopus.basic.StageId;
+import com.bilanee.octopus.basic.TokenUtils;
+import com.bilanee.octopus.basic.enums.GeneratorType;
+import com.bilanee.octopus.basic.enums.Province;
+import com.bilanee.octopus.basic.enums.RenewableType;
+import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.domain.Routers;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import org.junit.jupiter.api.Test;
@@ -41,6 +47,8 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        manageFacade.step();
+        StageId stageId = tunnel.runningComp().getStageId();
+        stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
+        unitFacade.listsMultiAnnualBids(stageId.toString(), TokenUtils.sign("1000"), Province.TRANSFER, RenewableType.WIND);
     }
 }

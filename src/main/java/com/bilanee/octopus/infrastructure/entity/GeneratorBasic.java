@@ -19,6 +19,7 @@ public class GeneratorBasic {
   String unitName;
   Integer prov;
   Integer type;
+  Integer subType;
   Double ratedVolt;
   Double ratedCapacity;
   Double inplantUseFactor;

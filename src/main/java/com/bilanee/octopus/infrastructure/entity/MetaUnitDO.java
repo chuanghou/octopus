@@ -22,6 +22,8 @@ public class MetaUnitDO {
     UnitType unitType;
     @Nullable
     GeneratorType generatorType;
+    @Nullable
+    RenewableType renewableType;
     Integer sourceId;
     @TableField(typeHandler = PositionHandler.class)
     Map<TimeFrame, Map<Direction, Double>> capacity;
