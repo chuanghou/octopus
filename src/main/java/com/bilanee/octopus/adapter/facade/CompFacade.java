@@ -419,6 +419,15 @@ public class CompFacade {
     @SneakyThrows
     @GetMapping("listSpotMarketVOByInstant")
     public Result<InstantSpotMarketVO> getSpotMarketVOs(String stageId, String province, Integer instant, @RequestHeader String token) {
+
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
+
         SpotMarketVO spotMarketVO = (SpotMarketVO) cache.get(
                 "listSpotMarketVOs" + stageId + province + TokenUtils.getUserId(token), () -> doListSpotMarketVOs(stageId, province, token));
         InstantSpotMarketVO instantSpotMarketVO = InstantSpotMarketVO.builder()

@@ -119,9 +119,14 @@ public class UnitFacade {
     public Result<List<UnitInterBidVO>> listInterBidsVOs(@NotBlank String stageId, @RequestHeader String token) {
 
         String userId = TokenUtils.getUserId(token);
+
         StageId parsedStageId = StageId.parse(stageId);
         Comp comp = tunnel.runningComp();
         BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         boolean realTime = comp.getStageId().equals(parsedStageId);
 
         LambdaQueryWrapper<UnitDO> queryWrapper = new LambdaQueryWrapper<UnitDO>()
@@ -752,6 +757,13 @@ public class UnitFacade {
     public Result<List<IntraDaBidVO>> listDaBidVOs(@NotBlank String stageId, @RequestHeader String token) {
         String userId = TokenUtils.getUserId(token);
         StageId parsed = StageId.parse(stageId);
+
+        Comp comp = tunnel.runningComp();
+        BizEx.nullThrow(comp, ErrorEnums.COMP_NOT_EXISTED);
+
+        Long compId = StageId.parse(stageId).getCompId();
+        BizEx.falseThrow(Objects.equals(compId, comp.getCompId()), PARAM_FORMAT_WRONG.message("该场次已经结束，请重新进入"));
+
         List<Unit> units = tunnel.listUnits(parsed.getCompId(), parsed.getRoundId(), userId);
         List<IntraDaBidVO> intraDaBidVOs = Collect.transfer(units,u -> this.build(u, parsed));
         return Result.success(intraDaBidVOs);
