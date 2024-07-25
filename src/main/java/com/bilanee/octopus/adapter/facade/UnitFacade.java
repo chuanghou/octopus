@@ -1451,9 +1451,10 @@ public class UnitFacade {
                 throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
             }
             return MultiYearBid.builder()
-                    .unitId(unitMap.get(d.getUnitId()).getUnitId())
+                    .unitId(Long.valueOf(unitMap.get(d.getUnitId()).getMetaUnit().getSourceId()))
                     .unitName(unitMap.get(d.getUnitId()).getMetaUnit().getName())
                     .renewableType(renewableType)
+                    .roundId(parsedStageId.getRoundId())
                     .maxMultiYearClearedMwh(d.getMaxMultiYearClearedMwh())
                     .offerMwh1(d.getOfferMwh1())
                     .offerMwh2(d.getOfferMwh2())

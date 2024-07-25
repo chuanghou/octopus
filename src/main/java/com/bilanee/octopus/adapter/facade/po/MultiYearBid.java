@@ -85,7 +85,7 @@ public class MultiYearBid {
     public void afterValidation() {
         double v = offerMwh1 + offerMwh2 + offerMwh3;
         LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>()
-                .eq(MultiYearUnitOfferDO::getRoundId, roundId)
+                .eq(MultiYearUnitOfferDO::getRoundId, roundId + 1)
                 .eq(MultiYearUnitOfferDO::getUnitId, unitId);
         MultiYearUnitOfferDO multiYearUnitOfferDO = BeanUtil.getBean(MultiYearUnitOfferDOMapper.class).selectOne(eq);
         BizEx.trueThrow(v > multiYearUnitOfferDO.getMaxMultiYearClearedMwh(), ErrorEnums.PARAM_FORMAT_WRONG.message("报单量超过限制"));
