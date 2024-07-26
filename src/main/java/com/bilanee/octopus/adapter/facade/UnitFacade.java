@@ -295,7 +295,7 @@ public class UnitFacade {
         CompletableFuture<List<Unit>> future2 = CompletableFuture.supplyAsync(() -> {
             StageId parsedStageId = StageId.parse(stageId);
             return tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), TokenUtils.getUserId(token));
-        });
+        }, executor);
 
         Map<IntraSymbol, IntraInstantDO> instantDOMap = future0.get();
         ListMultimap<IntraSymbol, IntraQuotationDO> quotationDOMap = future1.get();
