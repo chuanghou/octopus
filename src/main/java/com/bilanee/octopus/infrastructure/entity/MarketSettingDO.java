@@ -1,8 +1,11 @@
 package com.bilanee.octopus.infrastructure.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.stellariver.milky.infrastructure.base.database.JsonHandler;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -30,12 +33,38 @@ public class MarketSettingDO {
   Integer balanceConstraintPenaltyFactor;
   Integer branchConstraintPenaltyFactor;
   Integer sectionConstraintPenaltyFactor;
-  Double loadAnnualMaxForecastErr;
-  Double loadMonthlyMaxForecastErr;
-  Double loadDaMaxForecastErr;
-  Double renewableAnnualMaxForecastErr;
-  Double renewableMonthlyMaxForecastErr;
-  Double renewableDaMaxForecastErr;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  ForecastErr loadMaxForecastErr;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  ForecastErr renewableMaxForecastErr;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr multiLoadForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr annualLoadForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr monthlyLoadForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr daLoadForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr multiYearRenewableForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr annualRenewableForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr monthlyRenewableForecastDeviation;
+
+  @TableField(typeHandler = JacksonTypeHandler.class)
+  RealErr daRenewableForecastDeviation;
+
+
   Integer forwardNumOfferSegs;
   Integer forwardNumBidSegs;
   Integer spotNumOfferSegs;
@@ -87,7 +116,6 @@ public class MarketSettingDO {
   String annualCoalPrice;
   String monthlyCoalPrice;
   String daCoalPrice;
-  String forecastDeviation;
   Double retailPriceForecastMultiple;
   Integer assetAllocationMode;
   String assetAllocationModeStr;
@@ -124,8 +152,7 @@ public class MarketSettingDO {
    */
   Integer intraprovincialMultiYearResultDuration;
 
-  /**
-   * 新能源专场交易电网申报需求占新能源预测上网电量百分比“:”为分隔符，存储顺序：
+  /**   * 新能源专场交易电网申报需求占新能源预测上网电量百分比“:”为分隔符，存储顺序：
    * 送电省风、送电省光、
    * 受电省风、受电省光
    */

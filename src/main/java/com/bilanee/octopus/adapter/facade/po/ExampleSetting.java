@@ -14,6 +14,12 @@ import javax.validation.constraints.NotNull;
 public class ExampleSetting {
 
     /**
+     * 负荷多年预测百分比误差
+     */
+    @NotNull @Valid
+    ForecastError loadMultiYearMaxForecastErr;
+
+    /**
      * 负荷年度预测百分比误差
      */
     @NotNull @Valid
@@ -30,6 +36,12 @@ public class ExampleSetting {
      */
     @NotNull @Valid
     ForecastError loadDaMaxForecastErr;
+
+    /**
+     * 新能源多年预测百分比误差
+     */
+    @NotNull @Valid
+    ForecastError renewableMultiYearMaxForecastErr;
 
     /**
      * 新能源年度预测百分比误差

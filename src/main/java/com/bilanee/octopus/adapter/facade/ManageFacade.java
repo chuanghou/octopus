@@ -1,7 +1,9 @@
 package com.bilanee.octopus.adapter.facade;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.PaperVO;
@@ -367,35 +369,62 @@ public class ManageFacade {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         ExampleSetting.ExampleSettingBuilder builder = ExampleSetting.builder();
 
-        String forecastDeviation = marketSettingDO.getForecastDeviation();
-        if (Kit.notBlank(forecastDeviation)) {
-            String[] split = StringUtils.split(forecastDeviation, ":");
+        ForecastError loadMultiYear = ForecastError.builder()
+                .forecastError(marketSettingDO.getLoadMaxForecastErr().getMultiYear())
+                .transfer(marketSettingDO.getMultiLoadForecastDeviation().getTransfer())
+                .receiver(marketSettingDO.getMultiLoadForecastDeviation().getReceiver())
+                .build();
+        builder.loadMultiYearMaxForecastErr(loadMultiYear);
 
-            ForecastError loadAnnual = ForecastError.builder().forecastError(marketSettingDO.getLoadAnnualMaxForecastErr())
-                    .transfer(Double.valueOf(split[0])).receiver(Double.valueOf(split[3])).build();
+            ForecastError loadAnnual = ForecastError.builder()
+                    .forecastError(marketSettingDO.getLoadMaxForecastErr().getAnnual())
+                    .transfer(marketSettingDO.getAnnualLoadForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getAnnualLoadForecastDeviation().getReceiver())
+                    .build();
             builder.loadAnnualMaxForecastErr(loadAnnual);
 
-            ForecastError loadMonthly = ForecastError.builder().forecastError(marketSettingDO.getLoadMonthlyMaxForecastErr())
-                    .transfer(Double.valueOf(split[1])).receiver(Double.valueOf(split[4])).build();
+            ForecastError loadMonthly = ForecastError.builder()
+                    .forecastError(marketSettingDO.getLoadMaxForecastErr().getMonthly())
+                    .transfer(marketSettingDO.getMonthlyLoadForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getMonthlyLoadForecastDeviation().getReceiver())
+                    .build();
             builder.loadMonthlyMaxForecastErr(loadMonthly);
 
-            ForecastError loadDa = ForecastError.builder().forecastError(marketSettingDO.getLoadDaMaxForecastErr())
-                    .transfer(Double.valueOf(split[2])).receiver(Double.valueOf(split[5])).build();
+            ForecastError loadDa = ForecastError.builder().forecastError(marketSettingDO.getLoadMaxForecastErr().getDa())
+                    .transfer(marketSettingDO.getDaLoadForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getDaLoadForecastDeviation().getReceiver())
+                    .build();
             builder.loadDaMaxForecastErr(loadDa);
 
-            ForecastError generatorAnnual = ForecastError.builder().forecastError(marketSettingDO.getRenewableAnnualMaxForecastErr())
-                    .transfer(Double.valueOf(split[6])).receiver(Double.valueOf(split[9])).build();
+        ForecastError generatorMultiYear = ForecastError.builder()
+                .forecastError(marketSettingDO.getRenewableMaxForecastErr().getMultiYear())
+                .transfer(marketSettingDO.getMultiYearRenewableForecastDeviation().getTransfer())
+                .receiver(marketSettingDO.getMultiYearRenewableForecastDeviation().getReceiver())
+                .build();
+        builder.renewableMultiYearMaxForecastErr(generatorMultiYear);
+
+
+            ForecastError generatorAnnual = ForecastError.builder()
+                    .forecastError(marketSettingDO.getRenewableMaxForecastErr().getAnnual())
+                    .transfer(marketSettingDO.getAnnualRenewableForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getAnnualRenewableForecastDeviation().getReceiver())
+                    .build();
             builder.renewableAnnualMaxForecastErr(generatorAnnual);
 
-            ForecastError generatorMonthly = ForecastError.builder().forecastError(marketSettingDO.getRenewableMonthlyMaxForecastErr())
-                    .transfer(Double.valueOf(split[7])).receiver(Double.valueOf(split[10])).build();
+            ForecastError generatorMonthly = ForecastError.builder()
+                    .forecastError(marketSettingDO.getRenewableMaxForecastErr().getMonthly())
+                    .transfer(marketSettingDO.getMonthlyRenewableForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getMonthlyRenewableForecastDeviation().getReceiver())
+                    .build();
             builder.renewableMonthlyMaxForecastErr(generatorMonthly);
 
-            ForecastError generatorDa = ForecastError.builder().forecastError(marketSettingDO.getRenewableDaMaxForecastErr())
-                    .transfer(Double.valueOf(split[8])).receiver(Double.valueOf(split[11])).build();
+            ForecastError generatorDa = ForecastError.builder()
+                    .forecastError(marketSettingDO.getRenewableMaxForecastErr().getDa())
+                    .transfer(marketSettingDO.getDaRenewableForecastDeviation().getTransfer())
+                    .receiver(marketSettingDO.getDaRenewableForecastDeviation().getReceiver())
+                    .build();
             builder.renewableDaMaxForecastErr(generatorDa);
 
-        }
         ExampleSetting exampleSetting = builder.build();
         return Result.success(exampleSetting);
     }
@@ -408,29 +437,43 @@ public class ManageFacade {
     public Result<Void> updateExampleSetting(@RequestBody ExampleSetting exampleSetting) {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
 
-        marketSettingDO.setLoadAnnualMaxForecastErr(exampleSetting.getLoadAnnualMaxForecastErr().getForecastError());
-        marketSettingDO.setLoadMonthlyMaxForecastErr(exampleSetting.getLoadMonthlyMaxForecastErr().getForecastError());
-        marketSettingDO.setLoadDaMaxForecastErr(exampleSetting.getLoadDaMaxForecastErr().getForecastError());
-        marketSettingDO.setRenewableAnnualMaxForecastErr(exampleSetting.getRenewableAnnualMaxForecastErr().getForecastError());
-        marketSettingDO.setRenewableMonthlyMaxForecastErr(exampleSetting.getRenewableMonthlyMaxForecastErr().getForecastError());
-        marketSettingDO.setRenewableDaMaxForecastErr(exampleSetting.getRenewableDaMaxForecastErr().getForecastError());
-        String forecastDeviation = Stream.of(
-                exampleSetting.getLoadAnnualMaxForecastErr().getTransfer(),
-                exampleSetting.getLoadMonthlyMaxForecastErr().getTransfer(),
-                exampleSetting.getLoadDaMaxForecastErr().getTransfer(),
+        ForecastError loadMultiYearMaxForecastErr = exampleSetting.getLoadMultiYearMaxForecastErr();
+        ForecastError loadAnnualMaxForecastErr = exampleSetting.getLoadAnnualMaxForecastErr();
+        ForecastError loadMonthlyMaxForecastErr = exampleSetting.getLoadMonthlyMaxForecastErr();
+        ForecastError loadDaMaxForecastErr = exampleSetting.getLoadDaMaxForecastErr();
 
-                exampleSetting.getLoadAnnualMaxForecastErr().getReceiver(),
-                exampleSetting.getLoadMonthlyMaxForecastErr().getReceiver(),
-                exampleSetting.getLoadDaMaxForecastErr().getReceiver(),
+        ForecastErr loadForecastErr = ForecastErr.builder().multiYear(loadAnnualMaxForecastErr.getForecastError())
+                .annual(loadAnnualMaxForecastErr.getForecastError())
+                .monthly(loadMonthlyMaxForecastErr.getForecastError())
+                .da(loadDaMaxForecastErr.getForecastError())
+                .build();
+        marketSettingDO.setLoadMaxForecastErr(loadForecastErr);
 
-                exampleSetting.getRenewableAnnualMaxForecastErr().getTransfer(),
-                exampleSetting.getRenewableMonthlyMaxForecastErr().getTransfer(),
-                exampleSetting.getRenewableDaMaxForecastErr().getTransfer(),
+        marketSettingDO.setMultiLoadForecastDeviation(RealErr.builder().transfer(loadMultiYearMaxForecastErr.getTransfer()).receiver(loadMultiYearMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setAnnualLoadForecastDeviation(RealErr.builder().transfer(loadAnnualMaxForecastErr.getTransfer()).receiver(loadAnnualMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setMonthlyLoadForecastDeviation(RealErr.builder().transfer(loadMonthlyMaxForecastErr.getTransfer()).receiver(loadMonthlyMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setDaLoadForecastDeviation(RealErr.builder().transfer(loadDaMaxForecastErr.getTransfer()).receiver(loadDaMaxForecastErr.getReceiver()).build());
 
-                exampleSetting.getRenewableAnnualMaxForecastErr().getReceiver(),
-                exampleSetting.getRenewableMonthlyMaxForecastErr().getReceiver(),
-                exampleSetting.getRenewableDaMaxForecastErr().getReceiver()).map(Objects::toString).collect(Collectors.joining(":"));
-        marketSettingDO.setForecastDeviation(forecastDeviation);
+
+        ForecastError renewableMultiYearMaxForecastErr = exampleSetting.getRenewableMultiYearMaxForecastErr();
+        ForecastError renewableAnnualMaxForecastErr = exampleSetting.getRenewableAnnualMaxForecastErr();
+        ForecastError renewableMonthlyMaxForecastErr = exampleSetting.getRenewableMonthlyMaxForecastErr();
+        ForecastError renewableDaMaxForecastErr = exampleSetting.getRenewableDaMaxForecastErr();
+
+
+        ForecastErr renewableForecastErr = ForecastErr.builder().multiYear(renewableMultiYearMaxForecastErr.getForecastError())
+                .annual(renewableAnnualMaxForecastErr.getForecastError())
+                .monthly(renewableMonthlyMaxForecastErr.getForecastError())
+                .da(renewableDaMaxForecastErr.getForecastError())
+                .build();
+        marketSettingDO.setRenewableMaxForecastErr(renewableForecastErr);
+
+        marketSettingDO.setMultiYearRenewableForecastDeviation(RealErr.builder().transfer(renewableMultiYearMaxForecastErr.getTransfer()).receiver(renewableMultiYearMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setAnnualRenewableForecastDeviation(RealErr.builder().transfer(renewableAnnualMaxForecastErr.getTransfer()).receiver(renewableAnnualMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setMonthlyRenewableForecastDeviation(RealErr.builder().transfer(renewableMonthlyMaxForecastErr.getTransfer()).receiver(renewableMonthlyMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setDaRenewableForecastDeviation(RealErr.builder().transfer(renewableDaMaxForecastErr.getTransfer()).receiver(renewableDaMaxForecastErr.getReceiver()).build());
+
+
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

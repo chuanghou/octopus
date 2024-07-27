@@ -1549,54 +1549,64 @@ public class UnitFacade {
     @SuppressWarnings("unchecked")
     @GetMapping("listRetailPackageVO")
     public Result<RetailPackageVO> listsRetailPackageVO(@NotBlank String stageId, @RequestHeader String token, @NotNull Province province) {
-        StageId parsedStageId = StageId.parse(stageId);
-        String userId = TokenUtils.getUserId(token);
-        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
-                .stream().filter(u -> u.getMetaUnit().getProvince().equals(province))
-                .filter(u -> UnitType.LOAD.equals(u.getMetaUnit().getUnitType())).collect(Collectors.toList());
+        RetailPackageVO.PackageDetail packageDetail0 = RetailPackageVO.PackageDetail.builder().checked(true).description("描述样例").id(10).build();
+        RetailPackageVO.PackageDetail packageDetail1 = RetailPackageVO.PackageDetail.builder().checked(false).description("描述样例").id(10).build();
+        RetailPackageVO.PackageDetail packageDetail2 = RetailPackageVO.PackageDetail.builder().checked(false).description("描述样例").id(10).build();
+        RetailPackageVO.PackageDetail packageDetail3 = RetailPackageVO.PackageDetail.builder().checked(false).description("描述样例").id(10).build();
 
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        RetailPackageVO.RetailPackageVOBuilder builder = RetailPackageVO.builder().headMessage(marketSettingDO.getRetailPlanDescription());
-        if (Collect.isEmpty(units)) {
-            builder.unitPackages(Collections.EMPTY_LIST);
-            return Result.success(builder.build());
-        }
-
-        Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
-
-        List<Integer> sourceIds = Collect.transfer(units, u -> u.getMetaUnit().getSourceId());
-        LambdaQueryWrapper<RetailMarketLoadBidDO> in = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
-                .eq(RetailMarketLoadBidDO::getRoundId, parsedStageId.getRoundId())
-                .in(RetailMarketLoadBidDO::getLoadId, sourceIds);
-
-        ListMultimap<Integer, RetailMarketLoadBidDO> groupBidDO =
-                retailMarketLoadBidDOMapper.selectList(in).stream().collect(Collect.listMultiMap(RetailMarketLoadBidDO::getLoadId));
-
-
-        LambdaQueryWrapper<RetailMarketPackageDescription> eq = new LambdaQueryWrapper<RetailMarketPackageDescription>()
-                .eq(RetailMarketPackageDescription::getRoundId, parsedStageId.getRoundId() + 1)
-                .eq(RetailMarketPackageDescription::getProv, province.getDbCode());
-        Map<Integer, RetailMarketPackageDescription> map = Collect.toMap(retailMarketPackageDescriptionMapper.selectList(eq), RetailMarketPackageDescription::getRetailPackageId);
-
-
-        List<RetailPackageVO.UnitPackage> unitPackages = units.stream().map(u -> {
-            List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = groupBidDO.get(u.getMetaUnit().getSourceId());
-            List<RetailPackageVO.PackageDetail> packageDetails = retailMarketLoadBidDOS.stream().map(d -> {
-                return RetailPackageVO.PackageDetail.builder()
-                        .id(d.getRetailPackageId())
-                        .description(map.get(d.getRetailPackageId()).getRetailPackageDescription())
-                        .checked(d.getIsSelectedRetailPackage())
-                        .build();
-            }).collect(Collectors.toList());
-            return RetailPackageVO.UnitPackage.builder()
-                    .unitId(u.getUnitId())
-                    .unitName(u.getMetaUnit().getName())
-                    .packageDetails(packageDetails)
-                    .build();
-        }).collect(Collectors.toList());
-
-        RetailPackageVO retailPackageVO = builder.unitPackages(unitPackages).build();
-        return Result.success(retailPackageVO);
+        RetailPackageVO.UnitPackage unitPackage = RetailPackageVO.UnitPackage.builder().unitId(1L).unitName("测试").packageDetails(Collect.asList(packageDetail0, packageDetail1, packageDetail2, packageDetail3)).build();
+        RetailPackageVO retailPackageVO1 = RetailPackageVO.builder().headMessage("测试样例")
+                .unitPackages(Collect.asList(unitPackage, unitPackage))
+                .build();
+        return Result.success(retailPackageVO1);
+//        StageId parsedStageId = StageId.parse(stageId);
+//        String userId = TokenUtils.getUserId(token);
+//        List<Unit> units = tunnel.listUnits(parsedStageId.getCompId(), parsedStageId.getRoundId(), userId)
+//                .stream().filter(u -> u.getMetaUnit().getProvince().equals(province))
+//                .filter(u -> UnitType.LOAD.equals(u.getMetaUnit().getUnitType())).collect(Collectors.toList());
+//
+//        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+//        RetailPackageVO.RetailPackageVOBuilder builder = RetailPackageVO.builder().headMessage(marketSettingDO.getRetailPlanDescription());
+//        if (Collect.isEmpty(units)) {
+//            builder.unitPackages(Collections.EMPTY_LIST);
+//            return Result.success(builder.build());
+//        }
+//
+//        Map<Integer, Unit> unitMap = Collect.toMap(units, u -> u.getMetaUnit().getSourceId());
+//
+//        List<Integer> sourceIds = Collect.transfer(units, u -> u.getMetaUnit().getSourceId());
+//        LambdaQueryWrapper<RetailMarketLoadBidDO> in = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
+//                .eq(RetailMarketLoadBidDO::getRoundId, parsedStageId.getRoundId())
+//                .in(RetailMarketLoadBidDO::getLoadId, sourceIds);
+//
+//        ListMultimap<Integer, RetailMarketLoadBidDO> groupBidDO =
+//                retailMarketLoadBidDOMapper.selectList(in).stream().collect(Collect.listMultiMap(RetailMarketLoadBidDO::getLoadId));
+//
+//
+//        LambdaQueryWrapper<RetailMarketPackageDescription> eq = new LambdaQueryWrapper<RetailMarketPackageDescription>()
+//                .eq(RetailMarketPackageDescription::getRoundId, parsedStageId.getRoundId() + 1)
+//                .eq(RetailMarketPackageDescription::getProv, province.getDbCode());
+//        Map<Integer, RetailMarketPackageDescription> map = Collect.toMap(retailMarketPackageDescriptionMapper.selectList(eq), RetailMarketPackageDescription::getRetailPackageId);
+//
+//
+//        List<RetailPackageVO.UnitPackage> unitPackages = units.stream().map(u -> {
+//            List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = groupBidDO.get(u.getMetaUnit().getSourceId());
+//            List<RetailPackageVO.PackageDetail> packageDetails = retailMarketLoadBidDOS.stream().map(d -> {
+//                return RetailPackageVO.PackageDetail.builder()
+//                        .id(d.getRetailPackageId())
+//                        .description(map.get(d.getRetailPackageId()).getRetailPackageDescription())
+//                        .checked(d.getIsSelectedRetailPackage())
+//                        .build();
+//            }).collect(Collectors.toList());
+//            return RetailPackageVO.UnitPackage.builder()
+//                    .unitId(u.getUnitId())
+//                    .unitName(u.getMetaUnit().getName())
+//                    .packageDetails(packageDetails)
+//                    .build();
+//        }).collect(Collectors.toList());
+//
+//        RetailPackageVO retailPackageVO = builder.unitPackages(unitPackages).build();
+//        return Result.success(retailPackageVO);
     }
 
 

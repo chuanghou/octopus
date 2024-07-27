@@ -48,7 +48,6 @@ public class MyTest {
     @Test
     public void interPointTest() throws InterruptedException {
         StageId stageId = tunnel.runningComp().getStageId();
-        stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
-        unitFacade.listsMultiAnnualBids(stageId.toString(), TokenUtils.sign("1000"), Province.TRANSFER, RenewableType.WIND);
+        unitFacade.listsRetailPackageVO(stageId.toString(), TokenUtils.sign("1000") ,Province.TRANSFER);
     }
 }
