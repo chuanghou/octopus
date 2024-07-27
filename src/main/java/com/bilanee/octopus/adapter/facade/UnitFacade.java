@@ -1434,11 +1434,12 @@ public class UnitFacade {
         MarketSettingDO marketSettingDO = BeanUtil.getBeanLoader().getBean(MarketSettingMapper.class).selectById(1);
         double renewableSpecialTransactionDemand = Double.parseDouble(marketSettingDO.getRenewableSpecialTransactionDemand());
         String percentage = marketSettingDO.getRenewableSpecialTransactionDemandPercentage();
+        Integer roundId = StageId.parse(stageId).getRoundId();
         String[] split = percentage.split(":");
-        double transferWind = renewableSpecialTransactionDemand * Double.parseDouble(split[0]);
-        double transferSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[1]);
-        double receiverWind = renewableSpecialTransactionDemand * Double.parseDouble(split[2]);
-        double receiverSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[3]);
+        double transferWind = renewableSpecialTransactionDemand * Double.parseDouble(split[2 * roundId + 0]);
+        double transferSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[2 * roundId + 1]);
+        double receiverWind = renewableSpecialTransactionDemand * Double.parseDouble(split[2 * roundId + 2]);
+        double receiverSolar = renewableSpecialTransactionDemand * Double.parseDouble(split[2 * roundId + 3]);
 
         double require;
 

@@ -171,13 +171,15 @@ public class Comp extends AggregateRoot {
             tunnel.insertBid(bid3);
         });
 
+
+
         MarketSettingDO marketSettingDO = BeanUtil.getBeanLoader().getBean(MarketSettingMapper.class).selectById(1);
         String renewableSpecialTransactionDemand = marketSettingDO.getRenewableSpecialTransactionDemand();
         String[] split = renewableSpecialTransactionDemand.split(":");
-        Double transferWind = Double.valueOf(split[0]);
-        Double transferSolar = Double.valueOf(split[1]);
-        Double receiverWind = Double.valueOf(split[2]);
-        Double receiverSolar = Double.valueOf(split[3]);
+        Double transferWind = Double.valueOf(split[2 * roundId + 0]);
+        Double transferSolar = Double.valueOf(split[2 * roundId + 1]);
+        Double receiverWind = Double.valueOf(split[2 * roundId + 2]);
+        Double receiverSolar = Double.valueOf(split[2 * roundId + 3]);
         Double solarSpecificPriceCap = marketSettingDO.getSolarSpecificPriceCap();
         Double windSpecificPriceCap = marketSettingDO.getWindSpecificPriceCap();
 
