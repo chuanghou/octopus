@@ -494,6 +494,8 @@ public class ManageFacade {
                 .minForwardLoadPosition(marketSettingDO.getMinForwardLoadPosition())
                 .minForwardUnitPosition(marketSettingDO.getMinForwardUnitPosition())
                 .maxForwardClearedMwMultiple(marketSettingDO.getMaxForwardClearedMwMultiple())
+                .solarSpecificPriceCap(marketSettingDO.getSolarSpecificPriceCap())
+                .windSpecificPriceCap(marketSettingDO.getWindSpecificPriceCap())
                 .build();
         return Result.success(electricMarketSettingVO);
     }
@@ -531,6 +533,8 @@ public class ManageFacade {
         marketSettingDO.setMinForwardLoadPosition(electricMarketSetting.getMinForwardLoadPosition());
         marketSettingDO.setMinForwardLoadPosition(electricMarketSetting.getMinForwardLoadPosition());
         marketSettingDO.setMaxForwardClearedMwMultiple(electricMarketSetting.getMaxForwardClearedMwMultiple());
+        marketSettingDO.setWindSpecificPriceCap(electricMarketSetting.getWindSpecificPriceCap());
+        marketSettingDO.setSolarSpecificPriceCap(electricMarketSetting.getSolarSpecificPriceCap());
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }

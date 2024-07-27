@@ -110,6 +110,17 @@ public class ElectricMarketSettingVO {
      */
     Double maxForwardClearedMwMultiple;
 
+    /**
+     * 风力新能源价格上限
+     */
+    Double windSpecificPriceCap;
+
+
+    /**
+     * 光伏新能源价格上限
+     */
+    Double solarSpecificPriceCap;
+
 
 }
 
