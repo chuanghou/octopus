@@ -385,10 +385,11 @@ public class Tunnel {
             List<StackDiagramDO> stackDiagramDOS = stackDiagramDOMapper.selectList(eq1);
             if (stageId.getTradeStage() == TradeStage.AN_INTER) {
                 stackDiagramDOS.forEach(stackDiagramDO -> {
-                   stackDiagramDO.setIntraprovincialAnnualTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
-                    Double maxMonthlyReceivingMw = stackDiagramDO.getMaxMonthlyReceivingMw();
-                    double max = Math.max(maxMonthlyReceivingMw, interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
-                    stackDiagramDO.setMonthlyReceivingForecastMw(max);
+                    stackDiagramDO.setIntraprovincialAnnualTielinePower(interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
+                    double max0 = Math.max(stackDiagramDO.getMaxMonthlyReceivingForecastMw(), interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
+                    stackDiagramDO.setMaxMonthlyReceivingForecastMw(max0);
+                    double max1 = Math.max(stackDiagramDO.getMinMonthlyReceivingForecastMw(), interClearance.getMarketQuantity() + interClearance.getNonMarketQuantity());
+                    stackDiagramDO.setMinMonthlyReceivingForecastMw(max1);
                 });
             } else if (stageId.getTradeStage() == TradeStage.MO_INTER){
                 for (StackDiagramDO stackDiagramDO : stackDiagramDOS) {

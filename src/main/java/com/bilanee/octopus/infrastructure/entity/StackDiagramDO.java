@@ -22,12 +22,22 @@ public class StackDiagramDO {
   String dt;
   Integer prd;
   Integer prov;
+
+
+  /**
+   * 月度受电预测上限 （用于堆叠图）（MW）	decimal			新增，=max(月度需求缺口*110%,省间年度市场+计划的成交量)
+   */
+  Double maxMonthlyReceivingForecastMw;
+
+  /**
+   * 月度受电预测下限（用于堆叠图）（MW）	decimal			新增，=max(月度受电目标下限,日前受电目标,省间年度市场+计划的成交量)
+   */
+  Double minMonthlyReceivingForecastMw;
+
   Double maxAnnualReceivingMw;
   Double maxMonthlyReceivingMw;
   Double minAnnualReceivingMw;
   Double minMonthlyReceivingMw;
-  Double annualReceivingForecastMw;
-  Double monthlyReceivingForecastMw;
   Double intraprovincialAnnualTielinePower;
   Double intraprovincialMonthlyTielinePower;
   Double daReceivingTarget;
