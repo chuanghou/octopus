@@ -164,10 +164,10 @@ public class Comp extends AggregateRoot {
                     .quantity(unitOffer.getOfferMwh1()).price(unitOffer.getOfferPrice1()).direction(Direction.SELL).build();
             tunnel.insertBid(bid1);
             Bid bid2 = templateBid.toBuilder().bidId(uniqueIdGetter.get())
-                    .quantity(unitOffer.getOfferMwh1()).price(unitOffer.getOfferPrice1()).direction(Direction.SELL).build();
+                    .quantity(unitOffer.getOfferMwh2()).price(unitOffer.getOfferPrice2()).direction(Direction.SELL).build();
             tunnel.insertBid(bid2);
             Bid bid3 = templateBid.toBuilder().bidId(uniqueIdGetter.get())
-                    .quantity(unitOffer.getOfferMwh1()).price(unitOffer.getOfferPrice1()).direction(Direction.SELL).build();
+                    .quantity(unitOffer.getOfferMwh3()).price(unitOffer.getOfferPrice3()).direction(Direction.SELL).build();
             tunnel.insertBid(bid3);
         });
 

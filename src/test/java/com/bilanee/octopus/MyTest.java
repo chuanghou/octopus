@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.SimulateSetting;
+import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
 import com.bilanee.octopus.adapter.facade.vo.MultiYearBidVO;
 import com.bilanee.octopus.adapter.facade.vo.RetailPackageVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
@@ -57,6 +58,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<Void> step = manageFacade.step();
+        Result<List<InterClearanceVO>> listResult = compFacade.interClearanceVO("774018.TRADE.0.MULTI_ANNUAL.CLEAR", TokenUtils.sign("1000"));
+        Assertions.assertTrue(listResult.getSuccess());
     }
 }
