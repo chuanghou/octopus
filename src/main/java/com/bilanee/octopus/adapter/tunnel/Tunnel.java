@@ -360,6 +360,9 @@ public class Tunnel {
         clearanceDOMapper.insert(clearanceDO);
 
 
+        if (interClearance.getMultiYearFrame() != null) {
+            return;
+        }
         // 写回数据库给现货那边使用,
         List<Integer> prds = interClearance.getTimeFrame().getPrds();
         prds.forEach(prd -> {
