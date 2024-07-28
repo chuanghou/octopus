@@ -57,10 +57,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Long compId = tunnel.runningComp().getCompId();
-        List<Unit> units = tunnel.listUnits(compId, 0, "1000");
-        List<Unit> units1 = tunnel.listUnits(compId, 0, "1001");
-        List<Unit> units2 = tunnel.listUnits(compId, 0, "1002");
-        List<Unit> units3 = tunnel.listUnits(compId, 0, "1003");
+        Result<Void> step = manageFacade.step();
     }
 }

@@ -140,7 +140,7 @@ public class Comp extends AggregateRoot {
         LambdaQueryWrapper<MultiYearUnitOfferDO> eq0 = new LambdaQueryWrapper<MultiYearUnitOfferDO>()
                 .eq(MultiYearUnitOfferDO::getRoundId, roundId + 1);
         List<MultiYearUnitOfferDO> unitOffers = multiYearUnitOfferDOMapper.selectList(eq0);
-        LambdaQueryWrapper<UnitDO> eq1 = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, command).eq(UnitDO::getRoundId, roundId);
+        LambdaQueryWrapper<UnitDO> eq1 = new LambdaQueryWrapper<UnitDO>().eq(UnitDO::getCompId, compId).eq(UnitDO::getRoundId, roundId);
         List<UnitDO> unitDOs = BeanUtil.getBean(UnitDOMapper.class).selectList(eq1).stream()
                 .filter(u -> GeneratorType.RENEWABLE.equals(u.getMetaUnit().getGeneratorType())).collect(Collectors.toList());
         List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to);

@@ -29,6 +29,7 @@ public class BidDO {
     Province province;
     TimeFrame timeFrame;
     Integer instant;
+    RenewableType renewableType;
     TradeStage tradeStage;
     Direction direction;
     Double quantity;
