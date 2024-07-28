@@ -20,10 +20,14 @@ import com.stellariver.milky.domain.support.command.CommandBus;
 import com.stellariver.milky.domain.support.dependency.UniqueIdGetter;
 import lombok.AccessLevel;
 import lombok.CustomLog;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,6 +44,8 @@ public class Processor implements EventHandler<IntraBidContainer> {
     final UniqueIdGetter uniqueIdGetter;
 
     private Double latestPrice = 0D;
+
+    private final BlockingQueue<Object> blockingQueue = new ArrayBlockingQueue<>(1);
 
     public Processor(Tunnel tunnel, Object symbol, UniqueIdGetter uniqueIdGetter) {
         this.tunnel = tunnel;
@@ -103,8 +109,11 @@ public class Processor implements EventHandler<IntraBidContainer> {
         });
     }
 
+    @SneakyThrows
     public void close() {
+        blockingQueue.clear();
         disruptor.publishEvent((rtBidContainer, sequence) -> rtBidContainer.setOperation(Operation.CLOSE));
+        blockingQueue.poll(5, TimeUnit.MINUTES);
     }
 
     public void clear() {
@@ -136,6 +145,7 @@ public class Processor implements EventHandler<IntraBidContainer> {
             wsTopic = WsTopic.ROLL_BID;
             WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
         }
+        blockingQueue.add(new Object());
     }
 
     private void doClose() {

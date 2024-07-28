@@ -46,9 +46,6 @@ public class MyTest {
     BidDOMapper bidDOMapper;
 
     @Autowired
-    Routers routers;
-
-    @Autowired
     Tunnel tunnel;
 
     @Autowired
@@ -57,7 +54,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<MultiYearBidVO> multiYearBidVOResult = unitFacade.listsMultiAnnualBids("770318.TRADE.0.MULTI_ANNUAL.BID", TokenUtils.sign("1000"), Province.TRANSFER, RenewableType.WIND);
+        Result<MultiYearBidVO> multiYearBidVOResult = unitFacade.listsMultiAnnualBids(tunnel.runningComp().getStageId().toString(), TokenUtils.sign("1000"), Province.TRANSFER, RenewableType.WIND);
         System.out.println(multiYearBidVOResult);
     }
 }
