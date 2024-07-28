@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.SimulateSetting;
+import com.bilanee.octopus.adapter.facade.vo.MultiYearBidVO;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.StageId;
@@ -56,8 +57,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
-        Result<SimulateSetting> simulateSetting = manageFacade.getSimulateSetting();
-        Result<List<ManageFacade.RetailPlan>> listResult = manageFacade.listRetailPlans();
+        Result<MultiYearBidVO> multiYearBidVOResult = unitFacade.listsMultiAnnualBids("770318.TRADE.0.MULTI_ANNUAL.BID", TokenUtils.sign("1000"), Province.TRANSFER, RenewableType.WIND);
+        System.out.println(multiYearBidVOResult);
     }
 }
