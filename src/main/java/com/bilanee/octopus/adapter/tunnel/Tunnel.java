@@ -295,7 +295,7 @@ public class Tunnel {
 
     public GridLimit transLimit(StageId stageId, TimeFrame timeFrame, MultiYearFrame multiYearFrame) {
         if (TradeStage.MULTI_ANNUAL == stageId.getTradeStage()) {
-            return GridLimit.builder().low(Double.MIN_VALUE).high(Double.MAX_VALUE).build();
+            return GridLimit.builder().low(-10_0000D).high(10_0000D).build();
         }
         Map<TradeStage, Map<TimeFrame, GridLimit>> prepare = prepare(stageId.getRoundId());
         GridLimit originalTransLimit = prepare.get(stageId.getTradeStage()).get(timeFrame);
