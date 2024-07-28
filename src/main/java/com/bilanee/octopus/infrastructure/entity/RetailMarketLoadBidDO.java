@@ -13,7 +13,7 @@ import java.util.Date;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName(value = "retail_market_load_bid_and_result", autoResultMap = true)
+@TableName(value = "retail_plan_load_bid_and_result", autoResultMap = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RetailMarketLoadBidDO {
 
@@ -22,7 +22,6 @@ public class RetailMarketLoadBidDO {
     Integer roundId;
     Integer loadId;
     Date dt;
-    Integer retailPackageId;
-    Boolean isSelectedRetailPackage;
-
+    Integer retailPlanId;
+    Boolean isSelectedRetailPlan;
 }

@@ -8,13 +8,13 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName(value = "retail_market_package_description", autoResultMap = true)
+@TableName(value = "retail_plan_description", autoResultMap = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RetailMarketPackageDescription {
 
     Integer roundId;
     Integer prov;
-    Integer retailPackageId;
-    String retailPackageDescription;
+    Integer retailPlanId;
+    String retailPlanDescription;
 
 }

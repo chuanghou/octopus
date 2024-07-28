@@ -1565,7 +1565,7 @@ public class UnitFacade {
 
         List<Integer> sourceIds = Collect.transfer(units, u -> u.getMetaUnit().getSourceId());
         LambdaQueryWrapper<RetailMarketLoadBidDO> in = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
-                .eq(RetailMarketLoadBidDO::getRoundId, parsedStageId.getRoundId())
+                .eq(RetailMarketLoadBidDO::getRoundId, parsedStageId.getRoundId() + 1)
                 .in(RetailMarketLoadBidDO::getLoadId, sourceIds);
 
         ListMultimap<Integer, RetailMarketLoadBidDO> groupBidDO =
@@ -1575,16 +1575,16 @@ public class UnitFacade {
         LambdaQueryWrapper<RetailMarketPackageDescription> eq = new LambdaQueryWrapper<RetailMarketPackageDescription>()
                 .eq(RetailMarketPackageDescription::getRoundId, parsedStageId.getRoundId() + 1)
                 .eq(RetailMarketPackageDescription::getProv, province.getDbCode());
-        Map<Integer, RetailMarketPackageDescription> map = Collect.toMap(retailMarketPackageDescriptionMapper.selectList(eq), RetailMarketPackageDescription::getRetailPackageId);
+        Map<Integer, RetailMarketPackageDescription> map = Collect.toMap(retailMarketPackageDescriptionMapper.selectList(eq), RetailMarketPackageDescription::getRetailPlanId);
 
 
         List<RetailPackageVO.UnitPackage> unitPackages = units.stream().map(u -> {
             List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = groupBidDO.get(u.getMetaUnit().getSourceId());
             List<RetailPackageVO.PackageDetail> packageDetails = retailMarketLoadBidDOS.stream().map(d -> {
                 return RetailPackageVO.PackageDetail.builder()
-                        .id(d.getRetailPackageId())
-                        .description(map.get(d.getRetailPackageId()).getRetailPackageDescription())
-                        .checked(d.getIsSelectedRetailPackage())
+                        .id(d.getRetailPlanId())
+                        .description(map.get(d.getRetailPlanId()).getRetailPlanDescription())
+                        .checked(d.getIsSelectedRetailPlan())
                         .build();
             }).collect(Collectors.toList());
             return RetailPackageVO.UnitPackage.builder()
@@ -1627,11 +1627,11 @@ public class UnitFacade {
                 .eq(RetailMarketLoadBidDO::getRoundId, pStageId.getRoundId());
         List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = retailMarketLoadBidDOMapper.selectList(eq);
         retailMarketLoadBidDOS.forEach(retailMarketLoadBidDO -> {
-            RetailMarketPO.PackageChoice packageChoice = map.get(retailMarketLoadBidDO.getRetailPackageId());
+            RetailMarketPO.PackageChoice packageChoice = map.get(retailMarketLoadBidDO.getRetailPlanId());
             if (packageChoice == null) {
                 throw new BizEx(PARAM_FORMAT_WRONG.message("没有提交所有选项"));
             }
-            retailMarketLoadBidDO.setIsSelectedRetailPackage(packageChoice.getChecked());
+            retailMarketLoadBidDO.setIsSelectedRetailPlan(packageChoice.getChecked());
         });
 
         retailMarketLoadBidDOS.forEach(retailMarketLoadBidDOMapper::updateById);
