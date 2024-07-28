@@ -126,6 +126,9 @@ public class Processor implements EventHandler<IntraBidContainer> {
         try {
             doOnEvent(event, sequence, endOfBatch);
         } catch (Throwable throwable) {
+            if (event.getOperation() == Operation.CLOSE) {
+                blockingQueue.add(new Object());
+            }
             log.error("Processor process failure", throwable);
         }
     }
