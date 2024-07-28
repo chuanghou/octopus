@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.stellariver.milky.infrastructure.base.database.JsonHandler;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -41,7 +40,7 @@ public class MarketSettingDO {
   ForecastErr renewableMaxForecastErr;
 
   @TableField(typeHandler = JacksonTypeHandler.class)
-  RealErr multiLoadForecastDeviation;
+  RealErr multiYearLoadForecastDeviation;
 
   @TableField(typeHandler = JacksonTypeHandler.class)
   RealErr annualLoadForecastDeviation;
@@ -69,11 +68,6 @@ public class MarketSettingDO {
   Integer forwardNumBidSegs;
   Integer spotNumOfferSegs;
   Integer spotNumBidSegs;
-  Double thermalForecastConfidence;
-  Double loadForecastConfidence;
-  Double renewableAnnualForecastConfidence;
-  Double renewableMonthlyForecastConfidence;
-  Double renewableDaForecastConfidence;
   Integer maxStartupCurvePrds;
   Integer maxShutdownCurvePrds;
   Integer traderNum;

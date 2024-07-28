@@ -1,9 +1,7 @@
 package com.bilanee.octopus.adapter.facade;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.bilanee.octopus.adapter.facade.po.*;
 import com.bilanee.octopus.adapter.facade.vo.CompVO;
 import com.bilanee.octopus.adapter.facade.vo.PaperVO;
@@ -34,6 +32,7 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -371,8 +370,8 @@ public class ManageFacade {
 
         ForecastError loadMultiYear = ForecastError.builder()
                 .forecastError(marketSettingDO.getLoadMaxForecastErr().getMultiYear())
-                .transfer(marketSettingDO.getMultiLoadForecastDeviation().getTransfer())
-                .receiver(marketSettingDO.getMultiLoadForecastDeviation().getReceiver())
+                .transfer(marketSettingDO.getMultiYearLoadForecastDeviation().getTransfer())
+                .receiver(marketSettingDO.getMultiYearLoadForecastDeviation().getReceiver())
                 .build();
         builder.loadMultiYearMaxForecastErr(loadMultiYear);
 
@@ -449,7 +448,7 @@ public class ManageFacade {
                 .build();
         marketSettingDO.setLoadMaxForecastErr(loadForecastErr);
 
-        marketSettingDO.setMultiLoadForecastDeviation(RealErr.builder().transfer(loadMultiYearMaxForecastErr.getTransfer()).receiver(loadMultiYearMaxForecastErr.getReceiver()).build());
+        marketSettingDO.setMultiYearLoadForecastDeviation(RealErr.builder().transfer(loadMultiYearMaxForecastErr.getTransfer()).receiver(loadMultiYearMaxForecastErr.getReceiver()).build());
         marketSettingDO.setAnnualLoadForecastDeviation(RealErr.builder().transfer(loadAnnualMaxForecastErr.getTransfer()).receiver(loadAnnualMaxForecastErr.getReceiver()).build());
         marketSettingDO.setMonthlyLoadForecastDeviation(RealErr.builder().transfer(loadMonthlyMaxForecastErr.getTransfer()).receiver(loadMonthlyMaxForecastErr.getReceiver()).build());
         marketSettingDO.setDaLoadForecastDeviation(RealErr.builder().transfer(loadDaMaxForecastErr.getTransfer()).receiver(loadDaMaxForecastErr.getReceiver()).build());
@@ -778,6 +777,7 @@ public class ManageFacade {
         /**
          * 套餐参数
          */
+        @NotEmpty(message = "套餐参数不应该为空")
         List<Parameter> parameters;
     }
 
