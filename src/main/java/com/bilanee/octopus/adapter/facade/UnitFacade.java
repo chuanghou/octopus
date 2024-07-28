@@ -1528,12 +1528,12 @@ public class UnitFacade {
         LambdaQueryWrapper<MultiYearUnitOfferDO> eq = new LambdaQueryWrapper<MultiYearUnitOfferDO>().eq(MultiYearUnitOfferDO::getUnitId, multiYearBid.getUnitId())
                 .eq(MultiYearUnitOfferDO::getRoundId, pStageId.getRoundId() + 1);
         MultiYearUnitOfferDO multiYearUnitOfferDO = multiYearUnitOfferDOMapper.selectOne(eq);
-        multiYearUnitOfferDO.setOfferMwh1(multiYearUnitOfferDO.getOfferMwh1());
-        multiYearUnitOfferDO.setOfferMwh2(multiYearUnitOfferDO.getOfferMwh2());
-        multiYearUnitOfferDO.setOfferMwh3(multiYearUnitOfferDO.getOfferMwh3());
-        multiYearUnitOfferDO.setOfferPrice1(multiYearUnitOfferDO.getOfferPrice1());
-        multiYearUnitOfferDO.setOfferPrice2(multiYearUnitOfferDO.getOfferPrice2());
-        multiYearUnitOfferDO.setOfferPrice3(multiYearUnitOfferDO.getOfferPrice3());
+        multiYearUnitOfferDO.setOfferMwh1(multiYearBid.getOfferMwh1());
+        multiYearUnitOfferDO.setOfferMwh2(multiYearBid.getOfferMwh2());
+        multiYearUnitOfferDO.setOfferMwh3(multiYearBid.getOfferMwh3());
+        multiYearUnitOfferDO.setOfferPrice1(multiYearBid.getOfferPrice1());
+        multiYearUnitOfferDO.setOfferPrice2(multiYearBid.getOfferPrice2());
+        multiYearUnitOfferDO.setOfferPrice3(multiYearBid.getOfferPrice3());
         multiYearUnitOfferDOMapper.updateById(multiYearUnitOfferDO);
         return Result.success();
     }

@@ -16,6 +16,7 @@ import com.bilanee.octopus.basic.enums.Province;
 import com.bilanee.octopus.basic.enums.RenewableType;
 import com.bilanee.octopus.basic.enums.TradeStage;
 import com.bilanee.octopus.domain.Routers;
+import com.bilanee.octopus.domain.Unit;
 import com.bilanee.octopus.infrastructure.entity.MarketSettingDO;
 import com.bilanee.octopus.infrastructure.mapper.BidDOMapper;
 import com.bilanee.octopus.infrastructure.mapper.MarketSettingMapper;
@@ -56,9 +57,10 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        StageId stageId = tunnel.runningComp().getStageId();
-        stageId.setTradeStage(TradeStage.MULTI_ANNUAL);
-        Result<RetailPackageVO> retailPackageVOResult = unitFacade.listsRetailPackageVO(stageId.toString(), TokenUtils.sign("1001"), Province.TRANSFER);
-        Assertions.assertTrue(retailPackageVOResult.getSuccess());
+        Long compId = tunnel.runningComp().getCompId();
+        List<Unit> units = tunnel.listUnits(compId, 0, "1000");
+        List<Unit> units1 = tunnel.listUnits(compId, 0, "1001");
+        List<Unit> units2 = tunnel.listUnits(compId, 0, "1002");
+        List<Unit> units3 = tunnel.listUnits(compId, 0, "1003");
     }
 }
