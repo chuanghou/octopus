@@ -120,7 +120,9 @@ public class CompFacade {
         List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
                 .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
-                .stream().sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId())).collect(Collectors.toList());
+                .stream().filter(u -> parsedStageId.getTradeStage() != TradeStage.MULTI_ANNUAL || GeneratorType.RENEWABLE.equals(u.getMetaUnit().getGeneratorType()))
+                .sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId()))
+                .collect(Collectors.toList());
         interClearVOs.forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
 
         // 委托及成交信息
@@ -131,9 +133,11 @@ public class CompFacade {
                 .userId(ranking ? null : TokenUtils.getUserId(token))
                 .build();
 
+        Set<Long> unitIds = unitVOs.stream().map(UnitVO::getUnitId).collect(Collectors.toSet());
+
         List<Bid> bids = tunnel.listBids(bidQuery);
         interClearVOs.forEach(interClearanceVO -> {
-            List<Bid> subBids = bids.stream().filter(b -> {
+            List<Bid> subBids = bids.stream().filter(b -> unitIds.contains(b.getUnitId())).filter(b -> {
                 if (parsedStageId.getTradeStage() == TradeStage.MULTI_ANNUAL) {
                     return b.getRenewableType() == interClearanceVO.getMultiYearFrame().getRenewableType()
                             && b.getProvince() == interClearanceVO.getMultiYearFrame().getProvince();
