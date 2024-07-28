@@ -274,10 +274,54 @@ public class Routers implements EventRouters {
         BidQuery bidQuery = BidQuery.builder()
                 .roundId(now.getRoundId()).tradeStage(now.getTradeStage()).compId(stepped.getCompId()).build();
         String dt = tunnel.runningComp().getDt();
-        // TODO
-        // 联调结束后增加回写代码
+        List<Bid> bids = tunnel.listBids(bidQuery).stream()
+                .filter(bid -> bid.getDirection() == Direction.SELL)
+                .filter(bid -> Collect.isNotEmpty(bid.getDeals())).collect(Collectors.toList());
+
+        List<Unit> units = tunnel.listUnits(now.getCompId(), now.getRoundId(), null);
+        Map<Long, Unit> unitMap = Collect.toMap(units, Unit::getUnitId);
+
+        bids.stream().collect(Collect.listMultiMap(Bid::getUnitId)).asMap().forEach((uId, bs) -> {
+            List<Deal> deals = bs.stream().flatMap(bid -> bid.getDeals().stream()).collect(Collectors.toList());
+            double sum = deals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum();
+            Unit unit = unitMap.get(uId);
+            Integer sourceId = unit.getMetaUnit().getSourceId();
+            MultiYearPoolTransactionDO multiYearPoolTransactionDO = MultiYearPoolTransactionDO.builder()
+                    .roundId(now.getRoundId() + 1)
+                    .dt(dt)
+                    .clearedMwh(deals.stream().collect(Collectors.summarizingDouble(Deal::getQuantity)).getSum())
+                    .clearedPrice(deals.get(0).getPrice())
+                    .unitId(sourceId)
+                    .build();
+            multiYearPoolTransactionDOMapper.insert(multiYearPoolTransactionDO);
+
+            LambdaQueryWrapper<GeneratorForecastValueDO> eq = new LambdaQueryWrapper<GeneratorForecastValueDO>()
+                    .eq(GeneratorForecastValueDO::getRoundId, now.getRoundId() + 1)
+                    .eq(GeneratorForecastValueDO::getUnitId, sourceId);
+            List<GeneratorForecastValueDO> generatorForecastValueDOS = generatorForecastValueMapper.selectList(eq);
+            double sumRtp = generatorForecastValueDOS.stream().collect(Collectors.summarizingDouble(GeneratorForecastValueDO::getRtP)).getSum();
+            Map<Integer, GeneratorForecastValueDO> map = Collect.toMap(generatorForecastValueDOS, GeneratorForecastValueDO::getPrd);
+            IntStream.range(0, 24).forEach(i -> {
+                TransactionDO transactionDO = TransactionDO.builder()
+                        .roundId(now.getRoundId() + 1)
+                        .dt(dt)
+                        .prd(i)
+                        .resourceId(sourceId)
+                        .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
+                        .marketType(now.getTradeStage().getMarketType())
+                        .clearedMw((map.get(i).getRtP() / sumRtp) * sum)
+                        .build();
+                transactionDOMapper.insert(transactionDO);
+            });
+
+        });
+
+
+
     }
 
+    final MultiYearPoolTransactionDOMapper multiYearPoolTransactionDOMapper;
+    final GeneratorForecastValueMapper generatorForecastValueMapper;
 
     /**
      * 年度省间出清和月度省间出清，主要是为了清算集中竞价结果，算成交价格，确定各个量价最后的成交数量

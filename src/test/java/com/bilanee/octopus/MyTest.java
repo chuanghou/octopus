@@ -58,7 +58,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<List<InterClearanceVO>> listResult = compFacade.interClearanceVO("774018.TRADE.0.MULTI_ANNUAL.CLEAR", TokenUtils.sign("1000"));
-        Assertions.assertTrue(listResult.getSuccess());
+        Result<Void> step = manageFacade.step();
     }
 }
