@@ -698,19 +698,19 @@ public class ManageFacade {
 
         String transferMultiAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferMultiCoalPrice() + "").collect(Collectors.joining(":"));
         String receiverMultiAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverMultiCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setMultiYearCoalPrice(transferMultiAnnualCoalPrice + ";" + receiverMultiAnnualCoalPrice);
+        marketSettingDO.setMultiYearCoalPrice(transferMultiAnnualCoalPrice + ":" + receiverMultiAnnualCoalPrice);
 
         String transferAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferAnnualCoalPrice() + "").collect(Collectors.joining(":"));
         String receiverAnnualCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverAnnualCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setAnnualCoalPrice(transferAnnualCoalPrice + ";" + receiverAnnualCoalPrice);
+        marketSettingDO.setAnnualCoalPrice(transferAnnualCoalPrice + ":" + receiverAnnualCoalPrice);
 
         String transferMonthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
         String receiverMonthlyCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverMonthlyCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setMonthlyCoalPrice(transferMonthlyCoalPrice + ";" + receiverMonthlyCoalPrice);
+        marketSettingDO.setMonthlyCoalPrice(transferMonthlyCoalPrice + ":" + receiverMonthlyCoalPrice);
 
         String transferDaCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getTransferDaCoalPrice() + "").collect(Collectors.joining(":"));
         String receiverDaCoalPrice = simulateSetting.getRoundSettings().stream().map(r -> r.getReceiverDaCoalPrice() + "").collect(Collectors.joining(":"));
-        marketSettingDO.setDaCoalPrice(transferDaCoalPrice + ";" + receiverDaCoalPrice);
+        marketSettingDO.setDaCoalPrice(transferDaCoalPrice + ":" + receiverDaCoalPrice);
 
         marketSettingDO.setMwhPercentageForRetailPlan(simulateSetting.getMwhPercentageForRetailPlan());
 
