@@ -123,6 +123,14 @@ public class Processor implements EventHandler<IntraBidContainer> {
 
     @Override
     public void onEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
+        try {
+            doOnEvent(event, sequence, endOfBatch);
+        } catch (Throwable throwable) {
+            log.error("Processor process failure", throwable);
+        }
+    }
+
+    public void doOnEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
         log.info("onEvent(IntraBidContainer event {}", event);
         if (event.getOperation() == Operation.DECLARE) {
             doNewBid(event.getDeclareBid());
