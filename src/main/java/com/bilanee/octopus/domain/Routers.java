@@ -802,7 +802,7 @@ public class Routers implements EventRouters {
     public void routerDefaultAnnualBid(CompEvent.Stepped stepped, Context context){
         StageId now = stepped.getNow();
         boolean b0 = now.getMarketStatus() == MarketStatus.BID;
-        boolean b1 = now.getTradeStage() == TradeStage.AN_INTER;
+        boolean b1 = now.getTradeStage() == TradeStage.MULTI_ANNUAL;
         if (!(b0 && b1)) {
             return;
         }
