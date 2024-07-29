@@ -107,5 +107,10 @@ public class ElectricMarketSetting {
      */
     Double solarSpecificPriceCap;
 
+    /**
+     * 新能源专场交易电网申报需求占新能源预测上网电量百分比
+     */
+    RenewableSpecialTransactionDemandPercentage renewableSpecialTransactionDemandPercentage;
+
 
 }

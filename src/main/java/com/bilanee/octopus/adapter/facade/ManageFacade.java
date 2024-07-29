@@ -538,6 +538,7 @@ public class ManageFacade {
                 .maxForwardClearedMwMultiple(marketSettingDO.getMaxForwardClearedMwMultiple())
                 .solarSpecificPriceCap(marketSettingDO.getSolarSpecificPriceCap())
                 .windSpecificPriceCap(marketSettingDO.getWindSpecificPriceCap())
+                .renewableSpecialTransactionDemandPercentage(RenewableSpecialTransactionDemandPercentage.resolve(marketSettingDO.getRenewableSpecialTransactionDemandPercentage()))
                 .build();
         return Result.success(electricMarketSettingVO);
     }
@@ -577,6 +578,9 @@ public class ManageFacade {
         marketSettingDO.setMaxForwardClearedMwMultiple(electricMarketSetting.getMaxForwardClearedMwMultiple());
         marketSettingDO.setWindSpecificPriceCap(electricMarketSetting.getWindSpecificPriceCap());
         marketSettingDO.setSolarSpecificPriceCap(electricMarketSetting.getSolarSpecificPriceCap());
+
+        marketSettingDO.setRenewableSpecialTransactionDemandPercentage(electricMarketSetting.getRenewableSpecialTransactionDemandPercentage().storeValue());
+
         marketSettingMapper.updateById(marketSettingDO);
         return Result.success();
     }
@@ -630,9 +634,6 @@ public class ManageFacade {
         simulateSetting.setIntraprovincialMultiYearBidDuration(simulateSetting.getIntraprovincialMultiYearBidDuration());
         simulateSetting.setIntraprovincialMultiYearResultDuration(simulateSetting.getIntraprovincialMultiYearResultDuration());
 
-        SimulateSetting.RenewableSpecialTransactionDemandPercentage resolved
-                = SimulateSetting.RenewableSpecialTransactionDemandPercentage.resolve(marketSettingDO.getRenewableSpecialTransactionDemandPercentage());
-        simulateSetting.setRenewableSpecialTransactionDemandPercentage(resolved);
 
         simulateSetting.setMwhPercentageForRetailPlan(marketSettingDO.getMwhPercentageForRetailPlan());
 
@@ -675,8 +676,6 @@ public class ManageFacade {
 
         marketSettingDO.setIntraprovincialMultiYearBidDuration(simulateSetting.getIntraprovincialMultiYearBidDuration());
         marketSettingDO.setIntraprovincialMultiYearResultDuration(simulateSetting.getIntraprovincialMultiYearResultDuration());
-        marketSettingDO.setRenewableSpecialTransactionDemandPercentage(simulateSetting.getRenewableSpecialTransactionDemandPercentage().storeValue());
-
 
         // 轮次校验
         Integer roundNum = marketSettingDO.getRoundNum();
@@ -850,7 +849,6 @@ public class ManageFacade {
         }
 
         @BeanMapping(builder = @Builder(disableBuilder = true))
-        @Mapping(source = "renewableSpecialTransactionDemandPercentage", target = "renewableSpecialTransactionDemandPercentage", ignore = true)
         SimulateSetting to(MarketSettingDO marketSettingDO);
 
     }

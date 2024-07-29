@@ -166,60 +166,12 @@ public class SimulateSetting {
      */
     Integer intraprovincialMultiYearResultDuration;
 
-    /**
-     * 新能源专场交易电网申报需求占新能源预测上网电量百分比
-     */
-    RenewableSpecialTransactionDemandPercentage renewableSpecialTransactionDemandPercentage;
 
     /**
      * 总用电量中可变更零售套餐的
      * 电量占比
      */
     Double mwhPercentageForRetailPlan;
-
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @FieldDefaults(level = AccessLevel.PRIVATE)
-    static public class RenewableSpecialTransactionDemandPercentage {
-
-        /**
-         * 送电省风
-         */
-        Double transferWind;
-
-        /**
-         * 送电省光
-         */
-        Double transferSolar;
-
-        /**
-         * 受电省风
-         */
-        Double receiverWind;
-
-        /**
-         * 受电省光
-         */
-        Double receiverSolar;
-
-        public String storeValue() {
-            return String.format("%s:%s:%s:%s", transferWind, transferSolar, receiverWind, receiverSolar);
-        }
-
-        static public RenewableSpecialTransactionDemandPercentage resolve(String value) {
-            String[] split = StringUtils.split(value, ":");
-            RenewableSpecialTransactionDemandPercentage resolved = new RenewableSpecialTransactionDemandPercentage();
-            resolved.setTransferWind(Double.parseDouble(split[0]));
-            resolved.setTransferSolar(Double.parseDouble(split[1]));
-            resolved.setReceiverWind(Double.parseDouble(split[2]));
-            resolved.setReceiverSolar(Double.parseDouble(split[3]));
-            return resolved;
-        }
-
-    }
 
 }
 

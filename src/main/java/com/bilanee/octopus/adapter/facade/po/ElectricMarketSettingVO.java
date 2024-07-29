@@ -3,6 +3,7 @@ package com.bilanee.octopus.adapter.facade.po;
 import com.bilanee.octopus.basic.GridLimit;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @Builder
@@ -120,6 +121,11 @@ public class ElectricMarketSettingVO {
      * 光伏新能源价格上限
      */
     Double solarSpecificPriceCap;
+
+    /**
+     * 新能源专场交易电网申报需求占新能源预测上网电量百分比
+     */
+    RenewableSpecialTransactionDemandPercentage renewableSpecialTransactionDemandPercentage;
 
 
 }
