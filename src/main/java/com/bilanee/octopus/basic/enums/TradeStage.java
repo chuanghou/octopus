@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public enum TradeStage {
-    MULTI_ANNUAL("多年年度", TradeType.MULTI, null, null), //TODO
+    MULTI_ANNUAL("多年年度", TradeType.MULTI, 7, null), //TODO
     AN_INTER( "省间年度", TradeType.INTER, 1, 1),
     AN_INTRA( "省内年度", TradeType.INTRA, 3, 1),
     MO_INTER( "省间月度", TradeType.INTER, 2, 2),

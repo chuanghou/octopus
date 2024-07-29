@@ -1435,10 +1435,10 @@ public class UnitFacade {
         String percentage = marketSettingDO.getRenewableSpecialTransactionDemand();
         Integer roundId = StageId.parse(stageId).getRoundId();
         String[] split = percentage.split(":");
-        double transferWind = Double.parseDouble(split[2 * roundId + 0]);
-        double transferSolar = Double.parseDouble(split[2 * roundId + 1]);
-        double receiverWind = Double.parseDouble(split[2 * roundId + 2]);
-        double receiverSolar = Double.parseDouble(split[2 * roundId + 3]);
+        double transferWind = Double.parseDouble(split[2 * 0 + roundId]);
+        double transferSolar = Double.parseDouble(split[2 * 1 + roundId]);
+        double receiverWind = Double.parseDouble(split[2 * 2 + roundId]);
+        double receiverSolar = Double.parseDouble(split[2 * 3 + roundId]);
 
         double require;
 
@@ -1614,7 +1614,6 @@ public class UnitFacade {
         BizEx.trueThrow(cStageId.getTradeStage().getTradeType() != TradeType.MULTI, PARAM_FORMAT_WRONG.message("当前为多年间报价阶段"));
         BizEx.trueThrow(cStageId.getMarketStatus() != MarketStatus.BID, PARAM_FORMAT_WRONG.message("当前竞价阶段已经关闭"));
 
-        String userId = TokenUtils.getUserId(token);
 
         Unit unit = domainTunnel.getByAggregateId(Unit.class, retailMarketPO.getUnitId());
 
@@ -1624,7 +1623,7 @@ public class UnitFacade {
 
         LambdaQueryWrapper<RetailMarketLoadBidDO> eq = new LambdaQueryWrapper<RetailMarketLoadBidDO>()
                 .eq(RetailMarketLoadBidDO::getLoadId, sourceId)
-                .eq(RetailMarketLoadBidDO::getRoundId, pStageId.getRoundId());
+                .eq(RetailMarketLoadBidDO::getRoundId, pStageId.getRoundId() + 1);
         List<RetailMarketLoadBidDO> retailMarketLoadBidDOS = retailMarketLoadBidDOMapper.selectList(eq);
         retailMarketLoadBidDOS.forEach(retailMarketLoadBidDO -> {
             RetailMarketPO.PackageChoice packageChoice = map.get(retailMarketLoadBidDO.getRetailPlanId());

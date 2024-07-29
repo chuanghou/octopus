@@ -29,6 +29,7 @@ import com.stellariver.milky.domain.support.event.FinalEventRouter;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -302,16 +303,15 @@ public class Routers implements EventRouters {
             double sumRtp = generatorForecastValueDOS.stream().collect(Collectors.summarizingDouble(GeneratorForecastValueDO::getRtP)).getSum();
             Map<Integer, GeneratorForecastValueDO> map = Collect.toMap(generatorForecastValueDOS, GeneratorForecastValueDO::getPrd);
             IntStream.range(0, 24).forEach(i -> {
-                TransactionDO transactionDO = TransactionDO.builder()
-                        .roundId(now.getRoundId() + 1)
-                        .dt(dt)
-                        .prd(i)
-                        .resourceId(sourceId)
-                        .resourceType(unit.getMetaUnit().getUnitType().getDbCode())
-                        .marketType(now.getTradeStage().getMarketType())
-                        .clearedMw((map.get(i).getRtP() / sumRtp) * sum)
-                        .build();
-                transactionDOMapper.insert(transactionDO);
+                LambdaQueryWrapper<TransactionDO> eq1 = new LambdaQueryWrapper<TransactionDO>()
+                        .eq(TransactionDO::getRoundId, now.getRoundId() + 1)
+                        .eq(TransactionDO::getPrd, i)
+                        .eq(TransactionDO::getResourceId, sourceId)
+                        .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
+                        .eq(TransactionDO::getMarketType, now.getTradeStage().getMarketType());
+                TransactionDO transactionDO1 = transactionDOMapper.selectOne(eq1);
+                transactionDO1.setClearedMw((map.get(i).getRtP() / sumRtp) * sum);
+                transactionDOMapper.updateById(transactionDO1);
             });
 
         });
