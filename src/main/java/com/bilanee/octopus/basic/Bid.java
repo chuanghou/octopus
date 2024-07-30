@@ -58,7 +58,7 @@ public class Bid {
 
     @SneakyThrows
     public Double getTariff() {
-        if (direction == Direction.SELL) {
+        if (direction == Direction.SELL || tradeStage == TradeStage.MULTI_ANNUAL) {
             return 0D;
         } else {
             return cache.get("TransmissionAndDistributionTariff", () -> {

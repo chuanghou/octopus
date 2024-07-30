@@ -123,7 +123,17 @@ public class CompFacade {
                 .stream().filter(u -> parsedStageId.getTradeStage() != TradeStage.MULTI_ANNUAL || GeneratorType.RENEWABLE.equals(u.getMetaUnit().getGeneratorType()))
                 .sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId()))
                 .collect(Collectors.toList());
-        interClearVOs.forEach(interClearanceVO -> interClearanceVO.setUnitVOs(unitVOs));
+        interClearVOs.forEach(interClearanceVO -> {
+            if (parsedStageId.getTradeStage() != TradeStage.MULTI_ANNUAL) {
+                interClearanceVO.setUnitVOs(unitVOs);
+            } else {
+                MultiYearFrame multiYearFrame = interClearanceVO.getMultiYearFrame();
+                List<UnitVO> filterUnitVOs = unitVOs.stream().filter(u -> u.getMetaUnit().getProvince().equals(multiYearFrame.getProvince()))
+                        .filter(u -> multiYearFrame.getRenewableType().equals(u.getMetaUnit().getRenewableType()))
+                        .collect(Collectors.toList());
+                interClearanceVO.setUnitVOs(filterUnitVOs);
+            }
+        });
 
         // 委托及成交信息
         BidQuery bidQuery = BidQuery.builder()
@@ -549,10 +559,16 @@ public class CompFacade {
             List<Qp> supplyQps = supplyDa.get(i);
             List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
             Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+
+            List<Section> costSections = toSections(supplyQps, Comparator.comparing(Qp::getCost));
+            Point<Double> costTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+
             List<Qp> demandQps = demandDa.get(i);
             List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
             Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
             return SpotMarketEntityVO.builder()
+                    .costSections(costSections)
+                    .costTerminus(costTerminus)
                     .supplySections(supplySections)
                     .supplyTerminus(supplyTerminus)
                     .demandSections(demandSections)
@@ -567,10 +583,17 @@ public class CompFacade {
             List<Qp> supplyQps = supplyRt.get(i);
             List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
             Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+
+            List<Section> costSections = toSections(supplyQps, Comparator.comparing(Qp::getCost));
+            Point<Double> costTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
+
+
             List<Qp> demandQps = demandRt.get(i);
             List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
             Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
             return SpotMarketEntityVO.builder()
+                    .costSections(costSections)
+                    .costTerminus(costTerminus)
                     .supplySections(supplySections)
                     .supplyTerminus(supplyTerminus)
                     .demandSections(demandSections)
@@ -622,7 +645,7 @@ public class CompFacade {
         List<GeneratorDaSegmentBidDO> generatorDaSegmentBidDOs = Collect.isEmpty(classicUnitIds) ? Collections.EMPTY_LIST : generatorDaSegmentMapper.selectList(in0);
 
         List<Qp> classicQps = generatorDaSegmentBidDOs.stream()
-                .map(gDO -> new Qp(null, classicUnitIds.get(gDO.getUnitId()), gDO.getOfferMw(), gDO.getOfferPrice())).collect(Collectors.toList());
+                .map(gDO -> new Qp(null, classicUnitIds.get(gDO.getUnitId()), gDO.getOfferMw(), gDO.getOfferPrice(), gDO.getOfferCost())).collect(Collectors.toList());
 
         // 3. 新能源机组的根据预测调整量价段，区分日前和实时
         Map<Integer, Long> renewableUnitIds = renewableUnitDOs.stream()
@@ -667,7 +690,7 @@ public class CompFacade {
             LambdaQueryWrapper<TieLinePowerDO> eq = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1);
             tielineQps = tieLinePowerDOMapper.selectList(eq).stream().map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
-                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor());
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getOfferPriceFloor(), marketSettingDO.getOfferPriceFloor());
             }).collect(Collectors.toList());
         }
 
@@ -699,21 +722,21 @@ public class CompFacade {
         List<Qp> daInstantQps = loadDaForecastBidDOS.stream()
                 .collect(Collectors.groupingBy(LoadDaForecastBidDO::getPrd))
                 .entrySet().stream().sorted(Map.Entry.comparingByKey())
-                .map(e -> e.getValue().stream().map(b -> new Qp(e.getKey(), loadIds.get(b.getLoadId()), b.getBidMw(), b.getBidPrice())).collect(Collectors.toList()))
+                .map(e -> e.getValue().stream().map(b -> new Qp(e.getKey(), loadIds.get(b.getLoadId()), b.getBidMw(), b.getBidPrice(), null)).collect(Collectors.toList()))
                 .flatMap(Collection::stream).collect(Collectors.toList());
 
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         LambdaQueryWrapper<SprDO> eq0 = new LambdaQueryWrapper<SprDO>().eq(SprDO::getProv, province.getDbCode()).eq(SprDO::getRoundId, stageId.getRoundId() + 1);
         List<Qp> rtInstantQps = sprDOMapper.selectList(eq0).stream()
                 .sorted(Comparator.comparing(SprDO::getPrd))
-                .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getClearedPriceCap())).collect(Collectors.toList());
+                .map(sprDO -> new Qp(sprDO.getPrd(), null, sprDO.getRtLoad(), marketSettingDO.getClearedPriceCap(), null)).collect(Collectors.toList());
 
         List<Qp> tielineQps = new ArrayList<>();
         if (province == Province.TRANSFER) {
             LambdaQueryWrapper<TieLinePowerDO> eq1 = new LambdaQueryWrapper<TieLinePowerDO>().eq(TieLinePowerDO::getRoundId, stageId.getRoundId() + 1);
             tielineQps = tieLinePowerDOMapper.selectList(eq1).stream().sorted(Comparator.comparing(TieLinePowerDO::getPrd)).map(t -> {
                 double tielinePower = t.getAnnualTielinePower() + t.getMonthlyTielinePower() + t.getDaTielinePower();
-                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getClearedPriceCap());
+                return new Qp(t.getPrd(), null, tielinePower, marketSettingDO.getClearedPriceCap(),null);
             }).collect(Collectors.toList());
         }
 
@@ -743,10 +766,10 @@ public class CompFacade {
                 accumulate += segmentBidDO.getOfferMw();
                 if (accumulate >= cutoff) {
                     double lastQuantity = cutoff - (accumulate - segmentBidDO.getOfferMw());
-                    qps.add(new Qp(i, unitId, lastQuantity, segmentBidDO.getOfferPrice()));
+                    qps.add(new Qp(i, unitId, lastQuantity, segmentBidDO.getOfferPrice(), segmentBidDO.getOfferCost()));
                     break;
                 } else {
-                    qps.add(new Qp(i, unitId, segmentBidDO.getOfferMw(), segmentBidDO.getOfferPrice()));
+                    qps.add(new Qp(i, unitId, segmentBidDO.getOfferMw(), segmentBidDO.getOfferPrice(), segmentBidDO.getOfferCost()));
                 }
             }
         }
@@ -762,6 +785,7 @@ public class CompFacade {
         Long unitId;
         Double quantity;
         Double price;
+        Double cost;
     }
 
 

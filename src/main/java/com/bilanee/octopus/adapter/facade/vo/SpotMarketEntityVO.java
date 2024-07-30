@@ -16,6 +16,19 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SpotMarketEntityVO {
 
+
+    /**
+     * 市场供需曲线：成本曲线
+     */
+    List<Section> costSections;
+
+    /**
+     * 市场供需曲线：成本曲线终点
+     */
+    @JsonSerialize(using = PointSerialize.class)
+    Point<Double> costTerminus;
+
+
     /**
      * 市场供需曲线：供给曲线
      */
