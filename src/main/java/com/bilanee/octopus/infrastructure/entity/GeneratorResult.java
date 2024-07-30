@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.bilanee.octopus.basic.enums.GeneratorType;
+import com.bilanee.octopus.basic.enums.RenewableType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -41,6 +43,16 @@ public class GeneratorResult {
      */
     @TableField(exist = false)
     String unitName;
+
+    /**
+     * 机组类型
+     */
+    GeneratorType generatorType;
+
+    /**
+     * 新能源类型
+     */
+    RenewableType renewableType;
 
     /**
      * 该轮比赛省间中长期净收入（元）

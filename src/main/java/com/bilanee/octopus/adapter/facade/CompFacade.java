@@ -1322,8 +1322,10 @@ public class CompFacade {
                 .in(GeneratorResult::getUnitId, sourceIds);
         List<GeneratorResult> generatorResults = Collect.isEmpty(sourceIds) ? Collections.EMPTY_LIST : generatorResultMapper.selectList(in);
         generatorResults.forEach(g -> {
-            String name = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getUnitId())).findFirst().orElseThrow(SysEx::unreachable).getMetaUnit().getName();
-            g.setUnitName(name);
+            Unit unit = units.stream().filter(u -> u.getMetaUnit().getSourceId().equals(g.getUnitId())).findFirst().orElseThrow(SysEx::unreachable);
+            g.setUnitName(unit.getMetaUnit().getName());
+            g.setGeneratorType(unit.getMetaUnit().getGeneratorType());
+            g.setRenewableType(unit.getMetaUnit().getRenewableType());
         });
         List<GeneratorResult> collect0 = generatorResults.stream().filter(g -> g.getTraderId().equals(userId)).collect(Collectors.toList());
         List<GeneratorResult> collect1 = generatorResults.stream().filter(g -> !g.getTraderId().equals(userId)).collect(Collectors.toList());
