@@ -53,6 +53,7 @@ public class GeneratorResult {
     /**
      * 新能源类型
      */
+    @TableField(exist = false)
     RenewableType renewableType;
 
     /**
