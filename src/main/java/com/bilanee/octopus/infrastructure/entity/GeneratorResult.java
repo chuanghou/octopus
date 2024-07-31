@@ -47,6 +47,7 @@ public class GeneratorResult {
     /**
      * 机组类型
      */
+    @TableField(exist = false)
     GeneratorType generatorType;
 
     /**
