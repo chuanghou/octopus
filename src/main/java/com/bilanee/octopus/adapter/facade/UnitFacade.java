@@ -560,8 +560,6 @@ public class UnitFacade {
                 if (bid.getBidStatus() == BidStatus.MANUAL_CANCELLED) {
                     if (Collect.isEmpty(bid.getDeals())) {
                         operations = Collect.asList(Operation.DECLARE);
-                        bid.setQuantity(null);
-                        bid.setPrice(null);
                     } else {
                         operations = Collections.emptyList();
                     }
@@ -583,6 +581,11 @@ public class UnitFacade {
                         .cancelTimeStamp(bid.getCancelledTimeStamp())
                         .rollDealVOs(Collect.transfer(bid.getDeals(), d -> new RollDealVO(d.getQuantity(), d.getPrice(), d.getTimeStamp())))
                         .build();
+
+                if (bid.getBidStatus() == BidStatus.MANUAL_CANCELLED && Collect.isEmpty(bid.getDeals())) {
+                    bid.setQuantity(null);
+                    bid.setPrice(null);
+                }
                 builder.rollBidVO(rollBidVO);
                 builder.instantStatus(bid.getBidStatus().instantStatus(bid.getDeals()));
             } else {
