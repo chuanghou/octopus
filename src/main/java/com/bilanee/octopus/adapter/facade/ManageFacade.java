@@ -332,18 +332,13 @@ public class ManageFacade {
             throw new BizEx(ErrorEnums.PARAM_FORMAT_WRONG.message("已经到了最后阶段"));
         }
         delayExecutor.removeStepCommand();
-        boolean needBidAspect = comp.getCompStage() == CompStage.TRADE && comp.getMarketStatus() == MarketStatus.BID;
-        if (needBidAspect) {
-            boolean b = bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
-            SysEx.falseThrow(b, ErrorEnums.SYS_EX.message("未能全部停止报单"));
-        }
+
         try {
+            bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
             CompCmd.Step command = CompCmd.Step.builder().stageId(comp.getStageId().next(comp)).build();
             CommandBus.acceptMemoryTransactional(command, new HashMap<>());
         } finally {
-            if (needBidAspect) {
-                bidAspect.recover();
-            }
+            bidAspect.recover();
         }
         log.info("End step");
         return Result.success();
