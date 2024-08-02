@@ -803,12 +803,12 @@ public class Routers implements EventRouters {
         StageId now = stepped.getNow();
         boolean b0 = now.getMarketStatus() == MarketStatus.BID;
         boolean b1 = now.getTradeStage() == TradeStage.MULTI_ANNUAL;
-        if (!(b0 && b1)) {
+        if (!(b0 && b1 && (now.getRoundId() == 0))) {
             return;
         }
         Ssh.exec("python manage.py annual_default_bid");
         Comp comp = tunnel.runningComp();
-        List<Unit> units = tunnel.listUnits(comp.getCompId(), comp.getRoundId(), null);
+        List<Unit> units = tunnel.listUnits(comp.getCompId(), null, null);
         units.forEach(u -> fillAnnualBid(u, stepped));
 
     }
