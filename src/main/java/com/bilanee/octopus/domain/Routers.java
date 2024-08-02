@@ -57,7 +57,7 @@ public class Routers implements EventRouters {
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
 
-    public void fillAnnualBid(Unit unit, CompEvent.Stepped stepped) {
+    public void fillAnnualBid(Unit unit) {
         if (unit.getMetaUnit().getProvince().interDirection() != unit.getMetaUnit().getUnitType().generalDirection()) {
             return;
         }
@@ -810,7 +810,7 @@ public class Routers implements EventRouters {
         Ssh.exec("python manage.py annual_default_bid");
         Comp comp = tunnel.runningComp();
         List<Unit> units = tunnel.listUnits(comp.getCompId(), null, null);
-        units.forEach(u -> fillAnnualBid(u, stepped));
+        units.forEach(this::fillAnnualBid);
 
     }
 
