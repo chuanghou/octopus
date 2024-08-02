@@ -57,7 +57,7 @@ public class Routers implements EventRouters {
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
 
-    public void fillAnnualBid(Unit unit) {
+    public void fillAnnualBid(Unit unit, CompEvent.Stepped stepped) {
         if (unit.getMetaUnit().getProvince().interDirection() != unit.getMetaUnit().getUnitType().generalDirection()) {
             return;
         }
@@ -503,7 +503,7 @@ public class Routers implements EventRouters {
                     .clearedMw(deal.getQuantity())
                     .clearedPrice(deal.getPrice())
                     .build();
-            f.insert(rollDealDO);
+            rollDealDOMapper.insert(rollDealDO);
         });
 
 
@@ -803,14 +803,13 @@ public class Routers implements EventRouters {
         StageId now = stepped.getNow();
         boolean b0 = now.getMarketStatus() == MarketStatus.BID;
         boolean b1 = now.getTradeStage() == TradeStage.MULTI_ANNUAL;
-        boolean b2 = now.getRoundId() == 0;
-        if (!(b0 && b1 && b2)) {
+        if (!(b0 && b1)) {
             return;
         }
         Ssh.exec("python manage.py annual_default_bid");
         Comp comp = tunnel.runningComp();
-        List<Unit> units = tunnel.listUnits(comp.getCompId(), null, null);
-        units.forEach(this::fillAnnualBid);
+        List<Unit> units = tunnel.listUnits(comp.getCompId(), comp.getRoundId(), null);
+        units.forEach(u -> fillAnnualBid(u, stepped));
 
     }
 
