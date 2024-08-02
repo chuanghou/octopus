@@ -57,7 +57,7 @@ public class Routers implements EventRouters {
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
 
 
-    public void fillAnnualBid(Unit unit, CompEvent.Stepped stepped) {
+    public void fillAnnualBid(Unit unit, CompEvent.Created created) {
         if (unit.getMetaUnit().getProvince().interDirection() != unit.getMetaUnit().getUnitType().generalDirection()) {
             return;
         }
@@ -106,7 +106,7 @@ public class Routers implements EventRouters {
 
 
             UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(bidsAn).build();
-            CommandBus.driveByEvent(commandAn, stepped);
+            CommandBus.driveByEvent(commandAn, created);
 
         } else if (metaUnit.getUnitType() == UnitType.LOAD) {
             LambdaQueryWrapper<ForwardLoadBid> eq = new LambdaQueryWrapper<ForwardLoadBid>()
@@ -140,7 +140,7 @@ public class Routers implements EventRouters {
             });
 
             UnitCmd.InterBids commandAn = UnitCmd.InterBids.builder().stageId(stageIdAn).bids(bidsAn).build();
-            CommandBus.driveByEvent(commandAn, stepped);
+            CommandBus.driveByEvent(commandAn, created);
         } else {
             throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
         }
@@ -799,17 +799,11 @@ public class Routers implements EventRouters {
      * 执行清算
      */
     @EventRouter(order = 2)
-    public void routerDefaultAnnualBid(CompEvent.Stepped stepped, Context context){
-        StageId now = stepped.getNow();
-        boolean b0 = now.getMarketStatus() == MarketStatus.BID;
-        boolean b1 = now.getTradeStage() == TradeStage.MULTI_ANNUAL;
-        if (!(b0 && b1 && (now.getRoundId() == 0))) {
-            return;
-        }
+    public void routerDefaultAnnualBid(CompEvent.Created created, Context context){
         Ssh.exec("python manage.py annual_default_bid");
         Comp comp = tunnel.runningComp();
         List<Unit> units = tunnel.listUnits(comp.getCompId(), null, null);
-        units.forEach(u -> fillAnnualBid(u, stepped));
+        units.forEach(u -> fillAnnualBid(u, created));
 
     }
 
