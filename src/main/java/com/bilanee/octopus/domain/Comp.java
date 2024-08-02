@@ -351,7 +351,7 @@ public class Comp extends AggregateRoot {
                 .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
         stepRecords.add(stepRecord);
 
-        Thread.sleep(10 * 1_000L);
+        Thread.sleep(60 * 1_000L);
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);
