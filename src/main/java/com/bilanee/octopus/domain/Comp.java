@@ -356,6 +356,7 @@ public class Comp extends AggregateRoot {
         stepRecords.add(stepRecord);
 
         if (last.getMarketStatus() == MarketStatus.BID) {
+            Thread.sleep(3_000L);
             while (processorManager.processors.values().stream().anyMatch(p -> !p.empty())) {
                 Thread.sleep(1000L);
             }

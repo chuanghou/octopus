@@ -7,6 +7,7 @@ import lombok.experimental.FieldDefaults;
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 @Data
 @Builder
@@ -18,14 +19,14 @@ public class InterSpotBid {
     /**
      * 数量
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     @JsonSerialize(using = DoubleSerialize.class)
     Double quantity;
 
     /**
      * 价格
      */
-    @NotNull @Positive
+    @NotNull @PositiveOrZero
     @JsonSerialize(using = DoubleSerialize.class)
     Double price;
 
