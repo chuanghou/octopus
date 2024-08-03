@@ -81,6 +81,9 @@ public class Comp extends AggregateRoot {
     @StaticWire
     static private MultiYearUnitOfferDOMapper multiYearUnitOfferDOMapper;
 
+    @StaticWire
+    static ProcessorManager processorManager;
+
     @Override
     public String getAggregateId() {
         return compId.toString();
@@ -292,7 +295,7 @@ public class Comp extends AggregateRoot {
                 .dealQuantity(marketQuantity)
                 .dealPrice((interPoint == null || interPoint.getX() == 0D) ? null : interPoint.y);
 
-        GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR);
+        GridLimit priceLimit = tunnel.priceLimit(UnitType.GENERATOR, timeFrame, multiYearFrame);
 
         List<Section> buildSections = buildSections(sortedBuyBids);
         List<Section> sellSections = buildSections(sortedSellBids);
@@ -327,6 +330,7 @@ public class Comp extends AggregateRoot {
         return Double.parseDouble(format);
     }
 
+
     @MethodHandler
     public void step(CompCmd.Step command, Context context) throws InterruptedException {
         StageId last = getStageId();
@@ -351,7 +355,11 @@ public class Comp extends AggregateRoot {
                 .startTimeStamp(Clock.currentTimeMillis()).endTimeStamp(endingTimeStamp).build();
         stepRecords.add(stepRecord);
 
-        Thread.sleep(60 * 1_000L);
+        if (last.getMarketStatus() == MarketStatus.BID) {
+            while (processorManager.processors.values().stream().anyMatch(p -> !p.empty())) {
+                Thread.sleep(1000L);
+            }
+        }
 
         CompEvent.Stepped stepped = CompEvent.Stepped.builder().compId(compId).last(last).now(now).build();
         context.publish(stepped);

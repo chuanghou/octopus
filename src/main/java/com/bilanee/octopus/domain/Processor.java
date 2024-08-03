@@ -91,6 +91,10 @@ public class Processor implements EventHandler<IntraBidContainer> {
         }
     };
 
+    public boolean empty() {
+        return disruptor.getRingBuffer().remainingCapacity() == disruptor.getBufferSize();
+    }
+
 
     public void declare(Bid bid) {
         log.info("public void declare(Bid bid) {}", bid);

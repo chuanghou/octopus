@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.constraints.NotBlank;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -117,8 +118,14 @@ public class CompFacade {
                 .eq(UnitDO::getRoundId, parsedStageId.getRoundId())
                 .eq(!ranking, UnitDO::getUserId, TokenUtils.getUserId(token));
         List<UnitDO> unitDOs = unitDOMapper.selectList(queryWrapper);
-        List<Unit> units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
-                .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+        List<Unit> units;
+        if (parsedStageId.getTradeStage() != TradeStage.MULTI_ANNUAL) {
+            units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                    .filter(unit -> unit.getMetaUnit().getProvince().interDirection() == unit.getMetaUnit().getUnitType().generalDirection()).collect(Collectors.toList());
+        } else {
+            units = Collect.transfer(unitDOs, UnitAdapter.Convertor.INST::to).stream()
+                    .filter(unit -> unit.getMetaUnit().getRenewableType() != null).collect(Collectors.toList());
+        }
         List<UnitVO> unitVOs = Collect.transfer(units, u -> new UnitVO(u.getUnitId(), u.getMetaUnit().getName(), u.getMetaUnit()))
                 .stream().filter(u -> parsedStageId.getTradeStage() != TradeStage.MULTI_ANNUAL || GeneratorType.RENEWABLE.equals(u.getMetaUnit().getGeneratorType()))
                 .sorted(Comparator.comparing(u -> u.getMetaUnit().getSourceId()))
@@ -557,14 +564,14 @@ public class CompFacade {
         Double offerPriceCap = marketSettingDO.getOfferPriceCap();
         List<SpotMarketEntityVO> daEntityVOs = IntStream.range(0, 24).mapToObj(i -> {
             List<Qp> supplyQps = supplyDa.get(i);
-            List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
+            List<Section> supplySections = toSections(supplyQps, Qp::getPrice, Comparator.comparing(Qp::getPrice));
             Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
 
-            List<Section> costSections = toSections(supplyQps, Comparator.comparing(Qp::getCost));
+            List<Section> costSections = toSections(supplyQps, Qp::getCost, Comparator.comparing(Qp::getCost));
             Point<Double> costTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
 
             List<Qp> demandQps = demandDa.get(i);
-            List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
+            List<Section> demandSections = toSections(demandQps, Qp::getPrice, Comparator.comparing(Qp::getPrice).reversed());
             Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
             return SpotMarketEntityVO.builder()
                     .costSections(costSections)
@@ -581,15 +588,15 @@ public class CompFacade {
 
         List<SpotMarketEntityVO> rtEntityVOs = IntStream.range(0, 24).mapToObj(i -> {
             List<Qp> supplyQps = supplyRt.get(i);
-            List<Section> supplySections = toSections(supplyQps, Comparator.comparing(Qp::getPrice));
+            List<Section> supplySections = toSections(supplyQps, Qp::getPrice, Comparator.comparing(Qp::getPrice));
             Point<Double> supplyTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
 
-            List<Section> costSections = toSections(supplyQps, Comparator.comparing(Qp::getCost));
+            List<Section> costSections = toSections(supplyQps, Qp::getCost, Comparator.comparing(Qp::getCost));
             Point<Double> costTerminus = new Point<>(supplySections.get(supplySections.size() - 1).getRx(), offerPriceCap);
 
 
             List<Qp> demandQps = demandRt.get(i);
-            List<Section> demandSections = toSections(demandQps, Comparator.comparing(Qp::getPrice).reversed());
+            List<Section> demandSections = toSections(demandQps, Qp::getPrice, Comparator.comparing(Qp::getPrice).reversed());
             Point<Double> demandTerminus = new Point<>(demandSections.get(demandSections.size() - 1).getRx(), 0D);
             return SpotMarketEntityVO.builder()
                     .costSections(costSections)
@@ -604,13 +611,13 @@ public class CompFacade {
         return builder.rtEntityVOs(rtEntityVOs).build();
     }
 
-    List<Section> toSections(List<Qp> qps, Comparator<Qp> comparator) {
+    List<Section> toSections(List<Qp> qps, Function<Qp, Double> getter, Comparator<Qp> comparator) {
         qps = qps.stream().sorted(comparator).collect(Collectors.toList());
         Double accumulate = 0D;
         List<Section> sections = new ArrayList<>();
         for (Qp qp : qps) {
             Section section = Section.builder()
-                    .unitId(qp.getUnitId()).lx(accumulate).rx(accumulate + qp.getQuantity()).y(qp.getPrice()).build();
+                    .unitId(qp.getUnitId()).lx(accumulate).rx(accumulate + qp.getQuantity()).y(getter.apply(qp)).build();
             sections.add(section);
             accumulate += qp.getQuantity();
         }

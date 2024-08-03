@@ -286,6 +286,31 @@ public class Tunnel {
         }
     }
 
+
+    public GridLimit priceLimit(UnitType unitType, TimeFrame timeFrame, MultiYearFrame multiYearFrame) {
+        MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
+        if (timeFrame != null) {
+            if (unitType == UnitType.LOAD) {
+                return GridLimit.builder().low(marketSettingDO.getBidPriceFloor()).high(marketSettingDO.getBidPriceCap()).build();
+            } else if (unitType == UnitType.GENERATOR) {
+                return GridLimit.builder().low(marketSettingDO.getOfferPriceFloor()).high(marketSettingDO.getOfferPriceCap()).build();
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+        } else if (multiYearFrame != null) {
+            if (multiYearFrame.getRenewableType() == RenewableType.WIND) {
+                return GridLimit.builder().low(0D).high(marketSettingDO.getWindSpecificPriceCap()).build();
+            } else if (multiYearFrame.getRenewableType() == RenewableType.SOLAR) {
+                return GridLimit.builder().low(0D).high(marketSettingDO.getSolarSpecificPriceCap()).build();
+            } else {
+                throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+            }
+        } else {
+            throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
+        }
+
+    }
+
     public Map<UnitType, GridLimit> priceLimits() {
         MarketSettingDO marketSettingDO = marketSettingMapper.selectById(1);
         GridLimit loadPriceLimit = GridLimit.builder().low(marketSettingDO.getBidPriceFloor()).high(marketSettingDO.getBidPriceCap()).build();

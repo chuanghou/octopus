@@ -144,7 +144,14 @@ public class Unit extends AggregateRoot {
         bid.setBidStatus(BidStatus.NEW_DECELERATED);
 
         TradeStage tradeStage = tunnel.runningComp().getStageId().getTradeStage();
-
+        if (tradeStage == TradeStage.MO_INTRA) {
+            log.info("intra bid {}", bid);
+            Direction direction = moIntraDirection.computeIfAbsent(bid.getTimeFrame(), k -> bid.getDirection());
+            log.info("moIntraDirection {}", moIntraDirection);
+            BizEx.trueThrow(bid.getDirection() != direction, PARAM_FORMAT_WRONG.message("省内月度报单必须保持同一个方向"));
+        } else {
+            BizEx.trueThrow(bid.getDirection() != metaUnit.getUnitType().generalDirection(), PARAM_FORMAT_WRONG.message("省内年度报单方向错误"));
+        }
 
 
         Double unitBalance = balance.get(bid.getTimeFrame()).get(bid.getDirection());
