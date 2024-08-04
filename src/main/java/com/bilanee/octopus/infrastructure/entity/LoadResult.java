@@ -108,4 +108,23 @@ public class LoadResult {
      * 该轮比赛归一化利润（元）
      */
     Double normalizedProfit;
+
+
+    /**
+     * 该轮比赛所有差价合约净支出(元)
+     */
+    Double forwardContractExpenditure;
+
+
+    /**
+     * 同类负荷的平均利润
+     */
+    Double averageProfitOfSameType;
+
+
+    /**
+     * 该轮比赛所有差价合约净支出(元)
+     */
+    Double averageForwardContractExpenditureOfSameType;
+
 }
