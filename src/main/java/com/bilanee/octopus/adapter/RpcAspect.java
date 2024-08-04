@@ -14,12 +14,14 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.MDC;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 /**
@@ -50,6 +52,7 @@ public class RpcAspect {
 
     @Around("resultPointCut() || pageResultPointCut()")
     public Object resultResponseHandler(ProceedingJoinPoint pjp) {
+        MDC.put("traceId", UUID.randomUUID().toString());
         if (!init) {
             synchronized (lock) {
                 if (!init) {
@@ -112,6 +115,7 @@ public class RpcAspect {
             } else {
                 log.success(false).error(message, t);
             }
+            MDC.remove("traceId");
         }
         return result;
     }
