@@ -69,7 +69,7 @@ public class CompFacade {
     final SpotUnitClearedMapper spotUnitClearedMapper;
 
 
-    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(10L, TimeUnit.SECONDS).maximumSize(5000L).build();
+    static private final Cache<String, Object> cache = CacheBuilder.newBuilder().expireAfterWrite(10L, TimeUnit.MINUTES).maximumSize(10000L).build();
 
     /**
      * 当前运行竞赛查看

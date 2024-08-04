@@ -27,8 +27,8 @@ public class DelayExecutor {
     @SuppressWarnings("unchecked")
     public void schedule(Command command, long length, TimeUnit timeUnit) {
         scheduledFuture = (ScheduledFuture<Object>) scheduledExecutorService.schedule(() -> {
-            bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
             try {
+                bidAspect.stopBidCompletely(30, TimeUnit.SECONDS);
                 CommandBus.acceptMemoryTransactional(command, new HashMap<>());
             } finally {
                 bidAspect.recover();

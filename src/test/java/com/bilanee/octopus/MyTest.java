@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.SimulateSetting;
+import com.bilanee.octopus.adapter.facade.vo.InstantSpotMarketVO;
 import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
 import com.bilanee.octopus.adapter.facade.vo.MultiYearBidVO;
 import com.bilanee.octopus.adapter.facade.vo.RetailPackageVO;
@@ -30,7 +31,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-@ActiveProfiles("test")
+@ActiveProfiles("beta")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MyTest {
 
@@ -58,6 +59,7 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<Void> step = manageFacade.step();
+        Result<InstantSpotMarketVO> spotMarketVOs = compFacade.getSpotMarketVOs("818010.TRADE.0.DA_INTRA.CLEAR", Province.RECEIVER.name(), 0, TokenUtils.sign("1595"));
+
     }
 }
