@@ -1486,7 +1486,7 @@ public class UnitFacade {
             if (renewableType == RenewableType.SOLAR) {
                 priceLimit = marketSettingDO.getSolarSpecificPriceCap();
             } else if (renewableType == RenewableType.WIND) {
-                priceLimit = marketSettingDO.getSolarSpecificPriceCap();
+                priceLimit = marketSettingDO.getWindSpecificPriceCap();
             } else {
                 throw new SysEx(ErrorEnums.UNREACHABLE_CODE);
             }
