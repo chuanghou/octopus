@@ -1608,6 +1608,7 @@ public class UnitFacade {
      * @param token token
      * @return 报单结果
      */
+    @ToBid
     @PostMapping("submitRetailPackages")
     public Result<Void> submitRetailPackages(@RequestBody RetailMarketPO retailMarketPO, @NotBlank String stageId, @RequestHeader String token) {
         StageId pStageId = StageId.parse(stageId);
