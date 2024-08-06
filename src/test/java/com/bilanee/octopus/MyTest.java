@@ -31,7 +31,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-@ActiveProfiles("beta")
+@ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MyTest {
 
@@ -59,7 +59,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<InstantSpotMarketVO> spotMarketVOs = compFacade.getSpotMarketVOs("818010.TRADE.0.DA_INTRA.CLEAR", Province.RECEIVER.name(), 0, TokenUtils.sign("1595"));
-
+        System.out.println("");
     }
 }
