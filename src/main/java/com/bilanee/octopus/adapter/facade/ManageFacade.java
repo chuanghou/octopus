@@ -436,7 +436,8 @@ public class ManageFacade {
         ForecastError loadMonthlyMaxForecastErr = exampleSetting.getLoadMonthlyMaxForecastErr();
         ForecastError loadDaMaxForecastErr = exampleSetting.getLoadDaMaxForecastErr();
 
-        ForecastErr loadForecastErr = ForecastErr.builder().multiYear(loadAnnualMaxForecastErr.getForecastError())
+        ForecastErr loadForecastErr = ForecastErr.builder()
+                .multiYear(loadMultiYearMaxForecastErr.getForecastError())
                 .annual(loadAnnualMaxForecastErr.getForecastError())
                 .monthly(loadMonthlyMaxForecastErr.getForecastError())
                 .da(loadDaMaxForecastErr.getForecastError())
