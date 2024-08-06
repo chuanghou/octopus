@@ -88,6 +88,9 @@ public class WebSocket {
             return;
         }
         String userId = sessions.get(session);
+        if (userId == null) {
+            return;
+        }
         try {
             synchronized (session) {
                 boolean singleLoginLimit = BeanUtil.getBean(Tunnel.class).singleLoginLimit();
