@@ -160,7 +160,9 @@ public class Processor implements EventHandler<IntraBidContainer> {
             wsTopic = WsTopic.ROLL_BID;
             WebSocket.cast(WsMessage.builder().wsTopic(wsTopic).build());
         }
-        blockingQueue.add(new Object());
+        if (event.getOperation() == Operation.CLOSE) {
+            blockingQueue.add(new Object());
+        }
     }
 
     private void doClose() {
