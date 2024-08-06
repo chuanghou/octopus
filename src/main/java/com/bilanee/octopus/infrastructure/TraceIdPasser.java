@@ -13,7 +13,9 @@ public class TraceIdPasser implements ThreadLocalPasser<String> {
 
     @Override
     public void pass(Object t) {
-        MDC.put("traceId", t.toString());
+        if (t != null) {
+            MDC.put("traceId", t.toString());
+        }
     }
 
     @Override
