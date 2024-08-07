@@ -5,6 +5,7 @@ import com.bilanee.octopus.adapter.facade.UserFacade;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.TokenUtils;
 import com.stellariver.milky.common.base.BeanUtil;
+import com.stellariver.milky.common.tool.executor.ThreadLocalTransferableExecutor;
 import com.stellariver.milky.common.tool.util.Json;
 import lombok.CustomLog;
 import lombok.Data;
@@ -29,15 +30,12 @@ public class WebSocket {
 
     private static final Map<Session, String> sessions = new ConcurrentHashMap<>();
 
-    private static final Executor executor = new ThreadPoolExecutor(200, 200, 0L,TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-
     private  static  final CloseReason closeReason = new CloseReason(new CloseReason.CloseCode() {
         @Override
         public int getCode() {
             return 2024;
         }
     }, "一个用户ID不能同时登录两个页面");
-
 
 
     @OnOpen
@@ -109,13 +107,16 @@ public class WebSocket {
                 }
             }
         } catch (Throwable error) {
-            log.error("onMessage userId: {}, session : {}, wsMessage: {}", userId, session, message, error);
+            if (!(error instanceof EOFException)) {
+                log.error("onMessage userId: {}, session : {}", userId, session, error);
+            }
         }
     }
 
     @SneakyThrows
     public static void cast(WsMessage wsMessage) {
-        sessions.keySet().forEach(session -> executor.execute(() -> {
+        ThreadLocalTransferableExecutor threadLocalTransferableExecutor = BeanUtil.getBean(ThreadLocalTransferableExecutor.class);
+        sessions.keySet().forEach(session -> threadLocalTransferableExecutor.execute(() -> {
             String userId = sessions.get(session);
             try {
                 synchronized (session) {
@@ -125,8 +126,10 @@ public class WebSocket {
                 }
             } catch (Throwable error) {
                 if (!(error instanceof EOFException)) {
-                    log.error("onMessage userId: {}, session : {}", userId, session, error);
+                    log.error("cast userId: {}, session : {}", userId, session, error);
                 }
+            } finally {
+                log.info("cast finish {}", wsMessage);
             }
         }));
     }

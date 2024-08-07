@@ -6,6 +6,8 @@ import com.bilanee.octopus.basic.enums.Operation;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.Date;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -17,5 +19,7 @@ public class IntraBidContainer {
     Bid declareBid;
     Long cancelBidId;
     Direction cancelBidDirection;
+    String traceId;
+    Date enqueue;
 
 }

@@ -23,6 +23,7 @@ import lombok.CustomLog;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.MDC;
 
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -97,26 +98,37 @@ public class Processor implements EventHandler<IntraBidContainer> {
 
 
     public void declare(Bid bid) {
-        log.info("public void declare(Bid bid) {}", bid);
         disruptor.publishEvent((rtBidContainer, sequence) -> {
-            log.info("disruptor.publishEvent((rtBidContainer, sequence) {}", rtBidContainer);
+            rtBidContainer.setTraceId(MDC.get("traceId"));
             rtBidContainer.setOperation(Operation.DECLARE);
             rtBidContainer.setDeclareBid(bid);
+            long blockingNumber = disruptor.getBufferSize() - disruptor.getRingBuffer().remainingCapacity();
+            log.info("disruptor.publishNewBidEvent {}, blocking number {}", rtBidContainer, blockingNumber);
         });
     }
 
     public void cancel(Long cancelBidId, Direction cancelBidDirection) {
         disruptor.publishEvent((rtBidContainer, sequence) -> {
+            rtBidContainer.setTraceId(MDC.get("traceId"));
             rtBidContainer.setOperation(Operation.CANCEL);
             rtBidContainer.setCancelBidId(cancelBidId);
             rtBidContainer.setCancelBidDirection(cancelBidDirection);
+            rtBidContainer.setEnqueue(new Date());
+            long blockingNumber = disruptor.getBufferSize() - disruptor.getRingBuffer().remainingCapacity();
+            log.info("disruptor.publishCancelBidEvent {}, blocking number {}", rtBidContainer, blockingNumber);
         });
     }
 
     @SneakyThrows
     public void close() {
         blockingQueue.clear();
-        disruptor.publishEvent((rtBidContainer, sequence) -> rtBidContainer.setOperation(Operation.CLOSE));
+        disruptor.publishEvent((rtBidContainer, sequence) -> {
+            rtBidContainer.setTraceId(MDC.get("traceId"));
+            rtBidContainer.setOperation(Operation.CLOSE);
+            rtBidContainer.setEnqueue(new Date());
+            long blockingNumber = disruptor.getBufferSize() - disruptor.getRingBuffer().remainingCapacity();
+            log.info("disruptor.publishCancelBidEvent {}, blocking number {}", rtBidContainer, blockingNumber);
+        });
         blockingQueue.poll(5, TimeUnit.MINUTES);
     }
 
@@ -128,17 +140,25 @@ public class Processor implements EventHandler<IntraBidContainer> {
     @Override
     public void onEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
         try {
+            if (event.getTraceId() != null) {
+                MDC.put("traceId", event.getTraceId());
+            }
+            log.info("onEvent(IntraBidContainer event {}", event);
             doOnEvent(event, sequence, endOfBatch);
         } catch (Throwable throwable) {
             if (event.getOperation() == Operation.CLOSE) {
                 blockingQueue.add(new Object());
             }
             log.error("Processor process failure", throwable);
+        } finally {
+            MDC.remove("traceId");
+            event.setEnqueue(null);
+            log.info("event enqueue {}, finish {}", event.getEnqueue(), new Date());
         }
     }
 
     public void doOnEvent(IntraBidContainer event, long sequence, boolean endOfBatch) {
-        log.info("onEvent(IntraBidContainer event {}", event);
+
         if (event.getOperation() == Operation.DECLARE) {
             doNewBid(event.getDeclareBid());
         } else if (event.getOperation() == Operation.CANCEL) {
@@ -259,11 +279,10 @@ public class Processor implements EventHandler<IntraBidContainer> {
     }
 
     public void doNewBid(Bid declareBid) {
-        Direction direction = declareBid.getDirection();
         declareBid.setDeclareTimeStamp(Clock.currentTimeMillis());
         declareBid.setBidStatus(BidStatus.NEW_DECELERATED);
-        log.info("tunnel.insertBid(declareBid) {}", declareBid);
         tunnel.insertBid(declareBid);
+        log.info("tunnel.insertBid(declareBid) {}", declareBid);
         if (declareBid.getDirection() == Direction.BUY) {
             buyPriorityQueue.add(declareBid);
         } else if (declareBid.getDirection() == Direction.SELL) {
@@ -322,6 +341,7 @@ public class Processor implements EventHandler<IntraBidContainer> {
                 sellBid.setBidStatus(BidStatus.PART_DEAL);
             }
 
+            log.info("tunnel.updateBids(Collect.asList(buyBid, sellBid)) {} {}", buyBid, sellBid);
             tunnel.updateBids(Collect.asList(buyBid, sellBid));
 
             latestPrice = dealPrice;
@@ -370,7 +390,6 @@ public class Processor implements EventHandler<IntraBidContainer> {
         }
 
         tunnel.recordIntraInstantDO(builder.build());
-
 
     }
 
