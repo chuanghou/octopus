@@ -591,10 +591,6 @@ public class UnitFacade {
             } else {
                 builder.instantStatus(InstantStatus.NOT_BID);
             }
-
-            if (Collect.isEmpty(balanceVOs)) {
-                operations.clear();
-            }
             builder.operations(operations);
             builder.position(Double.parseDouble(String.format("%.2f", general - opposite)));
             return builder.build();
