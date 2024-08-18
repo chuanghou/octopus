@@ -5,10 +5,7 @@ import com.bilanee.octopus.adapter.facade.ManageFacade;
 import com.bilanee.octopus.adapter.facade.QuizFacade;
 import com.bilanee.octopus.adapter.facade.UnitFacade;
 import com.bilanee.octopus.adapter.facade.po.SimulateSetting;
-import com.bilanee.octopus.adapter.facade.vo.InstantSpotMarketVO;
-import com.bilanee.octopus.adapter.facade.vo.InterClearanceVO;
-import com.bilanee.octopus.adapter.facade.vo.MultiYearBidVO;
-import com.bilanee.octopus.adapter.facade.vo.RetailPackageVO;
+import com.bilanee.octopus.adapter.facade.vo.*;
 import com.bilanee.octopus.adapter.tunnel.Ssh;
 import com.bilanee.octopus.adapter.tunnel.Tunnel;
 import com.bilanee.octopus.basic.StageId;
@@ -31,7 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-@ActiveProfiles("test")
+@ActiveProfiles("prod")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MyTest {
 
@@ -59,6 +56,6 @@ public class MyTest {
 
     @Test
     public void interPointTest() throws InterruptedException {
-        System.out.println("");
+        Result<List<RollSymbolBidVO>> listResult = unitFacade.listRollSymbolBidVOs("1151246.TRADE.0.ROLL.BID", TokenUtils.sign("1000"));
     }
 }
