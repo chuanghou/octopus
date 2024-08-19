@@ -173,7 +173,7 @@ public class Unit extends AggregateRoot {
     public void handle(UnitCmd.RollBidDeclare command, Context context) {
         Bid bid = command.getBid();
         boolean bidden = Boolean.TRUE.equals(rollBidden.get(bid.getInstant()));
-        BizEx.trueThrow(bidden, PARAM_FORMAT_WRONG.message("时刻" + bid.getInstant() + "已有报单"));
+        BizEx.trueThrow(bidden, PARAM_FORMAT_WRONG.message("已有报单"));
         bid.setBidId(uniqueIdGetter.get());
         bid.setUserId(userId);
         bid.setCompId(command.getStageId().getCompId());
