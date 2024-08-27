@@ -546,7 +546,7 @@ public class Routers implements EventRouters {
     }
 
 
-    private void storeDbOfRoll(StageId now) {
+    public void storeDbOfRoll(StageId now) {
         BidQuery bidQuery = BidQuery.builder().compId(now.getCompId()).roundId(now.getRoundId()).tradeStage(now.getTradeStage()).build();
         List<Bid> bids = tunnel.listBids(bidQuery);
         log.info("bids {}", bids);
@@ -563,6 +563,7 @@ public class Routers implements EventRouters {
                         .eq(TransactionDO::getResourceType, unit.getMetaUnit().getUnitType().getDbCode())
                         .eq(TransactionDO::getMarketType, now.getTradeStage().getMarketType());
 
+                tBids = tBids.stream().filter(b -> !b.getDeals().isEmpty()).collect(Collectors.toList());
                 double quantity = tBids.stream()
                         .flatMap(uBid -> uBid.getDeals().stream()).map(Deal::getQuantity).reduce(0D, Double::sum);
                 if (quantity > 0) {

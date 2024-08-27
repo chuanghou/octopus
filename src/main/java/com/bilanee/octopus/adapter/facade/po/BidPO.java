@@ -29,6 +29,7 @@ public class BidPO {
     /**
      * 申报数量
      */
+    @NotNull(message = "申报数量不可为0")
     @PositiveOrZero @Digits(integer = 10, fraction = 0, message = "申报数量格式不满足要求")
     Double quantity;
 

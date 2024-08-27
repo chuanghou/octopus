@@ -54,8 +54,11 @@ public class MyTest {
     MarketSettingMapper marketSettingMapper;
 
 
+    @Autowired
+    Routers routers;
+
     @Test
     public void interPointTest() throws InterruptedException {
-        Result<List<RollSymbolBidVO>> listResult = unitFacade.listRollSymbolBidVOs("1151246.TRADE.0.ROLL.BID", TokenUtils.sign("1000"));
+        routers.storeDbOfRoll(StageId.parse("1706634.TRADE.0.ROLL.CLEAR"));
     }
 }
